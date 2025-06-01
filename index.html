@@ -20,12 +20,23 @@
         /* Clubhouse風カスタムカラー */
         .bg-clubhouse-bg { background-color: #F0EAE6; } /* 全体の背景色 */
         .bg-clubhouse-container { background-color: #FFFFFF; } /* コンテナ背景色 */
-        /* タイトルとサブタイトルの色を背景に馴染むように変更 */
         .text-clubhouse-title { color: #7D6E63; } /* 落ち着いたウォームグレー */
         .text-clubhouse-subtitle { color: #9A8B7E; } /* やや明るいウォームグレー */
         .bg-clubhouse-accent { background-color: #E59866; } /* くすんだオレンジ */
         .hover\:bg-clubhouse-accent-darker:hover { background-color: #D87E45; } /* 少し濃いくすんだオレンジ */
 
+        /* 画像リンクのスタイル */
+        .image-link img {
+            height: 40px; /* 少し小さくしてテキストとのバランス調整 */
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .image-link:hover img {
+            transform: scale(1.05);
+            /* box-shadow: 0 4px 8px rgba(0,0,0,0.2); */ /* ホバー時の影はボタン全体で表現 */
+        }
+        .image-link span {
+            font-size: 1rem; /* テキストのフォントサイズを他のボタンと合わせる */
+        }
     </style>
 </head>
 <body class="bg-clubhouse-bg flex justify-center items-center min-h-screen text-center text-gray-800 p-4">
@@ -59,6 +70,17 @@
                 <li>
                     <a href="https://sulebox.github.io/shifpen/yonkoma.html" class="link-button flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
                         <i class="fas fa-laugh-beam"></i>４コマ
+                    </a>
+                </li>
+                <li>
+                    <a href="https://m.youtube.com/playlist?list=PL1XdDxrGJU-P7gWkD6Ik8_ToGb4RI60Wh" target="_blank" rel="noopener noreferrer" class="link-button flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
+                        <i class="fab fa-youtube"></i>YouTube
+                    </a>
+                </li>
+                <li>
+                    <a href="https://genso.game/ja/" target="_blank" rel="noopener noreferrer" class="image-link flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
+                        <img src="site_logo_s.png" alt="元素騎士オンライン" class="rounded-md">
+                        <span class="ml-2">元素騎士</span>
                     </a>
                 </li>
             </ul>
