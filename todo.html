@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet"> 
     <style>
         body {
             font-family: 'Nunito Sans', sans-serif;
@@ -15,19 +15,18 @@
             justify-content: center;
             align-items: flex-start; 
             min-height: 100vh;
-            background-color: #FDF6EC; 
-            color: #2F2F2F; 
+            background-color: #fefbf3; /* TOPページ風: より明るいクリーム色 */
+            color: #4F463B; /* TOPページ風: ダークブラウン系のテキスト */
             padding-top: 2rem; 
             padding-bottom: 2rem; 
         }
         .app-container {
             background-color: #FFFFFF; 
             padding: 2rem;
-            border-radius: 1rem; 
-            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08), 0 4px 8px -3px rgba(0, 0, 0, 0.05); 
+            border-radius: 1.5rem; /* 少し丸みを強く */
+            box-shadow: 0 8px 16px -3px rgba(133, 115, 92, 0.15), 0 3px 6px -2px rgba(133, 115, 92, 0.1); /* ブラウン系の影 */
             width: 100%;
             max-width: 480px;
-            /* text-align: center; Removed from here to allow top-left alignment for back button */
         }
         #back-button-container {
             margin-bottom: 1rem;
@@ -35,35 +34,35 @@
         }
         #back-button {
             display: inline-block;
-            background-color: #e5e7eb; /* gray-200 */
-            color: #374151; /* gray-700 */
-            font-weight: 600; /* semibold */
-            padding: 0.375rem 0.75rem; /* py-1.5 px-3 */
-            border-radius: 0.375rem; /* rounded-md */
+            background-color: #F5EFE6; /* TOPページ風: 薄いベージュ */
+            color: #786A59; /* TOPページ風: ブラウン系テキスト */
+            font-weight: 600; 
+            padding: 0.375rem 0.75rem; 
+            border-radius: 0.5rem; /* 少し丸みを強く */
             text-decoration: none;
-            font-size: 0.875rem; /* text-sm */
+            font-size: 0.875rem; 
             transition: background-color 0.2s;
         }
         #back-button:hover {
-            background-color: #d1d5db; /* gray-300 */
+            background-color: #E9E0D6; 
         }
-        .main-title-container { /* New container for h1 and level display for centering */
+        .main-title-container { 
             text-align: center;
         }
         h1 { 
-            font-size: 1.625rem; 
-            font-weight: 700; 
-            color: #2F2F2F; 
-            margin-bottom: 0.25rem; /* Adjusted margin for monster select */
+            font-size: 1.875rem; /* text-3xl相当、少し大きく戻す */
+            font-weight: 800; /* より太くしてTOPページの見出しに近づける */
+            color: #4F463B; 
+            margin-bottom: 0.25rem; 
             display: flex; 
             align-items: baseline; 
             justify-content: center; 
             flex-wrap: wrap; 
         }
         #monster-select-title { 
-            font-size: 1.625rem; 
-            font-weight: 700; 
-            color: #2F2F2F; 
+            font-size: 1.875rem; 
+            font-weight: 800; 
+            color: #4F463B; 
             background-color: transparent;
             border: none;
             padding: 0 0.25rem; 
@@ -77,18 +76,18 @@
         #monster-select-title:focus {
             outline: none;
             text-decoration: underline; 
-            color: #F2994A;
+            color: #D9A477; /* TOPページ風アクセントカラー */
         }
         #app-title-suffix { 
-            font-size: 1.625rem; 
-            font-weight: 700;
-            color: #2F2F2F;
+            font-size: 1.875rem; 
+            font-weight: 800;
+            color: #4F463B;
             line-height: normal;
         }
 
         #gif-container { 
             margin-bottom: 1.5rem; 
-            margin-top: 0.75rem; /* Space after monster select/title */
+            margin-top: 0.75rem; 
             text-align: center; 
         }
         #gif-container img {
@@ -101,9 +100,9 @@
         #level-display {
             font-size: 1.5rem; 
             font-weight: 700; 
-            color: #F2994A; 
+            color: #D9A477; /* TOPページ風アクセントカラー */
             margin-bottom: 1rem; 
-            text-align: center; /* Ensure level is centered */
+            text-align: center; 
         }
         #reset-level-button-container { 
             text-align: center; 
@@ -112,7 +111,7 @@
         }
         #reset-level-button { 
             font-size: 0.75rem; 
-            color: #cbd5e1; 
+            color: #AE9F8D; /* TOPページ風: 薄いブラウン */
             background-color: transparent;
             border: none;
             text-decoration: underline;
@@ -122,7 +121,7 @@
             transition: color 0.2s;
         }
         #reset-level-button:hover {
-            color: #9ca3af; 
+            color: #8C7A66; /* TOPページ風: 少し濃いブラウン */
         }
         .input-group {
             margin-bottom: 1rem; 
@@ -132,73 +131,75 @@
             display: block;
             margin-bottom: 0.5rem; 
             font-weight: 600; 
-            color: #555555; 
+            color: #605548; /* TOPページ風: やや濃いブラウン */
         }
         .input-group input[type="text"] {
             width: 100%;
             padding: 0.85rem; 
-            border: 1px solid #E0E0E0; 
-            border-radius: 0.5rem; 
+            border: 1px solid #E9E0D6; /* TOPページ風: 薄いベージュの境界線 */
+            border-radius: 0.75rem; /* 少し丸みを強く */
             box-sizing: border-box;
             transition: border-color 0.3s, box-shadow 0.3s;
             font-weight: 400;
+            background-color: #FFFCF7; /* 入力欄の背景も少し色味を */
         }
         .input-group input[type="text"]:focus {
             outline: none;
-            border-color: #F2994A; 
-            box-shadow: 0 0 0 2px rgba(242, 153, 74, 0.3);
+            border-color: #D9A477; /* TOPページ風アクセントカラー */
+            box-shadow: 0 0 0 2px rgba(217, 164, 119, 0.3); /* TOPページ風アクセントカラーの影 */
         }
         .todo-item {
             display: flex;
             align-items: center;
             padding: 0.85rem;
             margin-bottom: 0.65rem; 
-            background-color: #FFFBF5; 
-            border-radius: 0.5rem; 
-            border: 1px solid #F5EADD; 
+            background-color: #FFFCF7; /* TOPページ風: アイテム背景 */
+            border-radius: 0.75rem; /* 少し丸みを強く */
+            border: 1px solid #F5EFE7; /* アイテム境界線 */
             transition: background-color 0.3s;
             text-align: left;
         }
         .todo-item.completed {
-            background-color: #E6F4EA; 
+            background-color: #E8F5E9; /* 少し落ち着いたグリーン */
             text-decoration: line-through;
-            color: #3C8C5A; 
+            color: #556B2F; /* オリーブグリーン系 */
         }
         .todo-item.completed label {
-            color: #3C8C5A;
+            color: #556B2F;
         }
         .todo-item input[type="checkbox"] {
             margin-right: 0.85rem; 
             width: 1.15rem; 
             height: 1.15rem; 
-            accent-color: #F2994A; 
+            accent-color: #D9A477; /* TOPページ風アクセントカラー */
             flex-shrink: 0; 
         }
         .todo-item label {
             flex-grow: 1;
             font-weight: 400;
-            color: #2F2F2F;
+            color: #4F463B;
         }
         button#submit-todos { 
-            background-color: #F2994A; 
+            background-color: #D9A477; /* TOPページ風アクセントカラー */
             color: white;
             padding: 0.85rem 1.75rem; 
             border: none;
-            border-radius: 0.5rem; 
+            border-radius: 0.75rem; /* 少し丸みを強く */
             font-weight: 700; 
             cursor: pointer;
             transition: background-color 0.3s, transform 0.1s;
             margin-top: 1rem; 
             width: 100%;
+            box-shadow: 0 2px 4px rgba(133, 115, 92, 0.2); /* ボタンにも少し影 */
         }
         button#submit-todos:hover:not(:disabled) {
-            background-color: #E68A3E; 
+            background-color: #C99467; /* 少し濃いアクセントカラー */
         }
         button#submit-todos:active:not(:disabled) {
             transform: scale(0.98);
         }
         button#submit-todos:disabled {
-            background-color: #FADCB3; 
+            background-color: #EADBCF; /* 薄いアクセントカラー */
             cursor: not-allowed;
         }
         .hidden {
@@ -206,17 +207,17 @@
         }
         #message-area {
             margin-top: 1rem; 
-            color: #D9534F; 
+            color: #C0392B; /* 少し落ち着いた赤 */
             font-weight: 600; 
             min-height: 1.5em;
-            text-align: center; /* Ensure message is centered */
+            text-align: center; 
         }
-        h2 { /* Sub-headings like "ToDoを3つ設定しよう！" */
+        h2 { 
             font-size: 1.25rem; 
             font-weight: 700; 
-            color: #2F2F2F;
+            color: #4F463B;
             margin-bottom: 1.25rem; 
-            text-align: center; /* Ensure sub-headings are centered */
+            text-align: center; 
         }
     </style>
 </head>
@@ -308,8 +309,7 @@
         const submitTodosButton = document.getElementById('submit-todos');
         const todoItemsWrapper = document.getElementById('todo-items-wrapper');
         const messageArea = document.getElementById('message-area');
-        // const backButton = document.getElementById('back-button'); // No JS needed for <a> tag navigation
-
+        
         const bakiAudio = document.getElementById('baki-sound');
         const levelupAudio = document.getElementById('levelup-sound');
 

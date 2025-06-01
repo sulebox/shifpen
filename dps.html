@@ -9,8 +9,8 @@
     <style>
         body {
             font-family: 'Noto Sans JP', 'Inter', sans-serif;
-            background-color: #FDF6E3;
-            color: #5D4037;
+            background-color: #F8F5F0; /* トップページ参考の背景色 (薄いベージュ系) */
+            color: #6D4C41; /* トップページ参考のメインテキスト色 (濃い茶色系) */
         }
         .skill-item {
             display: flex;
@@ -19,7 +19,7 @@
             justify-content: space-between;
             padding: 10px 12px;
             border-radius: 10px;
-            background-color: #FFFBF0;
+            background-color: #FFFFFF;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             transition: box-shadow 0.2s ease-in-out;
         }
@@ -39,7 +39,7 @@
             width: 1.35rem;
             height: 1.35rem;
             border-radius: 0.3rem;
-            accent-color: #E57373;
+            accent-color: #F57C00; /* トップページのボタン色参考 (オレンジ系) */
             flex-shrink: 0;
         }
         .skill-item input[type="checkbox"]:disabled + label {
@@ -51,13 +51,13 @@
         }
         .skill-item label {
             cursor: pointer;
-            color: #4E342E;
+            color: #4E342E; /* スキル名テキスト色 (濃い茶色) */
             font-weight: 500;
             flex-grow: 1;
         }
         .skill-description {
             font-size: 0.75rem;
-            color: #78716C;
+            color: #795548; /* 説明文テキスト色 (やや薄い茶色) */
             margin-left: calc(1.35rem + 12px);
             margin-bottom: 8px;
             padding-right: 12px;
@@ -69,12 +69,12 @@
             align-items: center;
             flex-wrap: wrap;
             font-size: 0.8rem;
-            color: #795548;
+            color: #8D6E63; /* ステータスラベル色 (薄めの茶色) */
             text-align: left;
             width: 100%;
         }
 
-        .skill-stats span { /* 威力, 再, DPS, 属性の各項目 */
+        .skill-stats span {
             margin-right: 8px;
             white-space: nowrap;
             margin-bottom: 4px;
@@ -84,7 +84,7 @@
         }
         .skill-stats .value {
             font-weight: 600;
-            color: #5D4037;
+            color: #5D4037; /* ステータス値の色 (濃い茶色) */
         }
         .attribute-tag {
             padding: 2px 6px;
@@ -102,7 +102,7 @@
 
         .buff-percentage {
             font-size: 0.8rem;
-            color: #E57373;
+            color: #EF6C00; /* バフ%の色 (オレンジ系) */
             font-weight: 600;
             margin-right: 8px;
             min-width: 50px;
@@ -111,8 +111,8 @@
         .skill-item select, .skill-item .level-display {
             padding: 6px 10px;
             border-radius: 6px;
-            border: 1px solid #D7CCC8;
-            background-color: #FFF8E1;
+            border: 1px solid #D7CCC8; /* ボーダー色 (薄い茶系) */
+            background-color: #FFF8E1; /* セレクトボックス背景 (薄い黄色系) */
             color: #5D4037;
             min-width: 70px;
             text-align: center;
@@ -127,10 +127,11 @@
             font-weight: 700;
             margin-bottom: 0.8rem;
             padding-bottom: 0.6rem;
-            border-bottom: 2px solid #E57373;
+            border-bottom: 2px solid #FB8C00; /* セクションタイトルのボーダー (オレンジ系) */
+            color: #A1887F; /* セクションタイトルの色 (茶系) */
         }
         .results-card {
-            background: linear-gradient(135deg, #FFAB91 0%, #FF8A65 100%);
+            background: linear-gradient(135deg, #FFB74D 0%, #FB8C00 100%); /* 結果カードのグラデーション (オレンジ系) */
             color: #FFFFFF;
         }
         .results-card h2 {
@@ -155,20 +156,20 @@
             gap: 0.875rem;
         }
         .back-button-container {
-            margin-bottom: 1rem; /* ヘッダーとの間隔 */
-            text-align: left; /* 左寄せ */
+            margin-bottom: 1rem;
+            text-align: left;
         }
         .back-button {
-            background-color: #E57373; /* アクセントカラー */
+            background-color: #FFA726; /* トップページのボタン色参考 (オレンジ系) */
             color: white;
             padding: 0.5rem 1rem;
-            border-radius: 0.375rem; /* rounded-md */
+            border-radius: 0.375rem;
             text-decoration: none;
             font-weight: 500;
             transition: background-color 0.2s ease-in-out;
         }
         .back-button:hover {
-            background-color: #D32F2F; /* 少し濃い赤 */
+            background-color: #FB8C00; /* 少し濃いオレンジ */
         }
     </style>
 </head>
@@ -180,25 +181,25 @@
         </div>
 
         <header class="mb-8 text-center">
-            <h1 class="text-4xl font-bold text-[#D35400]">元素DPSスカウター：シーフ</h1>
+            <h1 class="text-4xl font-bold text-[#795548]">元素DPSスカウター：シーフ</h1>
             <p class="text-md text-gray-700 mt-2">スキルを選択し、レベルを調整して合計DPSを確認します。</p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <section class="bg-[#FFF3E0] p-5 rounded-xl shadow-lg">
-                <h2 class="section-title text-[#BF360C]">攻撃スキル</h2>
+            <section class="bg-white p-5 rounded-xl shadow-lg">
+                <h2 class="section-title text-[#A1887F]">攻撃スキル</h2>
                 <div id="standard-skills-list" class="skill-list-grid">
                 </div>
             </section>
 
-            <section class="bg-[#FFF3E0] p-5 rounded-xl shadow-lg">
-                <h2 class="section-title text-[#BF360C]">継承スキル</h2>
+            <section class="bg-white p-5 rounded-xl shadow-lg">
+                <h2 class="section-title text-[#A1887F]">継承スキル</h2>
                 <div id="inherited-skills-list" class="skill-list-grid">
                 </div>
             </section>
 
-            <section class="bg-[#FFF3E0] p-5 rounded-xl shadow-lg">
-                <h2 class="section-title text-[#BF360C]">バフスキル</h2>
+            <section class="bg-white p-5 rounded-xl shadow-lg">
+                <h2 class="section-title text-[#A1887F]">バフスキル</h2>
                 <div id="buff-skills-list" class="skill-list-grid">
                 </div>
             </section>
@@ -516,10 +517,12 @@
                         descToShow = skill.descriptionLv1_4;
                     } else if (skill.type === 'inherited' && skill.description) {
                         descToShow = skill.description;
-                    } else if (skill.type === 'standard' || skill.type === 'buff') { // Lv1-4用説明がなく、Lv5用説明のみある場合
-                        descToShow = null; // 未チェック時はLv1-4扱いなので、Lv5専用説明は表示しない
+                    } else if ((skill.type === 'standard' || skill.type === 'buff') && skill.descriptionLv5 && !skill.descriptionLv1_4) {
+                        // Lv1-4用がなくLv5用のみある場合、未チェック時は表示しない
+                         descToShow = null;
                     }
                 }
+
 
                 if (descToShow) {
                     descriptionEl.textContent = descToShow;
