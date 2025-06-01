@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シフペンの部屋</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Interフォントの読み込み */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* ボタンのアイコンとテキストの間のスペース */
+        .link-button i {
+            margin-right: 0.5rem; /* 8px */
+        }
+
+        /* Clubhouse風カスタムカラー */
+        .bg-clubhouse-bg { background-color: #F0EAE6; } /* 全体の背景色 */
+        .bg-clubhouse-container { background-color: #FFFFFF; } /* コンテナ背景色 */
+        /* タイトルとサブタイトルの色を背景に馴染むように変更 */
+        .text-clubhouse-title { color: #7D6E63; } /* 落ち着いたウォームグレー */
+        .text-clubhouse-subtitle { color: #9A8B7E; } /* やや明るいウォームグレー */
+        .bg-clubhouse-accent { background-color: #E59866; } /* くすんだオレンジ */
+        .hover\:bg-clubhouse-accent-darker:hover { background-color: #D87E45; } /* 少し濃いくすんだオレンジ */
+
+    </style>
+</head>
+<body class="bg-clubhouse-bg flex justify-center items-center min-h-screen text-center text-gray-800 p-4">
+    <div class="bg-clubhouse-container p-6 md:p-10 rounded-2xl shadow-xl max-w-xl w-full mx-auto">
+        <header class="mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-clubhouse-title mb-2">シフペンの部屋</h1>
+            <p class="text-md md:text-lg text-clubhouse-subtitle font-medium">ゆっくりしていってね＾＾</p>
+        </header>
+
+        <section class="mb-10">
+            <img src="https://sulebox.github.io/shifpen/penpenshi.gif" alt="ペンギンのGIFアニメ" class="rounded-lg mx-auto" style="max-width: 70%; height: auto;">
+        </section>
+
+        <nav>
+            <ul class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                <li>
+                    <a href="https://sulebox.github.io/shifpen/equipment.html" class="link-button flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
+                        <i class="fas fa-shield-alt"></i>装備チェッカー
+                    </a>
+                </li>
+                <li>
+                    <a href="https://sulebox.github.io/shifpen/dps.html" class="link-button flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
+                        <i class="fas fa-bolt"></i>DPSスカウター
+                    </a>
+                </li>
+                <li>
+                    <a href="https://sulebox.github.io/shifpen/todo.html" class="link-button flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
+                        <i class="fas fa-tasks"></i>プヨンのToDo
+                    </a>
+                </li>
+                <li>
+                    <a href="https://sulebox.github.io/shifpen/yonkoma.html" class="link-button flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
+                        <i class="fas fa-laugh-beam"></i>４コマ
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</body>
+</html>

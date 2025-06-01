@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>元素DPSスカウター：シーフ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', 'Inter', sans-serif;
+            background-color: #FDF6E3;
+            color: #5D4037;
+        }
+        .skill-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background-color: #FFFBF0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.2s ease-in-out;
+        }
+
+        .skill-item:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+        .skill-item-name-group {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 4px;
+        }
+
+        .skill-item input[type="checkbox"] {
+            margin-right: 12px;
+            width: 1.35rem;
+            height: 1.35rem;
+            border-radius: 0.3rem;
+            accent-color: #E57373;
+            flex-shrink: 0;
+        }
+        .skill-item input[type="checkbox"]:disabled + label {
+            color: #9E9E9E;
+            cursor: not-allowed;
+        }
+         .skill-item input[type="checkbox"]:disabled {
+            accent-color: #BDBDBD;
+        }
+        .skill-item label {
+            cursor: pointer;
+            color: #4E342E;
+            font-weight: 500;
+            flex-grow: 1;
+        }
+        .skill-description {
+            font-size: 0.75rem;
+            color: #78716C;
+            margin-left: calc(1.35rem + 12px);
+            margin-bottom: 8px;
+            padding-right: 12px;
+            line-height: 1.4;
+            /* display: none; 初期表示の制御はJSで行うため削除 */
+        }
+
+        .skill-stats {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            font-size: 0.8rem;
+            color: #795548;
+            text-align: left;
+            width: 100%;
+        }
+
+        .skill-stats span { /* 威力, 再, DPS, 属性の各項目 */
+            margin-right: 8px;
+            white-space: nowrap;
+            margin-bottom: 4px;
+        }
+        .skill-stats span:last-child {
+            margin-right: 0;
+        }
+        .skill-stats .value {
+            font-weight: 600;
+            color: #5D4037;
+        }
+        .attribute-tag {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            margin-left: 0;
+        }
+        .attr-phys { background-color: #A1887F; color: white; }
+        .attr-magic { background-color: #7E57C2; color: white; }
+        .attr-earth { background-color: #8D6E63; color: white; }
+        .attr-light { background-color: #FFF176; color: #424242; }
+        .attr-dark { background-color: #616161; color: white; }
+
+
+        .buff-percentage {
+            font-size: 0.8rem;
+            color: #E57373;
+            font-weight: 600;
+            margin-right: 8px;
+            min-width: 50px;
+            text-align: right;
+        }
+        .skill-item select, .skill-item .level-display {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #D7CCC8;
+            background-color: #FFF8E1;
+            color: #5D4037;
+            min-width: 70px;
+            text-align: center;
+            font-weight: 500;
+            margin-left: auto;
+        }
+        .level-display {
+             background-color: #EFEBE9;
+        }
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 2px solid #E57373;
+        }
+        .results-card {
+            background: linear-gradient(135deg, #FFAB91 0%, #FF8A65 100%);
+            color: #FFFFFF;
+        }
+        .results-card h2 {
+            color: #FFFFFF;
+        }
+        .results-card span {
+            opacity: 1;
+        }
+        .results-card .value {
+             text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .controls-group {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+            width: 100%;
+            justify-content: space-between;
+        }
+        .skill-list-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.875rem;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 md:p-6 max-w-5xl">
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-[#D35400]">元素DPSスカウター：シーフ</h1>
+            <p class="text-md text-gray-700 mt-2">スキルを選択し、レベルを調整して合計DPSを確認します。</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <section class="bg-[#FFF3E0] p-5 rounded-xl shadow-lg">
+                <h2 class="section-title text-[#BF360C]">攻撃スキル</h2>
+                <div id="standard-skills-list" class="skill-list-grid">
+                </div>
+            </section>
+
+            <section class="bg-[#FFF3E0] p-5 rounded-xl shadow-lg">
+                <h2 class="section-title text-[#BF360C]">継承スキル</h2>
+                <div id="inherited-skills-list" class="skill-list-grid">
+                </div>
+            </section>
+
+            <section class="bg-[#FFF3E0] p-5 rounded-xl shadow-lg">
+                <h2 class="section-title text-[#BF360C]">バフスキル</h2>
+                <div id="buff-skills-list" class="skill-list-grid">
+                </div>
+            </section>
+        </div>
+
+        <section class="results-card p-6 rounded-xl shadow-2xl sticky bottom-4">
+            <h2 class="text-2xl font-bold mb-4 text-center">計算結果</h2>
+            <div class="flex justify-center items-center">
+                <div class="text-center">
+                    <span class="text-lg block">合計DPS</span>
+                    <span id="total-dps" class="text-3xl font-bold value">0.00</span>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // スキルデータ定義
+        const skillsData = [
+            // 攻撃スキル
+            {
+                id: "faint_attack", name: "ﾌｪｲﾝﾄｱﾀｯｸ", lv5Name: "⚪︎しの前撃", type: "standard", category: "standard", attribute: "物理", maxLevel: 5,
+                descriptionLv1_4: "巧みな動きで2連攻撃を繰り出す",
+                descriptionLv5: "巧みな動きで威力260の攻撃を行い、対象のクリティカル耐性を1.5秒間大きく下げる",
+                levels: [
+                    { level: 1, power: 200, ct: 10 }, { level: 2, power: 254, ct: 10 },
+                    { level: 3, power: 276, ct: 8 },  { level: 4, power: 338, ct: 8 },
+                    { level: 5, power: 260, ct: 8 }
+                ]
+            },
+            {
+                id: "atemi", name: "影当身", lv5Name: "永き眠りへの誘い", type: "standard", category: "standard", attribute: "物理", maxLevel: 5,
+                descriptionLv1_4: "命中補正+20の攻撃、物理ダメージを与えて20秒間眠らせる。隠密状態で使うと一定確率で敵を麻痺させる",
+                descriptionLv5: "命中補正+20の攻撃、威力325の物理ダメージを与えて15秒間眠らせる。隠密状態で使うと敵のHPを現在値の1%分失わせる",
+                levels: [
+                    { level: 1, power: 150, ct: 20 }, { level: 2, power: 193, ct: 16 },
+                    { level: 3, power: 240, ct: 13 }, { level: 4, power: 293, ct: 10 },
+                    { level: 5, power: 325, ct: 15 }
+                ]
+            },
+            {
+                id: "mafuugeki", name: "魔封撃", lv5Name: "術者⚪︎し", type: "standard", category: "standard", attribute: "物理", maxLevel: 5,
+                descriptionLv1_4: "物理属性ダメージを与え、40秒間スキルを封じる",
+                descriptionLv5: "威力455の物理属性ダメージを与え、20秒間スキルを封じ、強度1の強化魔法を1つ解除する",
+                levels: [
+                    { level: 1, power: 180, ct: 30 }, { level: 2, power: 242, ct: 24 },
+                    { level: 3, power: 312, ct: 20 }, { level: 4, power: 390, ct: 16 },
+                    { level: 5, power: 455, ct: 18 }
+                ]
+            },
+            {
+                id: "kyusho_kougeki", name: "急所攻撃", lv5Name: "ハートスキューア", type: "standard", category: "standard", attribute: "物理", maxLevel: 5,
+                descriptionLv1_4: "弱点を狙い、物理属性ダメージの3連攻撃を繰り出す",
+                descriptionLv5: "命中補正+100の攻撃、弱点を狙い、威力325の物理属性ダメージの一撃を繰り出す",
+                levels: [
+                    { level: 1, power: 300, ct: 10 }, { level: 2, power: 363, ct: 10 },
+                    { level: 3, power: 396, ct: 8 },  { level: 4, power: 458, ct: 8 },
+                    { level: 5, power: 325, ct: 6 }
+                ]
+            },
+            {
+                id: "kageho_ban", name: "影歩撃", lv5Name: "影没", type: "standard", category: "standard", attribute: "闇", maxLevel: 5,
+                descriptionLv1_4: "命中補正+20の攻撃、隠密状態で使うと一定確率で敵を麻痺させる",
+                descriptionLv5: "命中補正+20の攻撃、威力200の闇属性ダメージを与え、隠密状態となる 隠密状態で使うと一定確率で敵を麻痺させる",
+                levels: [
+                    { level: 1, power: 126, ct: 8 },  { level: 2, power: 150, ct: 8 },
+                    { level: 3, power: 150, ct: 6.5 },{ level: 4, power: 180, ct: 6.5 },
+                    { level: 5, power: 200, ct: 16 }
+                ]
+            },
+            {
+                id: "ashigarami", name: "足がらみ", lv5Name: "アキレスブレイク", type: "standard", category: "standard", attribute: "魔", maxLevel: 5,
+                descriptionLv1_4: "命中補正+10の攻撃、魔属性ダメージを与え、30秒間速さが33%減少する移動速度低下状態にする",
+                descriptionLv5: "命中補正+10の攻撃 威力390の魔属性ダメージを与え、15秒間速さが80%減少する移動速度低下状態にする",
+                levels: [
+                    { level: 1, power: 150, ct: 13 }, { level: 2, power: 220, ct: 13 },
+                    { level: 3, power: 300, ct: 13 }, { level: 4, power: 390, ct: 13 },
+                    { level: 5, power: 390, ct: 13 }
+                ]
+            },
+            // バフスキル
+            {
+                id: "thief_knowledge", name: "盗賊の心得", lv5Name: "盗賊の見切り", type: "buff", category: "buff", maxLevel: 5,
+                descriptionLv1_4: "脅威に対し素早く反応する構え。10分間、速さと攻撃力が上昇する 詠:2",
+                descriptionLv5: "脅威に対し素早く反応する構えを常時保つ。速さが20%、攻撃力が8%上昇する ※パッシブスキルとなり、ショートカット登録等から外れる",
+                levels: [
+                    { level: 1, buff: 0 }, { level: 2, buff: 0 }, { level: 3, buff: 0 },
+                    { level: 4, buff: 0 }, { level: 5, buff: 0.08 }
+                ]
+            },
+            {
+                id: "gale_knowledge", name: "疾風の陣", lv5Name: "砂嵐の陣", type: "buff", category: "buff", maxLevel: 5,
+                descriptionLv1_4: "敵の死角を作る構えをとり、10分間、対象の器用と速さが上昇する 詠:2",
+                descriptionLv5: "敵の死角を作る構えをとり、10分間、対象の器用と速さが140と、物理と魔法のクリティカル倍率が0.5上昇する 詠:2",
+                levels: [
+                    { level: 1, buff: 0 }, { level: 2, buff: 0 }, { level: 3, buff: 0 },
+                    { level: 4, buff: 0 }, { level: 5, buff: 0.125 }
+                ]
+            },
+            {
+                id: "thief_evasion", name: "盗賊のみかわし", lv5Name: "盗賊の神業", type: "buff", category: "buff", maxLevel: 5,
+                descriptionLv1_4: "脅威に対し神懸かった速度で反応する構え。3分間速さが上昇する 詠:2",
+                descriptionLv5: "脅威に対し神懸かった速度で反応する構え。1分間速さが300と10%上昇し、回避時に50%の確率でカウンターを行う 詠:2",
+                levels: [
+                    { level: 1, buff: 0 }, { level: 2, buff: 0 }, { level: 3, buff: 0 },
+                    { level: 4, buff: 0 }, { level: 5, buff: 0 }
+                ]
+            },
+            {
+                id: "rush", name: "ﾗｯｼｭ", lv5Name: "アドレナリン・ハイ", type: "buff", category: "buff", maxLevel: 5,
+                descriptionLv1_4: "素早い攻撃で猛襲する。X秒間右手の攻撃速度が速くなる（秒数はLvによって異なる）",
+                descriptionLv5: "素早い攻撃で猛襲する。30秒間、右手の攻撃速度が速くなると同時に攻撃力が20%上昇する",
+                levels: [
+                    { level: 1, buff: 0 }, { level: 2, buff: 0 }, { level: 3, buff: 0 },
+                    { level: 4, buff: 0 }, { level: 5, buff: 0.125 }
+                ]
+            },
+            // 継承スキル
+            {
+                id: "kyoushuu", name: "鉄拳", type: "inherited", category: "inherited", attribute: "物理", maxLevel: 1,
+                description: "命中補正+20の攻撃、精神を集中させた一撃を放ち、威力190の物理属性ダメージを与える",
+                levels: [{ level: 1, power: 190, ct: 10 }]
+            },
+            {
+                id: "kishuu", name: "虎砲", type: "inherited", category: "inherited", attribute: "物理", maxLevel: 1,
+                description: "命中補正+10の攻撃、虎をも倒す一撃を放ち、威力196の物理属性ダメージを与える",
+                levels: [{ level: 1, power: 196, ct: 8 }]
+            },
+            {
+                id: "pole_crash", name: "ﾎﾟｰﾙｸﾗｯｼｭ", type: "inherited", category: "inherited", attribute: "物理", maxLevel: 1,
+                description: "威力100の物理属性ダメージを与え、10秒間対象のガード値を50％減少させる",
+                levels: [{ level: 1, power: 100, ct: 12 }]
+            },
+            {
+                id: "grand_charge", name: "ｸﾞﾗﾝﾄﾞﾁｬｰｼﾞ", type: "inherited", category: "inherited", attribute: "土", maxLevel: 1,
+                description: "大地の気を溜め、威力350の土属性ダメージを与える",
+                levels: [{ level: 1, power: 350, ct: 5, displayCt: "詠:5" }]
+            },
+            {
+                id: "over_strike", name: "ｵｰﾊﾞｰｽﾄﾗｲｸ", type: "inherited", category: "inherited", attribute: "光", maxLevel: 1,
+                description: "聖なる気を溜め、威力500の光属性ダメージを与える",
+                levels: [{ level: 1, power: 500, ct: 7, displayCt: "詠:6 再:1" }]
+            },
+            {
+                id: "tsurugi_no_mai", name: "剣の舞", type: "inherited", category: "inherited", attribute: "物理", maxLevel: 1,
+                description: "威力100の物理属性の2連撃を繰り出す",
+                levels: [{ level: 1, power: 200, ct: 18 }]
+            }
+        ];
+
+        let selectedSkillsConfig = {};
+        const MAX_INHERITED_SKILLS = 3;
+
+        const standardSkillsList = document.getElementById('standard-skills-list');
+        const buffSkillsList = document.getElementById('buff-skills-list');
+        const inheritedSkillsList = document.getElementById('inherited-skills-list');
+        const totalDpsEl = document.getElementById('total-dps');
+
+        function renderSkill(skill) {
+            const skillItem = document.createElement('div');
+            skillItem.className = 'skill-item';
+            skillItem.setAttribute('data-skill-id', skill.id);
+
+            const nameGroup = document.createElement('div');
+            nameGroup.className = 'skill-item-name-group';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `skill-checkbox-${skill.id}`;
+            checkbox.value = skill.id;
+
+            const label = document.createElement('label');
+            label.htmlFor = `skill-checkbox-${skill.id}`;
+            label.id = `skill-label-${skill.id}`;
+            label.textContent = skill.name;
+
+            nameGroup.appendChild(checkbox);
+            nameGroup.appendChild(label);
+            skillItem.appendChild(nameGroup);
+
+            if (skill.descriptionLv1_4 || skill.descriptionLv5 || skill.description) {
+                const descriptionDiv = document.createElement('div');
+                descriptionDiv.id = `skill-description-${skill.id}`;
+                descriptionDiv.className = 'skill-description';
+                skillItem.appendChild(descriptionDiv);
+            }
+
+            const controlsGroup = document.createElement('div');
+            controlsGroup.className = 'controls-group';
+
+            if (skill.type === 'standard' || skill.type === 'inherited') {
+                const statsDiv = document.createElement('div');
+                statsDiv.className = 'skill-stats';
+                const powerSpan = document.createElement('span');
+                powerSpan.id = `skill-power-${skill.id}`;
+                const ctSpan = document.createElement('span');
+                ctSpan.id = `skill-ct-${skill.id}`;
+                const dpsSpan = document.createElement('span');
+                dpsSpan.id = `skill-dps-${skill.id}`;
+                const attrSpan = document.createElement('span');
+                attrSpan.id = `skill-attribute-${skill.id}`;
+
+                statsDiv.appendChild(powerSpan);
+                statsDiv.appendChild(ctSpan);
+                statsDiv.appendChild(dpsSpan);
+                statsDiv.appendChild(attrSpan);
+                controlsGroup.appendChild(statsDiv);
+            }
+
+            if (skill.type === 'buff') {
+                const buffPercentSpan = document.createElement('span');
+                buffPercentSpan.id = `buff-percent-${skill.id}`;
+                buffPercentSpan.className = 'buff-percentage';
+                controlsGroup.appendChild(buffPercentSpan);
+            }
+
+            let levelControl;
+            if (skill.type === 'standard' || skill.type === 'buff') {
+                levelControl = document.createElement('select');
+                levelControl.id = `skill-level-${skill.id}`;
+                levelControl.disabled = true;
+                for (let i = 1; i <= skill.maxLevel; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = `Lv${i}`;
+                    levelControl.appendChild(option);
+                }
+                levelControl.addEventListener('change', (event) => {
+                    const newLevel = parseInt(event.target.value);
+                    selectedSkillsConfig[skill.id] = newLevel;
+                    updateSkillDisplay(skill, newLevel, checkbox.checked);
+                    updateTotals();
+                });
+            } else {
+                levelControl = document.createElement('span');
+                levelControl.id = `skill-level-${skill.id}`;
+                levelControl.textContent = 'Lv1';
+                levelControl.className = 'level-display';
+            }
+            controlsGroup.appendChild(levelControl);
+            skillItem.appendChild(controlsGroup);
+
+            checkbox.addEventListener('change', (event) => {
+                const currentLevel = skill.type === 'inherited' ? 1 : parseInt(levelControl.value) || 1;
+                if (event.target.checked) {
+                    selectedSkillsConfig[skill.id] = currentLevel;
+                    if (levelControl.tagName === 'SELECT') levelControl.disabled = false;
+                } else {
+                    delete selectedSkillsConfig[skill.id];
+                    if (levelControl.tagName === 'SELECT') {
+                        levelControl.value = 1;
+                        levelControl.disabled = true;
+                    }
+                }
+                updateSkillDisplay(skill, parseInt(levelControl.value) || 1, event.target.checked);
+                if (skill.type === 'inherited') {
+                    updateInheritedSkillsCheckboxes();
+                }
+                updateTotals();
+            });
+            
+            updateSkillDisplay(skill, 1, checkbox.checked);
+
+            if (skill.category === 'standard') standardSkillsList.appendChild(skillItem);
+            else if (skill.category === 'buff') buffSkillsList.appendChild(skillItem);
+            else if (skill.category === 'inherited') inheritedSkillsList.appendChild(skillItem);
+        }
+
+        function getAttributeClass(attribute) {
+            switch (attribute) {
+                case '物理': return 'attr-phys';
+                case '魔': return 'attr-magic';
+                case '土': return 'attr-earth';
+                case '光': return 'attr-light';
+                case '闇': return 'attr-dark';
+                default: return '';
+            }
+        }
+
+        function updateSkillDisplay(skill, level, isChecked) {
+            const powerEl = document.getElementById(`skill-power-${skill.id}`);
+            const ctEl = document.getElementById(`skill-ct-${skill.id}`);
+            const dpsEl = document.getElementById(`skill-dps-${skill.id}`);
+            const attrEl = document.getElementById(`skill-attribute-${skill.id}`);
+            const buffPercentEl = document.getElementById(`buff-percent-${skill.id}`);
+            const labelEl = document.getElementById(`skill-label-${skill.id}`);
+            const descriptionEl = document.getElementById(`skill-description-${skill.id}`);
+
+            const lv1Data = skill.levels[0];
+
+            if (labelEl && (skill.type === 'standard' || skill.type === 'buff')) {
+                if (isChecked && level === 5 && skill.lv5Name) {
+                    labelEl.textContent = skill.lv5Name;
+                } else {
+                    labelEl.textContent = skill.name;
+                }
+            }
+
+            if (descriptionEl) {
+                let descToShow = null;
+                // isChecked の状態に関わらず、レベルに応じた説明を決定する
+                if (skill.type === 'standard' || skill.type === 'buff') {
+                    if (level === 5 && skill.descriptionLv5) {
+                        descToShow = skill.descriptionLv5;
+                    } else if (level >= 1 && level <= 4 && skill.descriptionLv1_4) {
+                        descToShow = skill.descriptionLv1_4;
+                    }
+                } else if (skill.type === 'inherited' && skill.description) {
+                    descToShow = skill.description; // 継承スキルは常にLv1なので、skill.description を使用
+                }
+
+                // スキルがチェックされていない場合は、Lv1の説明を表示 (ただし、descriptionLv1_4 または description がある場合)
+                if (!isChecked) {
+                    if ((skill.type === 'standard' || skill.type === 'buff') && skill.descriptionLv1_4) {
+                        descToShow = skill.descriptionLv1_4;
+                    } else if (skill.type === 'inherited' && skill.description) {
+                        descToShow = skill.description;
+                    } else if (skill.type === 'standard' || skill.type === 'buff') { // Lv1-4用説明がなく、Lv5用説明のみある場合
+                        descToShow = null; // 未チェック時はLv1-4扱いなので、Lv5専用説明は表示しない
+                    }
+                }
+
+                if (descToShow) {
+                    descriptionEl.textContent = descToShow;
+                    descriptionEl.style.display = 'block';
+                } else {
+                    descriptionEl.style.display = 'none';
+                }
+            }
+
+
+            if (skill.type === 'standard' || skill.type === 'inherited') {
+                if (powerEl && ctEl && dpsEl && attrEl && lv1Data) {
+                    let dataToDisplay = lv1Data; // 未チェック時もLv1データを表示の基準とする
+                    if (isChecked) { // チェックされていれば、選択レベルのデータで上書き
+                        const selectedLevelData = skill.levels[level - 1];
+                        if (selectedLevelData) {
+                            dataToDisplay = selectedLevelData;
+                        }
+                    }
+                    
+                    powerEl.innerHTML = `威力: <span class="value">${dataToDisplay.power !== undefined ? dataToDisplay.power : '-'}</span>`;
+                    
+                    let ctText = `再: <span class="value">${dataToDisplay.ct !== undefined ? dataToDisplay.ct : '-'}</span>`;
+                    if (dataToDisplay.displayCt) {
+                        ctText = dataToDisplay.displayCt.replace(/(\d+(\.\d+)?)/g, '<span class="value">$1</span>');
+                    }
+                    ctEl.innerHTML = ctText;
+
+                    if (dataToDisplay.power !== undefined && dataToDisplay.ct > 0) {
+                        dpsEl.innerHTML = `DPS: <span class="value">${(dataToDisplay.power / dataToDisplay.ct).toFixed(1)}</span>`;
+                    } else {
+                        dpsEl.innerHTML = `DPS: <span class="value">-</span>`;
+                    }
+                    if (skill.attribute) {
+                        attrEl.innerHTML = `<span class="attribute-tag ${getAttributeClass(skill.attribute)}">${skill.attribute}</span>`;
+                    } else {
+                        attrEl.innerHTML = '';
+                    }
+                }
+            } else if (skill.type === 'buff' && buffPercentEl) {
+                const currentLevelData = skill.levels[level - 1];
+                if (isChecked && level === 5 && currentLevelData && currentLevelData.buff > 0) {
+                    buffPercentEl.textContent = `${(currentLevelData.buff * 100).toFixed(0)}% UP`;
+                } else {
+                    buffPercentEl.textContent = '';
+                }
+            }
+        }
+
+        function updateInheritedSkillsCheckboxes() {
+            const allInheritedSkills = skillsData.filter(s => s.type === 'inherited');
+            let selectedInheritedCount = 0;
+            for (const skillId in selectedSkillsConfig) {
+                const skill = skillsData.find(s => s.id === skillId);
+                if (skill && skill.type === 'inherited') {
+                    selectedInheritedCount++;
+                }
+            }
+            allInheritedSkills.forEach(skill => {
+                const checkbox = document.getElementById(`skill-checkbox-${skill.id}`);
+                if (!checkbox) return;
+                checkbox.disabled = selectedInheritedCount >= MAX_INHERITED_SKILLS && !checkbox.checked;
+            });
+        }
+
+        function updateTotals() {
+            let currentTotalDps = 0;
+            let buffMultiplier = 1.0;
+            for (const skillId in selectedSkillsConfig) {
+                const skill = skillsData.find(s => s.id === skillId);
+                if (!skill) continue;
+                const selectedLevel = selectedSkillsConfig[skillId];
+                const levelData = skill.levels[selectedLevel - 1];
+                if (!levelData) continue;
+                if (skill.type === 'standard' || skill.type === 'inherited') {
+                    if (levelData.power && levelData.ct > 0) {
+                        currentTotalDps += levelData.power / levelData.ct;
+                    }
+                } else if (skill.type === 'buff') {
+                    if (levelData.buff && levelData.buff > 0) {
+                         buffMultiplier *= (1 + levelData.buff);
+                    }
+                }
+            }
+            totalDpsEl.textContent = (currentTotalDps * buffMultiplier).toFixed(2);
+        }
+
+        function init() {
+            skillsData.forEach(skill => renderSkill(skill));
+            updateInheritedSkillsCheckboxes();
+            updateTotals();
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
