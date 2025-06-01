@@ -11,7 +11,7 @@
             background-color: #F8F6F2; /* トップページに合わせた背景色 */
             color: #3C3C3C; /* 基本のテキストカラー */
             overscroll-behavior-x: none; 
-            padding-top: 4rem; /* 戻るボタンのスペースを確保 */
+            padding-top: 5rem; /* ヘッダーのスペースを確保 */
         }
         .page-bg {
             background-color: #F8F6F2;
@@ -42,7 +42,7 @@
         .comic-image {
             max-width: 100%;
             height: auto; 
-            max-height: 70vh; /* 戻るボタンとヘッダーの分、少し調整 */
+            max-height: 70vh; 
             object-fit: contain; 
             border: 1px solid #E5E7EB; 
             border-radius: 8px; 
@@ -66,36 +66,45 @@
         }
         .title-text {
             color: #4A4A4A; 
+            white-space: nowrap; /* タイトルが折り返さないようにする */
+            overflow: hidden; /* はみ出した部分を隠す */
+            text-overflow: ellipsis; /* はみ出した部分を...で表示 */
+            flex-grow: 1; /* タイトルができるだけ幅を取るように */
+            text-align: center; /* 中央揃え */
         }
         .page-info-text {
             color: #555555; 
         }
-        .top-left-container {
-            position: fixed; /* 画面左上に固定 */
+        .header-container {
+            position: fixed; /* 画面上部に固定 */
             top: 0;
             left: 0;
             width: 100%;
-            padding: 1rem; /* 上下の余白 */
-            background-color: #F8F6F2; /* bodyと同じ背景色でコンテンツとかぶらないように */
-            z-index: 50; /* 他の要素より手前に表示 */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* わずかな影 */
+            padding: 0.75rem 1rem; /* 上下0.75rem、左右1remのパディング */
+            background-color: #F8F6F2; 
+            z-index: 50; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+            display: flex; /* Flexboxを使用 */
+            align-items: center; /* 垂直方向中央揃え */
+            justify-content: space-between; /* 要素間のスペースを均等に配置 */
+        }
+        .back-button {
+            flex-shrink: 0; /* 戻るボタンが縮まないように */
+            margin-right: 1rem; /* タイトルとの間にマージン */
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="flex flex-col items-center justify-start min-h-screen page-bg p-4">
 
-    <div class="top-left-container">
-        <a href="https://sulebox.github.io/shifpen/" class="accent-color px-6 py-2 rounded-lg shadow-md font-semibold transition-colors duration-150 text-sm">
+    <div class="header-container">
+        <a href="https://sulebox.github.io/shifpen/" class="back-button accent-color px-5 py-2 rounded-lg shadow-md font-semibold transition-colors duration-150 text-sm">
             戻る
         </a>
-    </div>
+        <h1 class="text-2xl sm:text-3xl font-bold title-text">シフペンの４コマ</h1>
+        <div style="width: 70px;"></div> </div>
 
-    <header class="mb-6 text-center mt-8"> 
-        <h1 class="text-3xl font-bold title-text">シフペンの部屋</h1>
-    </header>
-
-    <main class="w-full max-w-xl flex flex-col items-center">
+    <main class="w-full max-w-xl flex flex-col items-center mt-4"> {/* ヘッダーとのマージン調整 */}
         <div id="imageContainer" class="image-container w-full mb-6 relative select-none">
             <img id="comicImage" src="" alt="4コマ漫画" class="comic-image mx-auto shadow-lg">
             <div id="imageLoader" class="loader"></div>
@@ -111,7 +120,7 @@
             <button id="nextButton" class="nav-button accent-color px-6 py-3 rounded-lg shadow-md font-semibold transition-colors duration-150">次へ ▶</button>
         </div>
         
-        </main>
+    </main>
 
     <script>
         const comicImages = [

@@ -127,11 +127,12 @@
             font-weight: 700;
             margin-bottom: 0.8rem;
             padding-bottom: 0.6rem;
-            border-bottom: 2px solid #FB8C00; /* セクションタイトルのボーダー (オレンジ系) */
-            color: #A1887F; /* セクションタイトルの色 (茶系) */
+            border-bottom: 2px solid #E8A87C; /* トップページ参考のくすんだオレンジ系 */
+            color: #A1887F;
         }
         .results-card {
-            background: linear-gradient(135deg, #FFB74D 0%, #FB8C00 100%); /* 結果カードのグラデーション (オレンジ系) */
+            background-color: #E8A87C; /* トップページ参考のくすんだオレンジ系 */
+            /* background: linear-gradient(135deg, #FFB74D 0%, #FB8C00 100%); グラデーションを単色に変更 */
             color: #FFFFFF;
         }
         .results-card h2 {
@@ -141,7 +142,7 @@
             opacity: 1;
         }
         .results-card .value {
-             text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+             text-shadow: 1px 1px 2px rgba(0,0,0,0.1); /* 影を少し薄く */
         }
         .controls-group {
             display: flex;
@@ -160,7 +161,7 @@
             text-align: left;
         }
         .back-button {
-            background-color: #FFA726; /* トップページのボタン色参考 (オレンジ系) */
+            background-color: #E8A87C; /* トップページ参考のくすんだオレンジ系 */
             color: white;
             padding: 0.5rem 1rem;
             border-radius: 0.375rem;
@@ -169,7 +170,7 @@
             transition: background-color 0.2s ease-in-out;
         }
         .back-button:hover {
-            background-color: #FB8C00; /* 少し濃いオレンジ */
+            background-color: #D58C5B; /* 少し濃いくすんだオレンジ */
         }
     </style>
 </head>
@@ -500,7 +501,6 @@
 
             if (descriptionEl) {
                 let descToShow = null;
-                // isChecked の状態に関わらず、レベルに応じた説明を決定する
                 if (skill.type === 'standard' || skill.type === 'buff') {
                     if (level === 5 && skill.descriptionLv5) {
                         descToShow = skill.descriptionLv5;
@@ -508,21 +508,18 @@
                         descToShow = skill.descriptionLv1_4;
                     }
                 } else if (skill.type === 'inherited' && skill.description) {
-                    descToShow = skill.description; // 継承スキルは常にLv1なので、skill.description を使用
+                    descToShow = skill.description;
                 }
 
-                // スキルがチェックされていない場合は、Lv1の説明を表示 (ただし、descriptionLv1_4 または description がある場合)
                 if (!isChecked) {
                     if ((skill.type === 'standard' || skill.type === 'buff') && skill.descriptionLv1_4) {
                         descToShow = skill.descriptionLv1_4;
                     } else if (skill.type === 'inherited' && skill.description) {
                         descToShow = skill.description;
                     } else if ((skill.type === 'standard' || skill.type === 'buff') && skill.descriptionLv5 && !skill.descriptionLv1_4) {
-                        // Lv1-4用がなくLv5用のみある場合、未チェック時は表示しない
                          descToShow = null;
                     }
                 }
-
 
                 if (descToShow) {
                     descriptionEl.textContent = descToShow;
@@ -532,11 +529,10 @@
                 }
             }
 
-
             if (skill.type === 'standard' || skill.type === 'inherited') {
                 if (powerEl && ctEl && dpsEl && attrEl && lv1Data) {
-                    let dataToDisplay = lv1Data; // 未チェック時もLv1データを表示の基準とする
-                    if (isChecked) { // チェックされていれば、選択レベルのデータで上書き
+                    let dataToDisplay = lv1Data;
+                    if (isChecked) {
                         const selectedLevelData = skill.levels[level - 1];
                         if (selectedLevelData) {
                             dataToDisplay = selectedLevelData;
