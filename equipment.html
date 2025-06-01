@@ -12,12 +12,38 @@
             background-color: #111827; 
             color: #d1d5db; 
         }
+        .header-container {
+            display: flex;
+            align-items: center; /* Vertically align items in the center */
+            margin-bottom: 1rem; /* mb-4 */
+        }
+        .back-button {
+            display: inline-block;
+            /* margin-bottom: 1rem; */ /* Removed bottom margin as it's now inline */
+            padding: 0.5rem 1rem;
+            background-color: #4a5568; /* Gray-700 */
+            color: white;
+            text-decoration: none;
+            border-radius: 0.375rem; /* rounded-md */
+            font-size: 0.875rem; /* text-sm */
+            transition: background-color 0.2s;
+            margin-right: 1rem; /* Add some space between button and title */
+        }
+        .back-button:hover {
+            background-color: #2d3748; /* Gray-800 */
+        }
+        .main-title { /* Class for the h1 title */
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 700; /* bold */
+            color: #f3f4f6; /* text-gray-100 */
+        }
+
         .table-container {
             background-color: #1f2937; 
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
             overflow-x: auto; 
-            max-height: 90vh; 
+            max-height: 85vh; 
         }
         .status-table {
             table-layout: fixed; 
@@ -225,7 +251,9 @@
     </style>
 </head>
 <body class="p-4 md:p-8">
-    <div class="mb-4"> <h1 class="text-2xl font-bold text-gray-100">シフ系装備 ステータス</h1> </div>
+    <div class="header-container"> <a href="https://sulebox.github.io/shifpen/" class="back-button">&lt; 戻る</a>
+        <h1 class="main-title">シフ系装備 ステータス</h1>
+    </div>
 
     <div class="table-container">
         <table class="min-w-full status-table">
@@ -307,7 +335,7 @@
             // Helms (6 items now)
             { type: "helm", id: "ludech-grim", name: "ﾙﾃﾞｯﾋｸﾞﾘﾑ", rarity: "SR", imageSrc: "sea.png", baseStats: { HP: 50, MP: 0, 攻撃力: 0, 防御力: 140, 魔法攻撃力: 0, 攻撃速度: 0, ガード: 0, 腕力: 130, 体力: 0, 速さ: 130, 知力: 0, 器用: 140, 精神: 0, 総合: 640 }, activeEffects: [...activeEffectsForHelm], equipableJobs: [...rule1Jobs]},
             { type: "helm", id: "reidite-helm", name: "ﾚｲﾀﾞｲﾄﾍﾙﾑ", rarity: "SR", imageSrc: "seb.png", baseStats: { HP: 50, MP: 0, 攻撃力: 0, 防御力: 140, 魔法攻撃力: 0, 攻撃速度: 0, ガード: 0, 腕力: 110, 体力: 110, 速さ: 70, 知力: 0, 器用: 110, 精神: 0, 総合: 640 }, activeEffects: [...activeEffectsForHelm], equipableJobs: [...rule1Jobs]},
-            { type: "helm", id: "qey-hat", name: "ｸｪｲｰﾄﾊｯﾄ", rarity: "SR", imageSrc: "sec.png", baseStats: { HP: 103, MP: 173, 攻撃力: 0, 防御力: 150, 魔法攻撃力: 0, 攻撃速度: 0, ガード: 0, 腕力: 250, 体力: 150, 速さ: 0, 知力: 150, 器用: 0, 精神: 0, 総合: 1226 }, activeEffects: [...activeEffectsForHelm], equipableJobs: [...rule2Jobs]}, // 腕力 0->250, 総合 976->1226
+            { type: "helm", id: "qey-hat", name: "ｸｪｲｰﾄﾊｯﾄ", rarity: "SR", imageSrc: "sec.png", baseStats: { HP: 103, MP: 173, 攻撃力: 0, 防御力: 150, 魔法攻撃力: 0, 攻撃速度: 0, ガード: 0, 腕力: 250, 体力: 150, 速さ: 0, 知力: 150, 器用: 0, 精神: 0, 総合: 1226 }, activeEffects: [...activeEffectsForHelm], equipableJobs: [...rule2Jobs]},
             { type: "helm", id: "second-hat", name: "2ndﾊｯﾄ", rarity: "SR", imageSrc: "sef.png", baseStats: { HP: 61, MP: 201, 攻撃力: 0, 防御力: 150, 魔法攻撃力: 0, 攻撃速度: 0, ガード: 0, 腕力: 180, 体力: 120, 速さ: 0, 知力: 0, 器用: 120, 精神: 150, 総合: 982 }, activeEffects: [...activeEffectsForHelm], equipableJobs: [...rule2Jobs]},
             { type: "helm", id: "defy-cap", name: "ﾃﾞｨﾌｧｲｷｬｯﾌﾟ", rarity: "LR", imageSrc: "sed.png", baseStats: { HP: 211, MP: 211, 攻撃力: 0, 防御力: 270, 魔法攻撃力: 0, 攻撃速度: 0, ガード: 0, 腕力: 320, 体力: 310, 速さ: 0, 知力: 0, 器用: 320, 精神: 0, 総合: 1642 }, activeEffects: [...activeEffectsForHelm], equipableJobs: [...rule3Jobs]},
             { type: "helm", id: "starlight-cap", name: "ｽﾀｰﾗｲﾄｷｬｯﾌﾟ", rarity: "LR", imageSrc: "see.png", baseStats: { HP: 201, MP: 301, 攻撃力: 0, 防御力: 250, 魔法攻撃力: 0, 攻撃速度: 0, ガード: 0, 腕力: 330, 体力: 240, 速さ: 190, 知力: 0, 器用: 220, 精神: 0, 総合: 1732 }, activeEffects: [...activeEffectsForHelm], equipableJobs: [...rule3Jobs]}
@@ -348,7 +376,6 @@
                     initialTotal += eq.baseStats[statName];
                 }
             }
-            // If baseStats.総合 is not explicitly set OR is 0 (and likely needs calculation), calculate it.
             if (eq.baseStats["総合"] === undefined || eq.baseStats["総合"] === 0 ) { 
                  eq.baseStats["総合"] = initialTotal;
             }
@@ -424,9 +451,6 @@
                 return baseStat; 
             }
             if (baseStat === 0 && statName !== "総合") return 0; 
-            // For "総合", we will calculate it based on other stats, so we don't apply level growth here directly.
-            // Instead, the base value of "総合" (which should be pre-calculated for Lv0) is used.
-            // The actual sum will be done in recalculateAndDisplayStats.
             if (statName === "総合") return baseStat; 
 
             const growthPerLevel = baseStat * 0.09;
@@ -446,7 +470,7 @@
                     currentTotal += calculatedValue;
                 }
             });
-            eq.calculatedStats["総合"] = currentTotal; // Update "総合" with the sum of other calculated stats
+            eq.calculatedStats["総合"] = currentTotal; 
 
             updateTableDisplayForEquipment(equipmentIndex);
         }

@@ -27,20 +27,41 @@
             box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08), 0 4px 8px -3px rgba(0, 0, 0, 0.05); 
             width: 100%;
             max-width: 480px;
+            /* text-align: center; Removed from here to allow top-left alignment for back button */
+        }
+        #back-button-container {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+        #back-button {
+            display: inline-block;
+            background-color: #e5e7eb; /* gray-200 */
+            color: #374151; /* gray-700 */
+            font-weight: 600; /* semibold */
+            padding: 0.375rem 0.75rem; /* py-1.5 px-3 */
+            border-radius: 0.375rem; /* rounded-md */
+            text-decoration: none;
+            font-size: 0.875rem; /* text-sm */
+            transition: background-color 0.2s;
+        }
+        #back-button:hover {
+            background-color: #d1d5db; /* gray-300 */
+        }
+        .main-title-container { /* New container for h1 and level display for centering */
             text-align: center;
         }
-        h1 { /* タイトル部分のスタイル */
-            font-size: 1.625rem; /* text-2xlより少し小さいくらい (26px) */
+        h1 { 
+            font-size: 1.625rem; 
             font-weight: 700; 
             color: #2F2F2F; 
-            margin-bottom: 0.5rem; 
+            margin-bottom: 0.25rem; /* Adjusted margin for monster select */
             display: flex; 
             align-items: baseline; 
             justify-content: center; 
             flex-wrap: wrap; 
         }
-        #monster-select-title { /* h1内のプルダウンメニューのスタイル */
-            font-size: 1.625rem; /* h1のフォントサイズに合わせる */
+        #monster-select-title { 
+            font-size: 1.625rem; 
             font-weight: 700; 
             color: #2F2F2F; 
             background-color: transparent;
@@ -58,8 +79,8 @@
             text-decoration: underline; 
             color: #F2994A;
         }
-        #app-title-suffix { /* 「のToDoアプリ」部分のスタイル */
-            font-size: 1.625rem; /* h1のフォントサイズに合わせる */
+        #app-title-suffix { 
+            font-size: 1.625rem; 
             font-weight: 700;
             color: #2F2F2F;
             line-height: normal;
@@ -67,7 +88,7 @@
 
         #gif-container { 
             margin-bottom: 1.5rem; 
-            margin-top: 0.5rem; 
+            margin-top: 0.75rem; /* Space after monster select/title */
             text-align: center; 
         }
         #gif-container img {
@@ -78,10 +99,11 @@
             border-radius: 0.5rem; 
         }
         #level-display {
-            font-size: 1.5rem; /* text-2xl相当 (24px) に変更 */
+            font-size: 1.5rem; 
             font-weight: 700; 
             color: #F2994A; 
             margin-bottom: 1rem; 
+            text-align: center; /* Ensure level is centered */
         }
         #reset-level-button-container { 
             text-align: center; 
@@ -187,12 +209,14 @@
             color: #D9534F; 
             font-weight: 600; 
             min-height: 1.5em;
+            text-align: center; /* Ensure message is centered */
         }
-        h2 {
+        h2 { /* Sub-headings like "ToDoを3つ設定しよう！" */
             font-size: 1.25rem; 
             font-weight: 700; 
             color: #2F2F2F;
             margin-bottom: 1.25rem; 
+            text-align: center; /* Ensure sub-headings are centered */
         }
     </style>
 </head>
@@ -201,15 +225,20 @@
     <audio id="levelup-sound" src="https://sulebox.github.io/todoapp/levelup.m4a" preload="auto"></audio>
 
     <div class="app-container">
-        <h1>
-            <select id="monster-select-title">
-                <option value="https://sulebox.github.io/todoapp/puyon.gif" selected>プヨン</option>
-                <option value="https://sulebox.github.io/todoapp/shef.gif">ローズン</option> {/* 表示名を変更 */}
-                <option value="https://sulebox.github.io/todoapp/bee.gif">ビープ</option>
-            </select>
-            <span id="app-title-suffix">のToDoアプリ</span>
-        </h1>
-        <div id="level-display">Lv. 1</div>
+        <div id="back-button-container">
+            <a href="https://sulebox.github.io/shifpen/" id="back-button">← 戻る</a>
+        </div>
+        <div class="main-title-container">
+            <h1>
+                <select id="monster-select-title">
+                    <option value="https://sulebox.github.io/todoapp/puyon.gif" selected>プヨン</option>
+                    <option value="https://sulebox.github.io/todoapp/shef.gif">ローズン</option>
+                    <option value="https://sulebox.github.io/todoapp/bee.gif">ビープ</option>
+                </select>
+                <span id="app-title-suffix">のToDoアプリ</span>
+            </h1>
+            <div id="level-display">Lv. 1</div>
+        </div>
         
         <div id="gif-container">
             <img id="puyon-gif" src="https://sulebox.github.io/todoapp/puyon.gif" alt="プヨンの応援">
@@ -279,7 +308,8 @@
         const submitTodosButton = document.getElementById('submit-todos');
         const todoItemsWrapper = document.getElementById('todo-items-wrapper');
         const messageArea = document.getElementById('message-area');
-        
+        // const backButton = document.getElementById('back-button'); // No JS needed for <a> tag navigation
+
         const bakiAudio = document.getElementById('baki-sound');
         const levelupAudio = document.getElementById('levelup-sound');
 
