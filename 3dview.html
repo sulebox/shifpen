@@ -13,6 +13,7 @@
             font-family: 'M PLUS Rounded 1c', sans-serif;
             /* Clubhouse風のカスタムカラー */
             --bg-color: #F0E7DB; /* 背景色: 温かみのあるクリーム */
+            --card-bg-color: #F8F4EF; /* カード背景色: 少し明るいクリーム */
             --text-main: #402E32; /* メインテキスト: ダークブラウン */
             --text-sub: #5C4B4E;  /* サブテキスト: 少し明るめのブラウン */
             --accent-color: #D97706; /* アクセント: 琥珀色 */
@@ -24,25 +25,28 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body style="background-color: var(--bg-color); color: var(--text-main);" class="flex flex-col min-h-screen">
+<body style="background-color: var(--bg-color); color: var(--text-main);" class="min-h-screen flex items-center justify-center p-4">
 
-    <div id="app-container" class="relative flex flex-col h-screen w-screen p-4 md:p-6 lg:p-8 gap-4">
+    <div id="app-container" class="w-full max-w-md mx-auto flex flex-col gap-4 p-6 rounded-2xl shadow-lg" style="background-color: var(--card-bg-color);">
         
-        <!-- ★変更点: 戻るボタンの追加 -->
-        <a href="https://sulebox.github.io/shifpen/" class="absolute top-4 left-4 md:top-6 md:left-6 z-10 p-2 rounded-full transition-colors duration-200" style="background-color: var(--btn-bg);" onmouseover="this.style.backgroundColor='var(--btn-hover)'" onmouseout="this.style.backgroundColor='var(--btn-bg)'">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-main);">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-        </a>
+        <header class="grid grid-cols-[auto_1fr_auto] items-center shrink-0 w-full gap-2">
+            <!-- ★変更点: whitespace-nowrapを追加 -->
+            <a href="https://sulebox.github.io/shifpen/" class="px-3 py-1 text-sm font-bold rounded-lg transition-colors duration-200 whitespace-nowrap" style="background-color: var(--btn-bg); color: var(--text-main);" onmouseover="this.style.backgroundColor='var(--btn-hover)'" onmouseout="this.style.backgroundColor='var(--btn-bg)'">
+                戻る
+            </a>
 
-        <!-- ヘッダー -->
-        <header class="text-center shrink-0 pt-8 md:pt-0">
-            <h1 class="text-2xl md:text-3xl font-bold" style="color: var(--accent-color);">3Dキャラクタービューワー</h1>
-            <p class="text-sm md:text-base mt-1" style="color: var(--text-sub);">キャラクターを選んで、クリック＆ドラッグで回転できます</p>
+            <!-- Title -->
+            <h1 class="text-center text-xl sm:text-2xl font-bold whitespace-nowrap" style="color: var(--accent-color);">3Dキャラクタービューワー</h1>
+
+            <!-- Placeholder to balance the layout -->
+            <!-- ★変更点: whitespace-nowrapを追加 -->
+            <div class="px-3 py-1 text-sm invisible whitespace-nowrap" aria-hidden="true">戻る</div>
         </header>
+        <p class="text-center text-xs sm:text-sm -mt-4 whitespace-nowrap overflow-hidden text-ellipsis" style="color: var(--text-sub);">キャラクターを選んで、クリック＆ドラッグで回転できます</p>
+
 
         <!-- メインコンテンツ (ビューワー) -->
-        <main class="w-full aspect-square md:w-auto md:flex-grow md:aspect-auto relative rounded-2xl overflow-hidden shadow-2xl" style="background-color: #E9DECF80;">
+        <main class="w-full aspect-square relative rounded-2xl overflow-hidden shadow-inner" style="background-color: #E9DECF80;">
             <div id="viewer-container" class="absolute inset-0"></div>
             <div id="loading-indicator" class="absolute inset-0 flex items-center justify-center transition-opacity duration-500" style="background-color: rgba(240, 231, 219, 0.8);">
                 <div class="text-center">
@@ -77,8 +81,6 @@
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-        // --- 定数と変数 ---
-        // ★変更点: 各キャラクターのURLとpositionYを調整
         const characters = [
             { name: 'ぺんぺん', url: 'https://cdn.jsdelivr.net/gh/sulebox/shifpen/Pen.glb', rotationY: Math.PI, scale: 1.0, positionY: -1.1 },
             { name: 'ガチョウ', url: 'https://cdn.jsdelivr.net/gh/sulebox/shifpen/Gaucho_pink.glb', rotationY: Math.PI, scale: 1.0, positionY: -1.5 },
@@ -93,17 +95,14 @@
         let currentModel = null;
         const loader = new GLTFLoader();
 
-        // --- 初期化と実行 ---
         init();
         animate();
         setupCharacterButtons();
         switchCharacter(characters[0]);
 
-
-        // --- 主要な関数 ---
         function init() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xF0E7DB);
+            scene.background = null; 
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setPixelRatio(window.devicePixelRatio);
@@ -186,12 +185,10 @@
                     model.position.x -= center.x;
                     model.position.y -= box.min.y;
                     model.position.z -= center.z;
-                    // カスタムY位置を適用
                     model.position.y += character.positionY || 0;
 
                     const maxDim = Math.max(size.x, size.y, size.z);
                     const baseScale = 4 / maxDim;
-                    // カスタムスケールを適用
                     const finalScale = baseScale * (character.scale || 1.0);
                     model.scale.set(finalScale, finalScale, finalScale);
 
