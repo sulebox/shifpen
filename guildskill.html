@@ -41,11 +41,15 @@
         }
     </style>
 </head>
-<body class="p-8">
+<body class="p-4 md:p-8">
 
-    <div class="flex flex-row items-start space-x-8">
+    <!-- Responsive Layout Container -->
+    <!-- Default: flex-col (mobile), md and up: flex-row (desktop) -->
+    <div class="flex flex-col md:flex-row md:items-start md:space-x-8">
+        
         <!-- Total Cost Container -->
-        <div id="total-cost-container" class="sticky top-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-gray-200 w-full max-w-[12rem] z-20">
+        <!-- On mobile: full width with margin bottom. On desktop: fixed width, sticky positioning. -->
+        <div id="total-cost-container" class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-gray-200 w-full mb-8 md:mb-0 md:max-w-[12rem] z-20 md:sticky md:top-8">
             <h3 class="text-xl font-bold mb-4 text-gray-900">必要素材合計</h3>
             <div id="total-cost-list" class="text-gray-700"></div>
             <button id="reset-button" class="mt-4 w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">
@@ -54,7 +58,7 @@
         </div>
 
         <!-- Skill Tree Wrapper for scrolling -->
-        <div class="overflow-x-auto pb-4">
+        <div class="overflow-x-auto pb-4 w-full">
             <div id="skill-tree-container" class="relative inline-block min-w-max">
                 <div class="flex justify-center items-start space-x-8">
                         <!-- Left Branch -->
@@ -111,7 +115,6 @@
         };
 
         // --- Skill Tree Structure ---
-        // Defines the order and dependencies of skills in the tree.
         const skillOrder = ['musou', 'str2', 'pcr2', 'pp2', 'as3', 'hp2', 'str1', 'int1', 'mpow1', 'mp3', 'int2', 'abyss', 'hp3', 'mpow2'];
         const dependencies = {
             'hp2':   ['str1'], 'as3':   ['hp2'], 'pcr2': ['hp2'],
@@ -275,7 +278,7 @@
 
             const totalCostList = document.getElementById('total-cost-list');
             totalCostList.innerHTML = '';
-            totalCostList.className = 'space-y-1'; // Use flexbox for each item
+            totalCostList.className = 'space-y-1'; 
 
             if (Object.keys(totals).length === 0) {
                 totalCostList.className = 'text-gray-700';
