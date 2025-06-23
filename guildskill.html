@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ギルドスキルツリー</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background-color: #fdf8f0;
+        }
+        .skill-card {
+            width: 15.4rem; /* 22remの70%に調整 */
+            flex-shrink: 0; /* 縮まないようにする */
+            transition: opacity 0.3s;
+            z-index: 10;
+        }
+        .custom-checkbox {
+            appearance: none; -webkit-appearance: none;
+            background-color: #fff; border: 2px solid #d1d5db; border-radius: 6px; /* 少し角を丸く */
+            width: 20px; height: 20px; /* サイズを小さく */
+            display: inline-block; position: relative;
+            vertical-align: middle; cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .custom-checkbox:checked {
+            background-color: #3d5afe; border-color: #3d5afe;
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+            background-size: 100% 100%; background-position: center; background-repeat: no-repeat;
+        }
+        .custom-checkbox:disabled { cursor: not-allowed; background-color: #f3f4f6; }
+        select { appearance: none; -webkit-appearance: none; -moz-appearance: none; }
+        select::-ms-expand { display: none; }
+        select:disabled { background-color: #e5e7eb; opacity: 0.6; cursor: not-allowed; }
+        .skill-card-disabled .skill-card-content {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body class="p-8">
+
+    <div class="flex flex-row items-start space-x-8">
+        <!-- Total Cost Container -->
+        <div id="total-cost-container" class="sticky top-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-gray-200 w-full max-w-[12rem] z-20">
+            <h3 class="text-xl font-bold mb-4 text-gray-900">必要素材合計</h3>
+            <div id="total-cost-list" class="text-gray-700"></div>
+            <button id="reset-button" class="mt-4 w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">
+                リセット
+            </button>
+        </div>
+
+        <!-- Skill Tree Wrapper for scrolling -->
+        <div class="overflow-x-auto pb-4">
+            <div id="skill-tree-container" class="relative inline-block min-w-max">
+                <div class="flex justify-center items-start space-x-8">
+                        <!-- Left Branch -->
+                        <div class="flex flex-col items-center space-y-8">
+                            <div id="skill-card-musou" class="skill-card bg-white rounded-2xl shadow-md p-4"></div>
+                            <div id="skill-card-str2" class="skill-card bg-white rounded-2xl shadow-md p-4"></div>
+                            <div id="skill-card-pcr2" class="skill-card bg-white rounded-2xl shadow-md p-4"></div>
+                        </div>
+
+                        <!-- Center Branch -->
+                        <div id="center-branch" class="flex flex-col items-center space-y-8">
+                            <div id="skill-card-pp2" class="skill-card bg-white rounded-2xl shadow-md p-4"></div>
+                            <div id="skill-card-as3" class="skill-card bg-white rounded-2xl shadow-md p-4"></div>
+                            <div id="skill-card-hp2" class="skill-card bg-white rounded-2xl shadow-md p-4"></div>
+                            <div id="skill-card-str1" class="skill-card bg-white rounded-2xl shadow-md p-4"></div>
+                            <div id="skill-card-int1" class="skill-card bg-white rounded-2xl shadow-md p-4"></div>
+                            <div id="skill-card-mpow1" class="skill-card bg-white rounded-2xl shadow-md p-4"></div>
+                            <div id="skill-card-mp3" class="skill-card bg-white rounded-2xl shadow-md p-4"></div>
+                            <div id="skill-card-int2" class="skill-card bg-white rounded-2xl shadow-md p-4"></div>
+                            <div id="skill-card-abyss" class="skill-card bg-white rounded-2xl shadow-md p-4"></div>
+                        </div>
+
+                        <!-- Magic Right Branch -->
+                        <div id="magic-right-branch" class="flex flex-col items-center space-y-8">
+                            <div id="skill-card-hp3" class="skill-card bg-white rounded-2xl shadow-md p-4"></div>
+                            <div id="skill-card-mpow2" class="skill-card bg-white rounded-2xl shadow-md p-4"></div>
+                        </div>
+                </div>
+                <!-- SVG Container for Connectors -->
+                <div id="connector-container" class="absolute top-0 left-0 w-full h-full pointer-events-none z-0"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Skill Data ---
+        // Contains all information about each skill, including name, type, levels, descriptions, ranks, and material costs.
+        const allSkillData = {
+            'musou': { name: "無双", type: 'physical', levels: { 1: { description: "詠唱時間1.5倍、物理スキル威力1.2倍 [消MP100、詠2、効60、再180]", rank: 10, materials: ["ギルドコイン x50", "記憶の書 x50"] }, 2: { description: "詠唱時間1.5倍、物理スキル威力1.4倍 [消MP100、詠2、効60、再180]", rank: 11, materials: ["ギルドコイン x100", "記憶の書 x100", "剛力Ⅱ x50"] }, 3: { description: "詠唱時間1.35倍、物理スキル威力1.6倍 [消MP100、詠2、効60、再180]", rank: 12, materials: ["ギルドコイン x180", "記憶の書 x150", "剛力Ⅱ x60", "剛力Ⅲ x30"] }, 4: { description: "詠唱時間1.35倍、物理スキル威力1.8倍 [消MP100、詠2、効60、再180]", rank: 13, materials: ["ギルドコイン x300", "記憶の書 x200", "剛力Ⅱ x70", "剛力Ⅲ x40"] }, 5: { description: "詠唱時間1.25倍、物理スキル威力2.0倍 [消MP100、詠2、効60、再180]", rank: 14, materials: ["ギルドコイン x450", "記憶の書 x250", "剛力Ⅰ x80", "剛力Ⅱ x50", "剛力Ⅲ x30"] } } },
+            'str2': { name: "腕力Ⅱ", type: 'physical', levels: { 1: { description: "腕力を2%増加", rank: 7, materials: ["ギルドコイン x30"] }, 2: { description: "腕力を4%増加", rank: 8, materials: ["ギルドコイン x80", "記憶の書 x20", "剛力Ⅱ x40"] }, 3: { description: "腕力を6%増加", rank: 9, materials: ["ギルドコイン x140", "記憶の書 x40", "剛力Ⅱ x40", "剛力Ⅲ x20"] }, 4: { description: "腕力を10%増加", rank: 10, materials: ["ギルドコイン x250", "記憶の書 x80", "剛力Ⅱ x40", "剛力Ⅲ x20"] }, 5: { description: "腕力を15%増加", rank: 11, materials: ["ギルドコイン x400", "記憶の書 x120", "剛力Ⅰ x80", "剛力Ⅱ x40", "剛力Ⅲ x20"] } } },
+            'pcr2': { name: "物クリ率Ⅱ", type: 'physical', levels: { 1: { description: "物理クリティカル発動率を1%増加", rank: 4, materials: ["ギルドコイン x12"] }, 2: { description: "物理クリティカル発動率を2%増加", rank: 5, materials: ["ギルドコイン x36", "記憶の書 x10", "剛力Ⅰ x20"] }, 3: { description: "物理クリティカル発動率を4%増加", rank: 6, materials: ["ギルドコイン x96", "記憶の書 x20", "剛力Ⅰ x40"] }, 4: { description: "物理クリティカル発動率を7%増加", rank: 7, materials: ["ギルドコイン x168", "記憶の書 x40", "剛力Ⅰ x40", "剛力Ⅱ x20"] }, 5: { description: "物理クリティカル発動率を10%増加", rank: 8, materials: ["ギルドコイン x300", "記憶の書 x60", "剛力Ⅰ x40", "剛力Ⅱ x20", "剛力Ⅲ x20"] } } },
+            'pp2': { name: "物理威力Ⅱ", type: 'physical', levels: { 1: { description: "物理スキル威力を1.05倍にする", rank: 8, materials: ["ギルドコイン x30"] }, 2: { description: "物理スキル威力を1.10倍にする", rank: 9, materials: ["ギルドコイン x80", "記憶の書 x20", "剛力Ⅱ x40"] }, 3: { description: "物理スキル威力を1.15倍にする", rank: 10, materials: ["ギルドコイン x140", "記憶の書 x40", "剛力Ⅱ x40", "剛力Ⅲ x20"] }, 4: { description: "物理スキル威力を1.20倍にする", rank: 11, materials: ["ギルドコイン x250", "記憶の書 x80", "剛力Ⅱ x40", "剛力Ⅲ x20"] }, 5: { description: "物理スキル威力を1.25倍にする", rank: 12, materials: ["ギルドコイン x400", "記憶の書 x120", "剛力Ⅰ x80", "剛力Ⅱ x40", "剛力Ⅲ x20"] } } },
+            'as3': { name: "攻速Ⅲ", type: 'physical', levels: { 1: { description: "攻撃速度を5増加", rank: 6, materials: ["ギルドコイン x30"] }, 2: { description: "攻撃速度を10増加", rank: 7, materials: ["ギルドコイン x80", "記憶の書 x20", "剛力Ⅱ x40"] }, 3: { description: "攻撃速度を15増加", rank: 8, materials: ["ギルドコイン x140", "記憶の書 x40", "剛力Ⅱ x40", "剛力Ⅲ x20"] }, 4: { description: "攻撃速度を20増加", rank: 9, materials: ["ギルドコイン x250", "記憶の書 x80", "剛力Ⅱ x40", "剛力Ⅲ x20"] }, 5: { description: "攻撃速度を30増加", rank: 10, materials: ["ギルドコイン x400", "記憶の書 x120", "剛力Ⅰ x80", "剛力Ⅱ x40", "剛力Ⅲ x20"] } } },
+            'hp2': { name: "HPⅡ", type: 'physical', levels: { 1: { description: "最大HPを2%増加", rank: 3, materials: ["ギルドコイン x12"] }, 2: { description: "最大HPを4%増加", rank: 4, materials: ["ギルドコイン x36", "記憶の書 x10", "剛力Ⅰ x20"] }, 3: { description: "最大HPを6%増加", rank: 5, materials: ["ギルドコイン x96", "記憶の書 x20", "剛力Ⅰ x40"] }, 4: { description: "最大HPを9%増加", rank: 6, materials: ["ギルドコイン x168", "記憶の書 x40", "剛力Ⅰ x40", "剛力Ⅱ x20"] }, 5: { description: "最大HPを12%増加", rank: 7, materials: ["ギルドコイン x300", "記憶の書 x60", "剛力Ⅰ x40", "剛力Ⅱ x20", "剛力Ⅲ x20"] } } },
+            'str1': { name: "腕力Ⅰ", type: 'physical', levels: { 1: { description: "腕力を1%増加", rank: 2, materials: ["ギルドコイン x10"] }, 2: { description: "腕力を2%増加", rank: 3, materials: ["ギルドコイン x30"] }, 3: { description: "腕力を4%増加", rank: 4, materials: ["ギルドコイン x80", "記憶の書 x10", "剛力Ⅰ x20"] }, 4: { description: "腕力を7%増加", rank: 5, materials: ["ギルドコイン x140", "記憶の書 x20", "剛力Ⅰ x20", "剛力Ⅱ x10"] }, 5: { description: "腕力を10%増加", rank: 6, materials: ["ギルドコイン x250", "記憶の書 x30", "剛力Ⅰ x20", "剛力Ⅱ x20", "剛力Ⅲ x10"] } } },
+            'int1': { name: "知力Ⅰ", type: 'magic', levels: { 1: { description: "知力を1%増加", rank: 2, materials: ["ギルドコイン x10"] }, 2: { description: "知力を2%増加", rank: 3, materials: ["ギルドコイン x30"] }, 3: { description: "知力を4%増加", rank: 4, materials: ["ギルドコイン x80", "記憶の書 x10", "魔道Ⅰ x20"] }, 4: { description: "知力を7%増加", rank: 5, materials: ["ギルドコイン x140", "記憶の書 x20", "魔道Ⅰ x20", "魔道Ⅱ x10"] }, 5: { description: "知力を10%増加", rank: 6, materials: ["ギルドコイン x250", "記憶の書 x30", "魔道Ⅰ x20", "魔道Ⅱ x20", "魔道Ⅲ x10"] } } },
+            'mpow1': { name: "魔法スキル威力Ⅰ", type: 'magic', levels: { 1: { description: "魔法スキル威力を1.05倍にする", rank: 3, materials: ["ギルドコイン x12"] }, 2: { description: "魔法スキル威力を1.10倍にする", rank: 4, materials: ["ギルドコイン x36", "記憶の書 x10", "魔道Ⅰ x20"] }, 3: { description: "魔法スキル威力を1.15倍にする", rank: 5, materials: ["ギルドコイン x96", "記憶の書 x20", "魔道Ⅰ x40", "魔道Ⅱ x20"] }, 4: { description: "魔法スキル威力を1.20倍にする", rank: 6, materials: ["ギルドコイン x168", "記憶の書 x40", "魔道Ⅰ x40", "魔道Ⅱ x20"] }, 5: { description: "魔法スキル威力を1.25倍にする", rank: 7, materials: ["ギルドコイン x300", "記憶の書 x60", "魔道Ⅰ x40", "魔道Ⅱ x20", "魔道Ⅲ x20"] } } },
+            'mp3': { name: "MPⅢ", type: 'magic', levels: { 1: { description: "最大MPを3%増加", rank: 4, materials: ["ギルドコイン x12"] }, 2: { description: "最大MPを6%増加", rank: 5, materials: ["ギルドコイン x36", "記憶の書 x10", "魔道Ⅱ x20"] }, 3: { description: "最大MPを10%増加", rank: 6, materials: ["ギルドコイン x96", "記憶の書 x20", "魔道Ⅱ x40"] }, 4: { description: "最大MPを15%増加", rank: 7, materials: ["ギルドコイン x168", "記憶の書 x40", "魔道Ⅱ x40", "魔道Ⅲ x20"] }, 5: { description: "最大MPを20%増加", rank: 8, materials: ["ギルドコイン x300", "記憶の書 x60", "魔道Ⅰ x40", "魔道Ⅱ x20", "魔道Ⅲ x20"] } } },
+            'int2': { name: "知力Ⅱ", type: 'magic', levels: { 1: { description: "知力を2%増加", rank: 7, materials: ["ギルドコイン x30"] }, 2: { description: "知力を4%増加", rank: 8, materials: ["ギルドコイン x80", "記憶の書 x20", "魔道Ⅱ x40"] }, 3: { description: "知力を6%増加", rank: 9, materials: ["ギルドコイン x140", "記憶の書 x40", "魔道Ⅱ x40", "魔道Ⅲ x20"] }, 4: { description: "知力を10%増加", rank: 10, materials: ["ギルドコイン x250", "記憶の書 x80", "魔道Ⅱ x40", "魔道Ⅲ x20"] }, 5: { description: "知力を15%増加", rank: 11, materials: ["ギルドコイン x400", "記憶の書 x120", "魔道Ⅰ x80", "魔道Ⅱ x40", "魔道Ⅲ x20"] } } },
+            'abyss': { name: "深淵", type: 'magic', levels: { 1: { description: "1分間魔法スキルの威力を10%アップ [消MP50、詠3、効60、再300]", rank: 10, materials: ["ギルドコイン x50", "記憶の書 x50"] }, 2: { description: "1分間魔法スキルの威力を20%アップ [消MP50、詠3、効60、再300]", rank: 11, materials: ["ギルドコイン x100", "記憶の書 x100", "魔道Ⅱ x50"] }, 3: { description: "1分間魔法スキルの威力を30%アップ [消MP50、詠3、効60、再300]", rank: 12, materials: ["ギルドコイン x180", "記憶の書 x150", "魔道Ⅱ x60", "魔道Ⅲ x30"] }, 4: { description: "1分間魔法スキルの威力を40%アップ [消MP50、詠3、効60、再300]", rank: 13, materials: ["ギルドコイン x300", "記憶の書 x200", "魔道Ⅱ x70", "魔道Ⅲ x40"] }, 5: { description: "1分間魔法スキルの威力を50%アップ [消MP50、詠3、効60、再300]", rank: 14, materials: ["ギルドコイン x450", "記憶の書 x250", "魔道Ⅰ x80", "魔道Ⅱ x50", "魔道Ⅲ x30"] } } },
+            'hp3': { name: "HPⅢ", type: 'magic', levels: { 1: { description: "最大HPを2%増加", rank: 6, materials: ["ギルドコイン x30"] }, 2: { description: "最大HPを4%増加", rank: 7, materials: ["ギルドコイン x80", "記憶の書 x20", "魔道Ⅰ x40"] }, 3: { description: "最大HPを6%増加", rank: 8, materials: ["ギルドコイン x140", "記憶の書 x40", "魔道Ⅰ x40", "魔道Ⅱ x20"] }, 4: { description: "最大HPを9%増加", rank: 9, materials: ["ギルドコイン x250", "記憶の書 x80", "魔道Ⅰ x40", "魔道Ⅱ x40", "魔道Ⅲ x20"] }, 5: { description: "最大HPを12%増加", rank: 10, materials: ["ギルドコイン x400", "記憶の書 x120", "魔道Ⅰ x80", "魔道Ⅱ x40", "魔道Ⅲ x20"] } } },
+            'mpow2': { name: "魔法スキル威力Ⅱ", type: 'magic', levels: { 1: { description: "魔法スキル威力を1.08倍にする", rank: 8, materials: ["ギルドコイン x30"] }, 2: { description: "魔法スキル威力を1.16倍にする", rank: 9, materials: ["ギルドコイン x80", "記憶の書 x20", "魔道Ⅱ x40"] }, 3: { description: "魔法スキル威力を1.24倍にする", rank: 10, materials: ["ギルドコイン x140", "記憶の書 x40", "魔道Ⅱ x40", "魔道Ⅲ x20"] }, 4: { description: "魔法スキル威力を1.32倍にする", rank: 11, materials: ["ギルドコイン x250", "記憶の書 x80", "魔道Ⅱ x40", "魔道Ⅲ x20"] }, 5: { description: "魔法スキル威力を1.40倍にする", rank: 12, materials: ["ギルドコイン x400", "記憶の書 x120", "魔道Ⅰ x80", "魔道Ⅱ x40", "魔道Ⅲ x20"] } } }
+        };
+
+        // --- Skill Tree Structure ---
+        // Defines the order and dependencies of skills in the tree.
+        const skillOrder = ['musou', 'str2', 'pcr2', 'pp2', 'as3', 'hp2', 'str1', 'int1', 'mpow1', 'mp3', 'int2', 'abyss', 'hp3', 'mpow2'];
+        const dependencies = {
+            'hp2':   ['str1'], 'as3':   ['hp2'], 'pcr2': ['hp2'],
+            'pp2':   ['as3'], 'str2': ['pcr2'], 'musou': ['str2'],
+            'mpow1': ['int1'], 'mp3': ['mpow1'], 'int2': ['mp3'], 'abyss': ['int2'], 'hp3': ['mpow1'],
+            'mpow2': ['hp3']
+        };
+        
+        /**
+         * Creates and injects the HTML for a single skill card.
+         * @param {string} skillId - The ID of the skill to set up.
+         */
+        function setupSkillCard(skillId) {
+            const card = document.getElementById(`skill-card-${skillId}`);
+            const skillInfo = allSkillData[skillId];
+            card.innerHTML = `
+                <div class="skill-card-content">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="skillCheckbox-${skillId}" class="custom-checkbox">
+                            <label for="skillCheckbox-${skillId}" class="text-base font-bold text-gray-900">${skillInfo.name}</label>
+                        </div>
+                        <div class="relative">
+                            <select id="levelSelector-${skillId}" class="w-24 appearance-none bg-gray-100 border border-gray-300 text-gray-800 text-base rounded-lg py-1 pl-3 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-400 transition" disabled>
+                                ${Object.keys(skillInfo.levels).map(lv => `<option value="${lv}">Lv ${lv}</option>`).join('')}
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-600"><svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg></div>
+                        </div>
+                    </div>
+                    <p id="skillDescription-${skillId}" class="text-sm text-gray-600 mb-3 ml-8"></p>
+                    <div id="detailsArea-${skillId}" class="pl-8 space-y-2 hidden">
+                        <div class="flex items-center"><h3 class="text-sm font-semibold text-gray-500 w-16">ランク</h3><p id="skillRank-${skillId}" class="text-base text-gray-800 font-medium"></p></div>
+                        <div class="flex items-start"><h3 class="text-sm font-semibold text-gray-500 w-16 pt-1">必要素材</h3><div id="skillMaterials-${skillId}" class="flex-1"></div></div>
+                    </div>
+                </div>
+            `;
+            
+            // Apply a border color based on the skill type (physical or magic).
+            card.classList.add('border-t-8'); 
+            if (skillInfo.type === 'magic') {
+                card.classList.add('border-purple-300');
+            } else {
+                card.classList.add('border-red-300');
+            }
+
+            // --- Event Listeners ---
+            const checkbox = document.getElementById(`skillCheckbox-${skillId}`);
+            
+            checkbox.addEventListener('change', () => {
+                toggleDetailsVisibility(skillId);
+                checkAllDependencies();
+            });
+            document.getElementById(`levelSelector-${skillId}`).addEventListener('change', () => {
+                updateSkillDetails(skillId);
+                setTimeout(drawConnectors, 50); // Redraw connectors after state change
+                calculateAndDisplayTotalCost(); 
+            });
+            
+            // Initial state setup
+            toggleDetailsVisibility(skillId);
+        }
+
+        /**
+         * Shows or hides the details section of a skill card based on its checkbox.
+         * @param {string} skillId - The ID of the skill.
+         */
+        function toggleDetailsVisibility(skillId) {
+            const checkbox = document.getElementById(`skillCheckbox-${skillId}`);
+            const detailsArea = document.getElementById(`detailsArea-${skillId}`);
+            const isChecked = checkbox.checked;
+
+            document.getElementById(`levelSelector-${skillId}`).disabled = !isChecked;
+            if (isChecked) {
+                detailsArea.classList.remove('hidden');
+            } else {
+                detailsArea.classList.add('hidden');
+            }
+            updateSkillDetails(skillId);
+            setTimeout(drawConnectors, 50); // Redraw connectors after visibility change
+        }
+
+        /**
+         * Updates the displayed details (description, rank, materials) for a skill.
+         * @param {string} skillId - The ID of the skill to update.
+         */
+        function updateSkillDetails(skillId) {
+            const level = document.getElementById(`levelSelector-${skillId}`).value || '1';
+            const skillData = allSkillData[skillId].levels;
+            const descriptionEl = document.getElementById(`skillDescription-${skillId}`);
+            const rankEl = document.getElementById(`skillRank-${skillId}`);
+            const materialsEl = document.getElementById(`skillMaterials-${skillId}`);
+            
+            const data = skillData[level];
+            descriptionEl.textContent = data.description;
+            rankEl.textContent = data.rank;
+            materialsEl.innerHTML = '';
+            if(data.materials) {
+                data.materials.forEach(material => {
+                    const item = document.createElement('p');
+                    item.className = 'text-sm text-gray-800 font-medium';
+                    item.textContent = material;
+                    materialsEl.appendChild(item);
+                });
+            }
+        }
+
+        /**
+         * Checks if prerequisites for each skill are met and enables/disables them accordingly.
+         */
+        function checkAllDependencies() {
+            skillOrder.forEach(skillId => {
+                const card = document.getElementById(`skill-card-${skillId}`);
+                const prereqIds = dependencies[skillId];
+                if (!prereqIds) { // No prerequisites
+                    card.classList.remove('skill-card-disabled');
+                    return;
+                };
+                
+                // Check if all prerequisite skills are checked
+                const allPrereqsMet = prereqIds.every(prereqId => {
+                    return document.getElementById(`skillCheckbox-${prereqId}`).checked;
+                });
+
+                if (allPrereqsMet) {
+                    card.classList.remove('skill-card-disabled');
+                } else {
+                    // If prerequisites are not met, uncheck and disable the skill
+                    const checkbox = document.getElementById(`skillCheckbox-${skillId}`);
+                    if (checkbox.checked) {
+                        checkbox.checked = false;
+                        checkbox.dispatchEvent(new Event('change')); // Trigger change event to update UI
+                    }
+                    card.classList.add('skill-card-disabled');
+                }
+            });
+            drawConnectors();
+            calculateAndDisplayTotalCost();
+        }
+
+        /**
+         * Calculates the total cost of all selected skills and displays it.
+         */
+        function calculateAndDisplayTotalCost() {
+            const totals = {};
+            skillOrder.forEach(skillId => {
+                const checkbox = document.getElementById(`skillCheckbox-${skillId}`);
+                if (checkbox.checked) {
+                    const level = document.getElementById(`levelSelector-${skillId}`).value;
+                    const materials = allSkillData[skillId].levels[level].materials;
+                    if (materials) {
+                        materials.forEach(materialStr => {
+                            const parts = materialStr.split(' x');
+                            const [name, quantity] = [parts[0].trim(), parseInt(parts[1], 10)];
+                            if (name && !isNaN(quantity)) {
+                                totals[name] = (totals[name] || 0) + quantity;
+                            }
+                        });
+                    }
+                }
+            });
+
+            const totalCostList = document.getElementById('total-cost-list');
+            totalCostList.innerHTML = '';
+            totalCostList.className = 'space-y-1'; // Use flexbox for each item
+
+            if (Object.keys(totals).length === 0) {
+                totalCostList.className = 'text-gray-700';
+                totalCostList.innerHTML = '<p class="text-sm text-gray-500">スキルを選択してください</p>';
+                return;
+            }
+
+            const sortedMaterials = Object.keys(totals).sort();
+            sortedMaterials.forEach(name => {
+                const itemContainer = document.createElement('div');
+                itemContainer.className = "flex justify-between items-center text-sm";
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'text-gray-700 whitespace-nowrap';
+                nameSpan.textContent = name;
+
+                const quantitySpan = document.createElement('span');
+                quantitySpan.className = 'font-semibold text-gray-900 ml-2';
+                quantitySpan.textContent = totals[name].toLocaleString();
+
+                itemContainer.appendChild(nameSpan);
+                itemContainer.appendChild(quantitySpan);
+                totalCostList.appendChild(itemContainer);
+            });
+        }
+
+        /**
+         * Draws SVG lines to connect related skills in the tree.
+         */
+        function drawConnectors() {
+            const container = document.getElementById('connector-container');
+            if (!container) return;
+            container.innerHTML = ''; // Clear previous connectors
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            const parent = container.parentElement;
+            svg.setAttribute('width', parent.scrollWidth);
+            svg.setAttribute('height', parent.scrollHeight);
+            svg.style.position = 'absolute';
+            svg.style.top = '0';
+            svg.style.left = '0';
+            container.appendChild(svg);
+            
+            // Defines which skills should be connected
+            const connections = [
+                ['str1', 'hp2'], ['hp2', 'as3'], ['as3', 'pp2'],
+                ['pcr2', 'str2'], ['str2', 'musou'],
+                ['hp2', 'pcr2'], // Horizontal connection
+                ['int1', 'mpow1'], ['mpow1', 'mp3'], ['mp3', 'int2'], ['int2', 'abyss'],
+                ['mpow1', 'hp3'], // Horizontal connection
+                ['hp3', 'mpow2'] // New connection
+            ];
+
+            connections.forEach(([fromId, toId]) => {
+                const fromCard = document.getElementById(`skill-card-${fromId}`);
+                const toCard = document.getElementById(`skill-card-${toId}`);
+                if (!fromCard || !toCard) return;
+
+                const containerRect = parent.getBoundingClientRect();
+                const fromRect = fromCard.getBoundingClientRect();
+                const toRect = toCard.getBoundingClientRect();
+
+                let x1, y1, x2, y2;
+                
+                // Special handling for horizontal connections
+                if ((fromId === 'hp2' && toId === 'pcr2') || (fromId === 'mpow1' && toId === 'hp3') ) {
+                     x1 = fromRect.right - containerRect.left;
+                     y1 = fromRect.top + fromRect.height / 2 - containerRect.top;
+                     x2 = toCard.getBoundingClientRect().left - containerRect.left;
+                     y2 = toRect.top + toRect.height / 2 - containerRect.top;
+                } else { // Default vertical connections
+                     x1 = fromRect.left + fromRect.width / 2 - containerRect.left;
+                     y1 = fromRect.top - containerRect.top;
+                     x2 = toRect.left + toRect.width / 2 - containerRect.left;
+                     y2 = toRect.bottom - containerRect.top;
+                }
+                
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', y1);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                line.setAttribute('stroke', '#d1d5db');
+                line.setAttribute('stroke-width', '4');
+                svg.appendChild(line);
+            });
+        }
+
+        /**
+         * Aligns branches vertically for a cleaner layout.
+         */
+        function alignBranches() {
+            const mpow1Card = document.getElementById('skill-card-mpow1');
+            const hp3Branch = document.getElementById('magic-right-branch');
+
+            if(mpow1Card && hp3Branch) {
+                const mpow1Rect = mpow1Card.getBoundingClientRect();
+                const treeContainerRect = document.getElementById('skill-tree-container').getBoundingClientRect();
+                const topOffset = mpow1Rect.top - treeContainerRect.top;
+                hp3Branch.style.paddingTop = `${topOffset}px`;
+            }
+        }
+        
+        // --- Initialization ---
+        skillOrder.forEach(id => setupSkillCard(id));
+        checkAllDependencies(); // Initial check
+
+        const resetButton = document.getElementById('reset-button');
+        resetButton.addEventListener('click', () => {
+            skillOrder.forEach(skillId => {
+                const checkbox = document.getElementById(`skillCheckbox-${skillId}`);
+                if (checkbox.checked) {
+                    checkbox.checked = false;
+                    // Dispatch change event to trigger all the necessary UI updates
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+
+        setTimeout(() => { // Delay to ensure layout is stable
+            alignBranches();
+            drawConnectors();
+        }, 100);
+        
+        window.addEventListener('resize', () => {
+            alignBranches();
+            drawConnectors();
+        });
+
+    });
+    </script>
+</body>
+</html>
