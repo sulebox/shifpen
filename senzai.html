@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>潜在能力チェッカー</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #F0EAE2; /* メインの背景色 (クリーム) */
+            --card-bg: #FFFFFF;
+            --text-primary: #24211E; /* タイトルの色 */
+            --text-secondary: #383023; /* 基本のテキスト色 */
+            --accent-color: #D97706; /* アクセントカラー (オレンジ) */
+            --border-color: #EAE5DF;
+            --selected-color: #F59E0B;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-secondary);
+        }
+
+        /* --- 上部固定エリア --- */
+        .summary-panel {
+            background-color: rgba(240, 234, 226, 0.85); /* 半透明の背景 */
+            backdrop-filter: blur(8px);
+            padding: 1.5rem; /* 少し余白を増やす */
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-color);
+            position: sticky;
+            top: 1rem;
+            z-index: 30;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem; /* セクション間の余白 */
+        }
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+
+        /* --- 初期職業選択 --- */
+        #job-selection-container {
+            display: flex;
+            gap: 0.75rem;
+        }
+        .job-select-button {
+            flex-grow: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            background-color: var(--card-bg);
+            color: var(--text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .job-select-button:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+        .job-select-button.selected {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+
+        #total-potential-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 1.5rem;
+            font-size: 0.9rem;
+            min-height: 24px; /* 何も選択されていない時の高さ */
+        }
+        .potential-stat span {
+            font-weight: 700;
+            color: var(--accent-color);
+            font-size: 1.1em;
+            margin-left: 0.25rem;
+        }
+
+        /* --- 装備カード --- */
+        .equipment-card {
+            background-color: var(--card-bg);
+            border-radius: 1.25rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 1rem;
+            width: 220px;
+            flex-shrink: 0;
+            border: 1px solid var(--border-color);
+            transition: box-shadow 0.2s;
+        }
+        .main-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+        .category-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            padding-left: 0.5rem;
+            border-left: 4px solid var(--accent-color);
+        }
+        .equipment-name {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+            line-height: 1.3;
+            min-height: 2.6em; /* 名前の長さに応じて高さを確保 */
+        }
+        .rarity-sr {
+            display: inline-block; background-color: #9333EA; color: white; font-size: 0.7rem; font-weight: bold; padding: 2px 8px; border-radius: 9999px; margin-left: 0.5rem; vertical-align: middle;
+        }
+        .rarity-lr { 
+            display: inline-block; background-color: var(--selected-color); color: #422006; font-size: 0.7rem; font-weight: bold; padding: 2px 8px; border-radius: 9999px; margin-left: 0.5rem; vertical-align: middle;
+        }
+        .item-image { 
+            width: 100%; height: 160px; background-color: #F3F4F6; border: 1px solid #E5E7EB; border-radius: 1rem; display: block; margin-bottom: 0.75rem; object-fit: contain; 
+        }
+        .card-potential-list {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            background-color: #f9fafb;
+            border-radius: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            min-height: 50px;
+        }
+        .card-potential-stat span {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-left: 0.25rem;
+        }
+
+        /* --- 職業アイコンボタン --- */
+        .section-header {
+            font-size: 0.8rem; font-weight: 500; color: #6B7280; margin-bottom: 0.5rem;
+        }
+        .job-icon-grid { 
+            display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px;
+            margin-top: 0.75rem; /* 上の要素とのマージン */
+        }
+        .job-icon-cell {
+            text-align: center; font-size: 1.2rem; line-height: 1; display: flex; align-items: center; justify-content: center; height: 32px; border-radius: 8px;
+            cursor: not-allowed; opacity: 0.15; transition: all 0.2s;
+        }
+        .job-icon-cell.equipable {
+            cursor: pointer; opacity: 0.6; 
+        }
+        .job-icon-cell.equipable:not(.filtered-out):hover {
+            background-color: #F3F4F6;
+            opacity: 1;
+        }
+        .job-icon-cell.selected {
+            opacity: 1;
+            background-color: var(--selected-color);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .job-icon-cell.filtered-out {
+            cursor: not-allowed !important;
+            opacity: 0.1 !important;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <h1 class="main-title">潜在能力チェッカー</h1>
+
+    <!-- 上部固定エリア -->
+    <div id="summary-panel" class="summary-panel">
+        <!-- 初期職業選択エリア -->
+        <div>
+            <h2 class="section-title">初期職業を選択</h2>
+            <div id="job-selection-container">
+                <button class="job-select-button" data-job="fighter">ファイター</button>
+                <button class="job-select-button" data-job="wizard">ウィザード</button>
+                <button class="job-select-button" data-job="thief">シーフ</button>
+                <button class="job-select-button" data-job="cleric">クレリック</button>
+            </div>
+        </div>
+        <!-- 合計潜在能力表示エリア -->
+        <div>
+            <h2 class="section-title">合計潜在能力</h2>
+            <div id="total-potential-display">
+                <!-- JavaScriptで生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 装備選択エリア -->
+    <div id="app-container" class="flex flex-col gap-8">
+        <!-- 装備カテゴリはここにJavaScriptで挿入されます -->
+    </div>
+
+    <script>
+        // --- データ定義 ---
+        const jobData = { "🗡️": { name: "ファイター" }, "🛡️": { name: "ガーディアン" }, "🌟": { name: "マジックナイト" }, "💀": { name: "ウォーロック" }, "🪄": { name: "ウィザード" }, "🔪": { name: "シーフ" }, "🥷": { name: "アサシン" }, "✊": { name: "モンク" }, "📖": { name: "ビショップ" }, "✝️": { name: "クレリック" }, "🔱": { name: "ドラグランサー" }, "⚔️": { name: "ドラグセイバー" }, "🔫": { name: "ドラグバスター" } };
+        const jobIcons = Object.keys(jobData);
+        const jobProgression = { fighter: ["🗡️", "🛡️", "🌟", "🔱", "⚔️", "🔫"], wizard:  ["🪄", "💀", "🌟", "🔱", "⚔️", "🔫"], thief:   ["🔪", "🥷", "✊", "🔱", "⚔️", "🔫"], cleric:  ["✝️", "📖", "✊", "🔱", "⚔️", "🔫"] };
+        const rule1Jobs = ["🗡️", "🔪", "✊", "🛡️", "🥷"]; 
+        const rule2Jobs = ["🔪", "✊", "🥷"]; 
+        const rule3Jobs = ["🔪"];
+        const rule4Jobs = ["🥷"];
+        const rule5Jobs = ["✊"]; 
+
+        const equipmentData = [ 
+            // Boots
+            { id: "reidite-boots", type: "boots", name: "ﾚｲﾀﾞｲﾄﾌﾞｰﾂ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/saa.png", equipableJobs: [...rule1Jobs], potential: { HP: 220, MP: 164 } },
+            { id: "ludech-boots", type: "boots", name: "ﾙﾃﾞｯﾋﾌﾞｰﾂ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sab.png", equipableJobs: [...rule1Jobs], potential: { HP: 220, MP: 164 } },
+            { id: "shukufuku-guard", type: "boots", name: "祝福ｶﾞｰﾄﾞ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sac.png", equipableJobs: [...rule3Jobs], potential: { "物理ダメUP": 5 } },
+            { id: "origin-guard", type: "boots", name: "ｵﾘｼﾞﾝｶﾞｰﾄﾞ", rarity: "LR", imageSrc: "https://sulebox.github.io/shifpen/sad.png", equipableJobs: [...rule3Jobs], potential: { "物理ダメUP": 15 } },
+            { id: "shukufuku-workpants", type: "boots", name: "祝福ﾜｰｸﾊﾟﾝﾂ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sae.png", equipableJobs: [...rule4Jobs], potential: { "物理ダメUP": 3, "魔法ダメUP": 3 } },
+            { id: "origin-workpants", type: "boots", name: "ｵﾘｼﾞﾝﾜｰｸﾊﾟﾝﾂ", rarity: "LR", imageSrc: "https://sulebox.github.io/shifpen/saf.png", equipableJobs: [...rule4Jobs], potential: { "物理ダメUP": 7, "魔法ダメUP": 10 } },
+            
+            // Armors
+            { id: "ludech-brest", type: "armor", name: "ﾙﾃﾞｯﾋﾌﾞﾚｽﾄ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sba.png", equipableJobs: [...rule1Jobs], potential: { HP: 220, MP: 164 } },
+            { id: "reidite-plate", type: "armor", name: "ﾚｲﾀﾞｲﾄﾌﾟﾚｰﾄ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sbb.png", equipableJobs: [...rule1Jobs], potential: { HP: 220, MP: 164 } },
+            { id: "shukufuku-cloth", type: "armor", name: "祝福のｸﾛｰｽ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sbd.png", equipableJobs: [...rule3Jobs], potential: { HP: 300, 速さ: 230 } },
+            { id: "origin-cloth", type: "armor", name: "ｵﾘｼﾞﾝｸﾛｰｽ", rarity: "LR", imageSrc: "https://sulebox.github.io/shifpen/sbe.png", equipableJobs: [...rule3Jobs], potential: { 腕力: 400, 速さ: 300 } },
+            { id: "shukufuku-workcloth", type: "armor", name: "祝福のﾜｰｸｸﾛｰｽ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sbc.png", equipableJobs: [...rule4Jobs], potential: { MP: 300, 腕力: 230 } },
+            
+            // Left Hand
+            { id: "greed-rock", type: "lefthand", name: "ｸﾞﾘｰﾄﾞﾛｯｸ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sca.png", equipableJobs: [...rule2Jobs], potential: { 知力: 150, 器用: 200 } },
+            { id: "another-style-sai", type: "lefthand", name: "ｱﾅｻﾞｰｽﾀｲﾙｻｲ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/scb.png", equipableJobs: [...rule2Jobs], potential: { 腕力: 150, 体力: 150 } },
+            
+            // Right Hand
+            { id: "greeder-style", type: "righthand", name: "ｸﾞﾘｰﾀﾞｰｽﾀｲﾙ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sda.png", equipableJobs: [...rule3Jobs], potential: { 速さ: 140, 器用: 150 } },
+            { id: "another-style-dagger", type: "righthand", name: "ｱﾅｻﾞｰｽﾀｲﾙﾀﾞｶﾞｰ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sdb.png", equipableJobs: [...rule3Jobs], potential: { 腕力: 150, 体力: 150 } },
+            { id: "murder-trap", type: "righthand", name: "ﾏｰﾀﾞｰﾄﾗｯﾌﾟ", rarity: "LR", imageSrc: "https://sulebox.github.io/shifpen/sdc.png", equipableJobs: [...rule3Jobs], potential: { 速さ: 280, 器用: 290 } },
+            { id: "uraus-trenge", type: "righthand", name: "ｳﾗｳｽﾄﾚﾝｼﾞ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sdd.png", equipableJobs: [...rule4Jobs], potential: { 速さ: 150, 器用: 110 } },
+            { id: "another-style-taro", type: "righthand", name: "ｱﾅｻﾞｰｽﾀｲﾙﾀﾛｰ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sde.png", equipableJobs: [...rule4Jobs], potential: { 攻撃: 180, 知力: 100 } },
+            { id: "glatnics-ha", type: "righthand", name: "ｸﾞﾗﾄﾆｸｽ・破", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sdf.png", equipableJobs: [...rule5Jobs], potential: { 腕力: 160, 体力: 70 } },
+            { id: "another-style-knuckle", type: "righthand", name: "ｱﾅｻﾞｰｽﾀｲﾙﾅｯｸﾙ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sdg.png", equipableJobs: [...rule5Jobs], potential: { 腕力: 150, 体力: 150 } },
+            { id: "another-style-claw", type: "righthand", name: "ｱﾅｻﾞｰｽﾀｲﾙｸﾛｰ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sdh.png", equipableJobs: [...rule3Jobs], potential: { 腕力: 150, 体力: 150 } },
+
+            // Helms - ★修正点: ユーザー指定の潜在能力に更新
+            { id: "ludech-grim", type: "helm", name: "ﾙﾃﾞｯﾋｸﾞﾘﾑ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sea.png", equipableJobs: [...rule1Jobs], potential: { HP: 220, MP: 164 } },
+            { id: "reidite-helm", type: "helm", name: "ﾚｲﾀﾞｲﾄﾍﾙﾑ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/seb.png", equipableJobs: [...rule1Jobs], potential: { HP: 220, MP: 164 } },
+            { id: "qey-hat", type: "helm", name: "ｸｪｲｰﾄﾊｯﾄ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sec.png", equipableJobs: [...rule2Jobs], potential: { 腕力: 150, 器用: 200 } },
+            { id: "second-hat", type: "helm", name: "2ndﾊｯﾄ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sef.png", equipableJobs: [...rule2Jobs], potential: { 腕力: 150, 体力: 150 } },
+            { id: "defy-cap", type: "helm", name: "ﾃﾞｨﾌｧｲｷｬｯﾌﾟ", rarity: "LR", imageSrc: "https://sulebox.github.io/shifpen/sed.png", equipableJobs: [...rule3Jobs], potential: { 速さ: 280, 器用: 290 } },
+            { id: "starlight-cap", type: "helm", name: "ｽﾀｰﾗｲﾄｷｬｯﾌﾟ", rarity: "LR", imageSrc: "https://sulebox.github.io/shifpen/see.png", equipableJobs: [...rule3Jobs], potential: { MP: 300, 腕力: 220 } }
+        ];
+        
+        // --- アプリケーションの状態管理 ---
+        let selectedByJob = {}; 
+        let selectedInitialJob = null;
+
+        // --- DOM生成とイベントリスナー設定 ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const appContainer = document.getElementById('app-container');
+            const jobSelectionContainer = document.getElementById('job-selection-container');
+            jobSelectionContainer.addEventListener('click', (event) => {
+                const button = event.target.closest('.job-select-button');
+                if (!button) return;
+                const job = button.dataset.job;
+                const isDeselecting = selectedInitialJob === job;
+                jobSelectionContainer.querySelectorAll('.job-select-button').forEach(btn => btn.classList.remove('selected'));
+                if (isDeselecting) {
+                    selectedInitialJob = null;
+                } else {
+                    button.classList.add('selected');
+                    selectedInitialJob = job;
+                }
+                applyJobFilter();
+                updateTotalPotentialDisplay();
+            });
+
+            const equipmentByCategory = equipmentData.reduce((acc, eq) => {
+                const type = eq.type;
+                if (!acc[type]) acc[type] = [];
+                acc[type].push(eq);
+                return acc;
+            }, {});
+            
+            const categoryOrder = [ { key: 'boots', name: 'ブーツ' }, { key: 'armor', name: 'アーマー' }, { key: 'lefthand', name: '左手' }, { key: 'righthand', name: '右手' }, { key: 'helm', name: 'ヘルム' } ];
+            categoryOrder.forEach(categoryInfo => {
+                const items = equipmentByCategory[categoryInfo.key];
+                if (!items) return;
+                const categorySection = document.createElement('section');
+                categorySection.dataset.categoryKey = categoryInfo.key;
+                const categoryTitle = document.createElement('h2');
+                categoryTitle.className = 'category-title';
+                categoryTitle.textContent = categoryInfo.name;
+                categorySection.appendChild(categoryTitle);
+                const scrollContainer = document.createElement('div');
+                scrollContainer.className = 'flex overflow-x-auto gap-4 py-4';
+                items.forEach(item => {
+                    scrollContainer.appendChild(createEquipmentCard(item));
+                });
+                categorySection.appendChild(scrollContainer);
+                appContainer.appendChild(categorySection);
+            });
+            updateTotalPotentialDisplay();
+        });
+
+        function createEquipmentCard(item) {
+            const card = document.createElement('div');
+            card.className = 'equipment-card';
+            card.id = `card-${item.id}`;
+
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'equipment-name';
+            nameDiv.innerHTML = `${item.name} <span class="rarity-${item.rarity.toLowerCase()}">${item.rarity}</span>`;
+            
+            const img = document.createElement('img');
+            img.src = item.imageSrc;
+            img.alt = item.name;
+            img.className = 'item-image';
+            img.onerror = () => { img.src = 'https://placehold.co/220x180/fecaca/991b1b?text=Error'; };
+
+            const potentialList = document.createElement('div');
+            potentialList.className = 'card-potential-list';
+            if (item.potential && Object.keys(item.potential).length > 0) {
+                for (const stat in item.potential) {
+                    const statDiv = document.createElement('div');
+                    statDiv.className = 'card-potential-stat';
+                    const value = item.potential[stat];
+                    if (stat.includes('ダメUP')) {
+                        statDiv.innerHTML = `${stat.replace('UP', '')}: <span>+${value}%</span>`;
+                    } else {
+                        statDiv.innerHTML = `${stat}: <span>${value}</span>`;
+                    }
+                    potentialList.appendChild(statDiv);
+                }
+            } else {
+                potentialList.textContent = 'なし';
+            }
+            
+            const jobsGrid = document.createElement('div');
+            jobsGrid.className = 'job-icon-grid';
+            jobIcons.forEach(icon => {
+                if (!jobData[icon] || !jobData[icon].name) return;
+                const iconCell = document.createElement('div');
+                iconCell.textContent = icon;
+                iconCell.dataset.jobIcon = icon;
+                iconCell.title = jobData[icon].name;
+                iconCell.classList.add('job-icon-cell');
+                if(item.equipableJobs.includes(icon)) {
+                    iconCell.classList.add('equipable');
+                    iconCell.addEventListener('click', () => handleJobIconClick(item, icon));
+                }
+                jobsGrid.appendChild(iconCell);
+            });
+            
+            card.append(nameDiv, img, potentialList, jobsGrid);
+            return card;
+        }
+
+        function handleJobIconClick(item, clickedJobIcon) {
+            if (selectedInitialJob && !jobProgression[selectedInitialJob].includes(clickedJobIcon)) {
+                return;
+            }
+            if (!selectedByJob[clickedJobIcon]) {
+                selectedByJob[clickedJobIcon] = {};
+            }
+            const currentSelectionForJob = selectedByJob[clickedJobIcon][item.type];
+            if (currentSelectionForJob === item.id) {
+                delete selectedByJob[clickedJobIcon][item.type];
+                if (Object.keys(selectedByJob[clickedJobIcon]).length === 0) {
+                     delete selectedByJob[clickedJobIcon];
+                }
+            } else { 
+                selectedByJob[clickedJobIcon][item.type] = item.id;
+            }
+            updateUICategory(item.type);
+            updateTotalPotentialDisplay();
+        }
+
+        function applyJobFilter() {
+            const allowedJobs = selectedInitialJob ? jobProgression[selectedInitialJob] : null;
+            if (allowedJobs) {
+                for (const jobIcon in selectedByJob) {
+                    if (!allowedJobs.includes(jobIcon)) {
+                        delete selectedByJob[jobIcon];
+                    }
+                }
+            }
+            const allIconCells = document.querySelectorAll('.job-icon-cell.equipable');
+            allIconCells.forEach(cell => {
+                const icon = cell.dataset.jobIcon;
+                cell.classList.remove('selected', 'filtered-out');
+                if (allowedJobs && !allowedJobs.includes(icon)) {
+                    cell.classList.add('filtered-out');
+                }
+            });
+            for(const jobIcon in selectedByJob) {
+                for (const categoryKey in selectedByJob[jobIcon]) {
+                    const itemId = selectedByJob[jobIcon][categoryKey];
+                    const iconInCard = document.querySelector(`#card-${itemId} [data-job-icon="${jobIcon}"]`);
+                    if(iconInCard) {
+                        iconInCard.classList.add('selected');
+                    }
+                }
+            }
+        }
+
+        function updateUICategory(categoryKey) {
+            const categorySection = document.querySelector(`[data-category-key="${categoryKey}"]`);
+            if (!categorySection) return;
+            const allIconsInCategory = categorySection.querySelectorAll('.job-icon-cell.equipable');
+            allIconsInCategory.forEach(icon => icon.classList.remove('selected'));
+            for (const job in selectedByJob) {
+                const selectedItemId = selectedByJob[job][categoryKey];
+                if (selectedItemId) {
+                    const iconInCard = categorySection.querySelector(`#card-${selectedItemId} [data-job-icon="${job}"]`);
+                    if(iconInCard) {
+                        iconInCard.classList.add('selected');
+                    }
+                }
+            }
+        }
+        
+        function updateTotalPotentialDisplay() {
+            const totalPotential = {};
+            const uniqueEquipments = new Set();
+            for (const job in selectedByJob) {
+                for (const category in selectedByJob[job]) {
+                    uniqueEquipments.add(selectedByJob[job][category]);
+                }
+            }
+            uniqueEquipments.forEach(itemId => {
+                const equipment = equipmentData.find(eq => eq.id === itemId);
+                if (equipment && equipment.potential) {
+                    for (const stat in equipment.potential) {
+                        if (!totalPotential[stat]) totalPotential[stat] = 0;
+                        totalPotential[stat] += equipment.potential[stat];
+                    }
+                }
+            });
+
+            const displayContainer = document.getElementById('total-potential-display');
+            displayContainer.innerHTML = '';
+            const allPossibleStats = ["攻撃", "防御", "HP", "MP", "腕力", "体力", "速さ", "器用", "知力", "精神", "物理ダメUP", "魔法ダメUP" ]; 
+            const statsToDisplay = allPossibleStats.filter(stat => totalPotential[stat]);
+
+            if (statsToDisplay.length === 0) {
+                 displayContainer.textContent = "装備の職業アイコンをクリックして選択してください";
+                 return;
+            }
+
+            statsToDisplay.forEach(stat => {
+                const statDiv = document.createElement('div');
+                statDiv.className = 'potential-stat';
+                if (stat.includes('ダメUP')) {
+                    statDiv.innerHTML = `${stat.replace('UP', '')}: <span>+${totalPotential[stat]}%</span>`;
+                } else {
+                    statDiv.innerHTML = `${stat}: <span>${totalPotential[stat]}</span>`;
+                }
+                displayContainer.appendChild(statDiv);
+            });
+        }
+    </script>
+</body>
+</html>
