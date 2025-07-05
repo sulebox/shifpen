@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音声付き4コマ漫画</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 基本的なスタイリング */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+        /* 画像マップのエリアにカーソルを合わせるとポインターになるように設定 */
+        area {
+            cursor: pointer;
+        }
+        /* メッセージボックスのスタイル */
+        .message-box {
+            transition: opacity 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="max-w-4xl w-full bg-white p-6 rounded-xl shadow-lg">
+        <h1 class="text-2xl font-bold text-center text-gray-800 mb-4">音声付き4コマ漫画</h1>
+        <p class="text-center text-gray-600 mb-6">各コマをクリックすると音声が流れます。（現在はコマ1〜4まで設定されています）</p>
+        
+        <!-- 漫画画像とイメージマップ -->
+        <div class="relative w-full">
+            <img id="comic-image" src="https://raw.githubusercontent.com/sulebox/shifpen/main/4koma_vol03.PNG" usemap="#comic-map" alt="4コマ漫画" class="w-full h-auto rounded-lg">
+            
+            <map name="comic-map">
+                <!-- 修正：コマ2, 3, 4に音声URLを設定しました -->
+                <!-- 画像サイズ: 1488x1908 -->
+                <!-- data-coordsに元のピクセル座標を保存 -->
+                <!-- 左列 -->
+                <area shape="rect" data-coords="40,40,724,475" href="#" alt="コマ1" onclick="playAudio('https://raw.githubusercontent.com/sulebox/shifpen/main/03_01.wav', 'コマ1')">
+                <area shape="rect" data-coords="40,505,724,940" href="#" alt="コマ2" onclick="playAudio('https://raw.githubusercontent.com/sulebox/shifpen/main/03_02.wav', 'コマ2')">
+                <area shape="rect" data-coords="40,970,724,1405" href="#" alt="コマ3" onclick="playAudio('https://raw.githubusercontent.com/sulebox/shifpen/main/03_03.mp3', 'コマ3')">
+                <area shape="rect" data-coords="40,1435,724,1870" href="#" alt="コマ4" onclick="playAudio('https://raw.githubusercontent.com/sulebox/shifpen/main/03_04.wav', 'コマ4')">
+                <!-- 右列 -->
+                <area shape="rect" data-coords="764,40,1448,475" href="#" alt="コマ5" onclick="playAudio(null, 'コマ5')">
+                <area shape="rect" data-coords="764,505,1448,940" href="#" alt="コマ6" onclick="playAudio(null, 'コマ6')">
+                <area shape="rect" data-coords="764,970,1448,1405" href="#" alt="コマ7" onclick="playAudio(null, 'コマ7')">
+                <area shape="rect" data-coords="764,1435,1448,1870" href="#" alt="コマ8" onclick="playAudio(null, 'コマ8')">
+            </map>
+        </div>
+
+        <!-- メッセージ表示エリア -->
+        <div id="message-box" class="message-box fixed bottom-5 right-5 bg-blue-500 text-white py-2 px-4 rounded-lg shadow-xl opacity-0">
+            <p id="message-text"></p>
+        </div>
+    </div>
+
+    <script>
+        // メッセージボックス要素を取得
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+        let messageTimeout;
+        let currentAudio = null; // 現在再生中のオーディオを管理する変数
+
+        /**
+         * 音声を再生し、メッセージを表示する関数
+         * @param {string | null} audioSrc - 再生する音声ファイルのURL。nullの場合は未設定メッセージを表示。
+         * @param {string} panelName - クリックされたコマの名前
+         */
+        function playAudio(audioSrc, panelName) {
+            event.preventDefault();
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+            if (audioSrc) {
+                const audio = new Audio(audioSrc);
+                currentAudio = audio;
+                audio.play()
+                    .then(() => showMessage(`${panelName}の音声を再生中...`))
+                    .catch(error => {
+                        console.error('音声の再生に失敗しました:', error);
+                        showMessage('エラー: 音声の再生に失敗しました', true);
+                        currentAudio = null;
+                    });
+                audio.onended = () => { currentAudio = null; };
+            } else {
+                showMessage(`${panelName}には音声が設定されていません`, true);
+            }
+        }
+
+        /**
+         * 画面右下にメッセージを表示する関数
+         * @param {string} message - 表示するメッセージ
+         * @param {boolean} isWarning - 警告メッセージかどうか
+         */
+        function showMessage(message, isWarning = false) {
+            clearTimeout(messageTimeout);
+            messageText.textContent = message;
+            messageBox.className = `message-box fixed bottom-5 right-5 text-white py-2 px-4 rounded-lg shadow-xl opacity-100 ${isWarning ? 'bg-red-500' : 'bg-blue-500'}`;
+            messageTimeout = setTimeout(() => {
+                messageBox.classList.add('opacity-0');
+            }, 3000);
+        }
+
+        /**
+         * レスポンシブイメージマップのための関数
+         * 画像の表示サイズに合わせて、クリック範囲の座標を動的に更新します。
+         */
+        function resizeImageMap() {
+            const img = document.getElementById('comic-image');
+            const map = document.querySelector('map[name="comic-map"]');
+            if (!img || !map) return;
+
+            const originalWidth = 1488; // 元画像の幅
+            const currentWidth = img.offsetWidth;
+            
+            if (currentWidth === 0) return;
+
+            const scale = currentWidth / originalWidth;
+            const areas = map.getElementsByTagName('area');
+
+            for (const area of areas) {
+                const originalCoordsStr = area.dataset.coords;
+                if (!originalCoordsStr) continue;
+
+                const originalCoords = originalCoordsStr.split(',').map(Number);
+                const newCoords = originalCoords.map(coord => Math.round(coord * scale));
+                area.setAttribute('coords', newCoords.join(','));
+            }
+        }
+
+        // ページの読み込み時とウィンドウサイズ変更時に、クリック範囲を再計算
+        window.addEventListener('load', resizeImageMap);
+        window.addEventListener('resize', resizeImageMap);
+        document.getElementById('comic-image').onload = resizeImageMap;
+
+    </script>
+
+</body>
+</html>
