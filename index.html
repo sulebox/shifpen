@@ -32,10 +32,6 @@
         }
         .image-link:hover img {
             transform: scale(1.05);
-            /* box-shadow: 0 4px 8px rgba(0,0,0,0.2); */ /* ホバー時の影はボタン全体で表現 */
-        }
-        .image-link span {
-            font-size: 1rem; /* テキストのフォントサイズを他のボタンと合わせる */
         }
     </style>
 </head>
@@ -65,28 +61,55 @@
                     </a>
                 </li>
                 <li>
+                    <a href="https://sulebox.github.io/shifpen/guildskill.html" class="link-button flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
+                        <i class="fas fa-sitemap"></i>ｷﾞﾙﾄﾞｽｷﾙﾁｪｯｶｰ
+                    </a>
+                </li>
+                <li>
                     <a href="https://sulebox.github.io/shifpen/todo.html" class="link-button flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
                         <i class="fas fa-tasks"></i>プヨンのToDo
                     </a>
                 </li>
-                <li>
-                    <a href="https://sulebox.github.io/shifpen/yonkoma.html" class="link-button flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
-                        <i class="fas fa-laugh-beam"></i>４コマ
-                    </a>
+                <li class="relative">
+                    <button id="yonkoma-button" class="link-button w-full flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
+                        <i class="fas fa-laugh-beam"></i>４コマ<i class="fas fa-chevron-down text-xs ml-2"></i>
+                    </button>
+                    <div id="yonkoma-dropdown" class="hidden absolute left-0 mt-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                        <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="yonkoma-button">
+                            <a href="https://sulebox.github.io/shifpen/yonkoma.html" class="block text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">ふつうのやつ</a>
+                            <a href="https://sulebox.github.io/shifpen/yonkoma_voice.html" class="block text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">声が出るやつ</a>
+                        </div>
+                    </div>
                 </li>
                 <li>
-                    <a href="https://youtu.be/w7odvapKcyw?si=k7UJWbmbOUzgqwcf" target="_blank" rel="noopener noreferrer" class="link-button flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
-                        <i class="fab fa-youtube"></i>YouTube
-                    </a>
-                </li>
-                <li>
-                    <a href="https://genso.game/ja/" target="_blank" rel="noopener noreferrer" class="image-link flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
-                        <img src="site_logo_s.png" alt="元素騎士オンライン" class="rounded-md">
-                        <span class="ml-2">元素騎士のサイト</span>
+                    <a href="https://sulebox.github.io/shifpen/douga.html" class="link-button flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
+                        <i class="fas fa-video"></i>シフペン動画
                     </a>
                 </li>
             </ul>
         </nav>
+
+        <div class="mt-10 text-center">
+            <a href="https://genso.game/ja/" target="_blank" rel="noopener noreferrer" class="inline-block transition-transform duration-300 hover:scale-105">
+                <img src="site_logo_s.png" alt="元素騎士オンライン" class="h-12">
+            </a>
+        </div>
     </div>
+
+    <script>
+        const yonkomaButton = document.getElementById('yonkoma-button');
+        const yonkomaDropdown = document.getElementById('yonkoma-dropdown');
+
+        yonkomaButton.addEventListener('click', () => {
+            yonkomaDropdown.classList.toggle('hidden');
+        });
+
+        // Close the dropdown if the user clicks outside of it
+        window.addEventListener('click', (event) => {
+            if (!yonkomaButton.contains(event.target) && !yonkomaDropdown.contains(event.target)) {
+                yonkomaDropdown.classList.add('hidden');
+            }
+        });
+    </script>
 </body>
 </html>
