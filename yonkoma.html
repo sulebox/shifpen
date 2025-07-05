@@ -3,263 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>シフペンの４コマ</title>
+    <title>音声付き4コマ漫画</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* 基本的なスタイリング */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #F8F6F2; /* トップページに合わせた背景色 */
-            color: #3C3C3C; /* 基本のテキストカラー */
-            overscroll-behavior-x: none; 
-            padding-top: 5rem; /* ヘッダーのスペースを確保 */
+            background-color: #f0f2f5;
         }
-        .page-bg {
-            background-color: #F8F6F2;
+        /* 画像マップのエリアにカーソルを合わせるとポインターになるように設定 */
+        area {
+            cursor: pointer;
         }
-        .accent-color {
-            background-color: #E8A37A; /* トップページに合わせたアクセントカラー */
-            color: white;
-        }
-        .accent-color:hover {
-            background-color: #D98F6A; /* ホバー時のアクセントカラー */
-        }
-        .nav-button {
-            min-width: 80px;
-        }
-        .disabled-button {
-            background-color: #D1D5DB;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-        .disabled-button:hover {
-            background-color: #D1D5DB;
-        }
-        .image-container {
-            touch-action: pan-y; 
-            user-select: none; 
-            -webkit-user-drag: none; 
-        }
-        .comic-image {
-            max-width: 100%;
-            height: auto; 
-            max-height: 70vh; 
-            object-fit: contain; 
-            border: 1px solid #E5E7EB; 
-            border-radius: 8px; 
-        }
-        .loader {
-            border: 4px solid #f3f3f3; 
-            border-top: 4px solid #E8A37A; 
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: none; 
-        }
-        @keyframes spin {
-            0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        .title-text {
-            color: #4A4A4A; 
-            white-space: nowrap; /* タイトルが折り返さないようにする */
-            overflow: hidden; /* はみ出した部分を隠す */
-            text-overflow: ellipsis; /* はみ出した部分を...で表示 */
-            flex-grow: 1; /* タイトルができるだけ幅を取るように */
-            text-align: center; /* 中央揃え */
-        }
-        .page-info-text {
-            color: #555555; 
-        }
-        .header-container {
-            position: fixed; /* 画面上部に固定 */
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 0.75rem 1rem; /* 上下0.75rem、左右1remのパディング */
-            background-color: #F8F6F2; 
-            z-index: 50; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
-            display: flex; /* Flexboxを使用 */
-            align-items: center; /* 垂直方向中央揃え */
-            justify-content: space-between; /* 要素間のスペースを均等に配置 */
-        }
-        .back-button {
-            flex-shrink: 0; /* 戻るボタンが縮まないように */
-            margin-right: 1rem; /* タイトルとの間にマージン */
+        /* メッセージボックスのスタイル */
+        .message-box {
+            transition: opacity 0.3s ease-in-out;
         }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="flex flex-col items-center justify-start min-h-screen page-bg p-4">
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
 
-    <div class="header-container">
-        <a href="https://sulebox.github.io/shifpen/" class="back-button accent-color px-5 py-2 rounded-lg shadow-md font-semibold transition-colors duration-150 text-sm">
-            戻る
-        </a>
-        <h1 class="text-2xl sm:text-3xl font-bold title-text">シフペンの４コマ</h1>
-        <div style="width: 70px;"></div> </div>
-
-    <main class="w-full max-w-xl flex flex-col items-center mt-4"> {/* ヘッダーとのマージン調整 */}
-        <div id="imageContainer" class="image-container w-full mb-6 relative select-none">
-            <img id="comicImage" src="" alt="4コマ漫画" class="comic-image mx-auto shadow-lg">
-            <div id="imageLoader" class="loader"></div>
-            <p id="imageError" class="text-center text-red-500 hidden">画像の読み込みに失敗しました。</p>
-        </div>
-
-        <div id="pageInfo" class="mb-4 text-lg page-info-text">
-            <span id="currentPage">1</span> / <span id="totalPages">10</span>
-        </div>
-
-        <div class="flex justify-center space-x-4 mb-8 w-full">
-            <button id="prevButton" class="nav-button accent-color px-6 py-3 rounded-lg shadow-md font-semibold transition-colors duration-150">◀ 前へ</button>
-            <button id="nextButton" class="nav-button accent-color px-6 py-3 rounded-lg shadow-md font-semibold transition-colors duration-150">次へ ▶</button>
-        </div>
+    <div class="max-w-4xl w-full bg-white p-6 rounded-xl shadow-lg">
+        <h1 class="text-2xl font-bold text-center text-gray-800 mb-4">音声付き4コマ漫画</h1>
+        <p class="text-center text-gray-600 mb-6">各コマをクリックすると音声が流れます。（現在はコマ1〜4まで設定されています）</p>
         
-    </main>
+        <!-- 漫画画像とイメージマップ -->
+        <div class="relative w-full">
+            <img id="comic-image" src="https://raw.githubusercontent.com/sulebox/shifpen/main/4koma_vol03.PNG" usemap="#comic-map" alt="4コマ漫画" class="w-full h-auto rounded-lg">
+            
+            <map name="comic-map">
+                <!-- 修正：コマ2, 3, 4に音声URLを設定しました -->
+                <!-- 画像サイズ: 1488x1908 -->
+                <!-- data-coordsに元のピクセル座標を保存 -->
+                <!-- 左列 -->
+                <area shape="rect" data-coords="40,40,724,475" href="#" alt="コマ1" onclick="playAudio('https://raw.githubusercontent.com/sulebox/shifpen/main/03_01.wav', 'コマ1')">
+                <area shape="rect" data-coords="40,505,724,940" href="#" alt="コマ2" onclick="playAudio('https://raw.githubusercontent.com/sulebox/shifpen/main/03_02.wav', 'コマ2')">
+                <area shape="rect" data-coords="40,970,724,1405" href="#" alt="コマ3" onclick="playAudio('https://raw.githubusercontent.com/sulebox/shifpen/main/03_03.mp3', 'コマ3')">
+                <area shape="rect" data-coords="40,1435,724,1870" href="#" alt="コマ4" onclick="playAudio('https://raw.githubusercontent.com/sulebox/shifpen/main/03_04.wav', 'コマ4')">
+                <!-- 右列 -->
+                <area shape="rect" data-coords="764,40,1448,475" href="#" alt="コマ5" onclick="playAudio(null, 'コマ5')">
+                <area shape="rect" data-coords="764,505,1448,940" href="#" alt="コマ6" onclick="playAudio(null, 'コマ6')">
+                <area shape="rect" data-coords="764,970,1448,1405" href="#" alt="コマ7" onclick="playAudio(null, 'コマ7')">
+                <area shape="rect" data-coords="764,1435,1448,1870" href="#" alt="コマ8" onclick="playAudio(null, 'コマ8')">
+            </map>
+        </div>
+
+        <!-- メッセージ表示エリア -->
+        <div id="message-box" class="message-box fixed bottom-5 right-5 bg-blue-500 text-white py-2 px-4 rounded-lg shadow-xl opacity-0">
+            <p id="message-text"></p>
+        </div>
+    </div>
 
     <script>
-        const comicImages = [
-            '4koma_vol01.PNG', '4koma_vol02.PNG', '4koma_vol03.PNG', '4koma_vol04.PNG', '4koma_vol05.PNG',
-            '4koma_vol06.PNG', '4koma_vol07.PNG', '4koma_vol08.PNG', '4koma_vol09.PNG', '4koma_vol10.PNG'
-        ];
+        // メッセージボックス要素を取得
+        const messageBox = document.getElementById('message-box');
+        const messageText = document.getElementById('message-text');
+        let messageTimeout;
+        let currentAudio = null; // 現在再生中のオーディオを管理する変数
 
-        let currentPageIndex = 0;
-        const totalPages = comicImages.length;
-
-        const comicImageElement = document.getElementById('comicImage');
-        const imageLoaderElement = document.getElementById('imageLoader');
-        const imageErrorElement = document.getElementById('imageError');
-        const prevButton = document.getElementById('prevButton');
-        const nextButton = document.getElementById('nextButton');
-        const currentPageDisplay = document.getElementById('currentPage');
-        const totalPagesDisplay = document.getElementById('totalPages');
-        const imageContainer = document.getElementById('imageContainer');
-
-        function showLoader() {
-            imageLoaderElement.style.display = 'block';
-            comicImageElement.style.display = 'none'; 
-            imageErrorElement.classList.add('hidden');
-        }
-
-        function hideLoader() {
-            imageLoaderElement.style.display = 'none';
-            comicImageElement.style.display = 'block'; 
-        }
-
-        function showError() {
-            imageLoaderElement.style.display = 'none';
-            comicImageElement.style.display = 'none';
-            imageErrorElement.classList.remove('hidden');
-        }
-
-        function loadImage(index) {
-            if (index < 0 || index >= totalPages) {
-                console.error('Invalid page index:', index);
-                return;
+        /**
+         * 音声を再生し、メッセージを表示する関数
+         * @param {string | null} audioSrc - 再生する音声ファイルのURL。nullの場合は未設定メッセージを表示。
+         * @param {string} panelName - クリックされたコマの名前
+         */
+        function playAudio(audioSrc, panelName) {
+            event.preventDefault();
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
             }
-            showLoader();
-            const imageName = comicImages[index];
-            const img = new Image();
-            img.onload = () => {
-                comicImageElement.src = imageName;
-                comicImageElement.alt = `4コマ漫画 ${index + 1}ページ目`;
-                currentPageIndex = index;
-                updatePageInfo();
-                updateButtonStates();
-                hideLoader();
-            };
-            img.onerror = () => {
-                console.error('Error loading image:', imageName);
-                showError(); 
-                updatePageInfo(); 
-                updateButtonStates(); 
-            };
-            img.src = imageName;
-        }
-
-        function updatePageInfo() {
-            currentPageDisplay.textContent = currentPageIndex + 1;
-            totalPagesDisplay.textContent = totalPages;
-        }
-
-        function updateButtonStates() {
-            if (currentPageIndex === 0) {
-                prevButton.classList.add('disabled-button');
-                prevButton.disabled = true;
+            if (audioSrc) {
+                const audio = new Audio(audioSrc);
+                currentAudio = audio;
+                audio.play()
+                    .then(() => showMessage(`${panelName}の音声を再生中...`))
+                    .catch(error => {
+                        console.error('音声の再生に失敗しました:', error);
+                        showMessage('エラー: 音声の再生に失敗しました', true);
+                        currentAudio = null;
+                    });
+                audio.onended = () => { currentAudio = null; };
             } else {
-                prevButton.classList.remove('disabled-button');
-                prevButton.disabled = false;
-            }
-
-            if (currentPageIndex === totalPages - 1) {
-                nextButton.classList.add('disabled-button');
-                nextButton.disabled = true;
-            } else {
-                nextButton.classList.remove('disabled-button');
-                nextButton.disabled = false;
+                showMessage(`${panelName}には音声が設定されていません`, true);
             }
         }
 
-        prevButton.addEventListener('click', () => {
-            if (currentPageIndex > 0) {
-                loadImage(currentPageIndex - 1);
-            }
-        });
+        /**
+         * 画面右下にメッセージを表示する関数
+         * @param {string} message - 表示するメッセージ
+         * @param {boolean} isWarning - 警告メッセージかどうか
+         */
+        function showMessage(message, isWarning = false) {
+            clearTimeout(messageTimeout);
+            messageText.textContent = message;
+            messageBox.className = `message-box fixed bottom-5 right-5 text-white py-2 px-4 rounded-lg shadow-xl opacity-100 ${isWarning ? 'bg-red-500' : 'bg-blue-500'}`;
+            messageTimeout = setTimeout(() => {
+                messageBox.classList.add('opacity-0');
+            }, 3000);
+        }
 
-        nextButton.addEventListener('click', () => {
-            if (currentPageIndex < totalPages - 1) {
-                loadImage(currentPageIndex + 1);
-            }
-        });
+        /**
+         * レスポンシブイメージマップのための関数
+         * 画像の表示サイズに合わせて、クリック範囲の座標を動的に更新します。
+         */
+        function resizeImageMap() {
+            const img = document.getElementById('comic-image');
+            const map = document.querySelector('map[name="comic-map"]');
+            if (!img || !map) return;
 
-        let touchstartX = 0;
-        let touchendX = 0;
-        const swipeThreshold = 50; 
+            const originalWidth = 1488; // 元画像の幅
+            const currentWidth = img.offsetWidth;
+            
+            if (currentWidth === 0) return;
 
-        imageContainer.addEventListener('touchstart', function(event) {
-            touchstartX = event.changedTouches[0].screenX;
-        }, { passive: true }); 
+            const scale = currentWidth / originalWidth;
+            const areas = map.getElementsByTagName('area');
 
-        imageContainer.addEventListener('touchend', function(event) {
-            touchendX = event.changedTouches[0].screenX;
-            handleSwipe();
-        }, { passive: true });
+            for (const area of areas) {
+                const originalCoordsStr = area.dataset.coords;
+                if (!originalCoordsStr) continue;
 
-        function handleSwipe() {
-            const swipeDistance = touchendX - touchstartX;
-            if (Math.abs(swipeDistance) < swipeThreshold) {
-                return;
-            }
-
-            if (touchendX < touchstartX) { 
-                if (currentPageIndex < totalPages - 1) {
-                    loadImage(currentPageIndex + 1);
-                }
-            } else if (touchendX > touchstartX) { 
-                if (currentPageIndex > 0) {
-                    loadImage(currentPageIndex - 1);
-                }
+                const originalCoords = originalCoordsStr.split(',').map(Number);
+                const newCoords = originalCoords.map(coord => Math.round(coord * scale));
+                area.setAttribute('coords', newCoords.join(','));
             }
         }
-        
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'ArrowRight') {
-                if (currentPageIndex < totalPages - 1) {
-                    loadImage(currentPageIndex + 1);
-                }
-            } else if (event.key === 'ArrowLeft') {
-                 if (currentPageIndex > 0) {
-                    loadImage(currentPageIndex - 1);
-                }
-            }
-        });
 
-        loadImage(0);
+        // ページの読み込み時とウィンドウサイズ変更時に、クリック範囲を再計算
+        window.addEventListener('load', resizeImageMap);
+        window.addEventListener('resize', resizeImageMap);
+        document.getElementById('comic-image').onload = resizeImageMap;
+
     </script>
 
 </body>
