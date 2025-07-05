@@ -148,7 +148,6 @@
             line-height: 1.3;
             min-height: 2.6em; /* 名前の長さに応じて高さを確保 */
         }
-        /* ★修正点: Rレアリティのスタイルを追加 */
         .rarity-r {
             display: inline-block; background-color: #3b82f6; color: white; font-size: 0.7rem; font-weight: bold; padding: 2px 8px; border-radius: 9999px; margin-left: 0.5rem; vertical-align: middle;
         }
@@ -267,9 +266,10 @@
             { id: "greed-rock", type: "lefthand", name: "ｸﾞﾘｰﾄﾞﾛｯｸ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sca.png", equipableJobs: [...rule2Jobs], potential: { 知力: 150, 器用: 200 } },
             { id: "another-style-sai", type: "lefthand", name: "ｱﾅｻﾞｰｽﾀｲﾙｻｲ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/scb.png", equipableJobs: [...rule2Jobs], potential: { 腕力: 150, 体力: 150 } },
             
-            // Right Hand - ★修正点: R武器3点を追加
+            // Right Hand
             { id: "border-knife", type: "righthand", name: "ﾎﾞｰﾀﾞｰﾅｲﾌ", rarity: "R", imageSrc: "https://sulebox.github.io/shifpen/scra.png", equipableJobs: [...rule3Jobs], potential: { 器用: 100 } },
-            { id: "hunters-claw", type: "righthand", name: "ﾊﾝﾀｰｽﾞｸﾛｳ", rarity: "R", imageSrc: "https://sulebox.github.io/shifpen/scrb.png", equipableJobs: [...rule3Jobs], potential: { 器用: 100 } },
+            // ★修正点: ハンターズクロウの装備可能職をrule4Jobs(アサシン)に変更
+            { id: "hunters-claw", type: "righthand", name: "ﾊﾝﾀｰｽﾞｸﾛｳ", rarity: "R", imageSrc: "https://sulebox.github.io/shifpen/scrb.png", equipableJobs: [...rule4Jobs], potential: { 器用: 100 } },
             { id: "battle-knuckle", type: "righthand", name: "ﾊﾞﾄﾙﾅｯｸﾙ", rarity: "R", imageSrc: "https://sulebox.github.io/shifpen/scrc.png", equipableJobs: [...rule5Jobs], potential: { 速さ: 100 } },
             { id: "greeder-style", type: "righthand", name: "ｸﾞﾘｰﾀﾞｰｽﾀｲﾙ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sda.png", equipableJobs: [...rule3Jobs], potential: { 速さ: 140, 器用: 150 } },
             { id: "another-style-dagger", type: "righthand", name: "ｱﾅｻﾞｰｽﾀｲﾙﾀﾞｶﾞｰ", rarity: "SR", imageSrc: "https://sulebox.github.io/shifpen/sdb.png", equipableJobs: [...rule3Jobs], potential: { 腕力: 150, 体力: 150 } },
