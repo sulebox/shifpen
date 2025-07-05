@@ -26,14 +26,14 @@
 
     <div class="max-w-4xl w-full bg-white p-6 rounded-xl shadow-lg">
         <h1 class="text-2xl font-bold text-center text-gray-800 mb-4">音声付き4コマ漫画</h1>
-        <p class="text-center text-gray-600 mb-6">各コマをクリックすると音声が流れます。（現在はコマ1〜4まで設定されています）</p>
+        <p class="text-center text-gray-600 mb-6">各コマをクリックすると音声が流れます。</p>
         
         <!-- 漫画画像とイメージマップ -->
         <div class="relative w-full">
             <img id="comic-image" src="https://raw.githubusercontent.com/sulebox/shifpen/main/4koma_vol03.PNG" usemap="#comic-map" alt="4コマ漫画" class="w-full h-auto rounded-lg">
             
             <map name="comic-map">
-                <!-- 修正：コマ2, 3, 4に音声URLを設定しました -->
+                <!-- 修正：コマ5, 6, 7, 8に音声URLを設定しました -->
                 <!-- 画像サイズ: 1488x1908 -->
                 <!-- data-coordsに元のピクセル座標を保存 -->
                 <!-- 左列 -->
@@ -42,10 +42,10 @@
                 <area shape="rect" data-coords="40,970,724,1405" href="#" alt="コマ3" onclick="playAudio('https://raw.githubusercontent.com/sulebox/shifpen/main/03_03.mp3', 'コマ3')">
                 <area shape="rect" data-coords="40,1435,724,1870" href="#" alt="コマ4" onclick="playAudio('https://raw.githubusercontent.com/sulebox/shifpen/main/03_04.wav', 'コマ4')">
                 <!-- 右列 -->
-                <area shape="rect" data-coords="764,40,1448,475" href="#" alt="コマ5" onclick="playAudio(null, 'コマ5')">
-                <area shape="rect" data-coords="764,505,1448,940" href="#" alt="コマ6" onclick="playAudio(null, 'コマ6')">
-                <area shape="rect" data-coords="764,970,1448,1405" href="#" alt="コマ7" onclick="playAudio(null, 'コマ7')">
-                <area shape="rect" data-coords="764,1435,1448,1870" href="#" alt="コマ8" onclick="playAudio(null, 'コマ8')">
+                <area shape="rect" data-coords="764,40,1448,475" href="#" alt="コマ5" onclick="playAudio('https://raw.githubusercontent.com/sulebox/shifpen/main/03_05.mp3', 'コマ5')">
+                <area shape="rect" data-coords="764,505,1448,940" href="#" alt="コマ6" onclick="playAudio('https://raw.githubusercontent.com/sulebox/shifpen/main/03_06.wav', 'コマ6')">
+                <area shape="rect" data-coords="764,970,1448,1405" href="#" alt="コマ7" onclick="playAudio('https://raw.githubusercontent.com/sulebox/shifpen/main/03_07.wav', 'コマ7')">
+                <area shape="rect" data-coords="764,1435,1448,1870" href="#" alt="コマ8" onclick="playAudio('https://raw.githubusercontent.com/sulebox/shifpen/main/03_08.wav', 'コマ8')">
             </map>
         </div>
 
