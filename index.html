@@ -50,10 +50,16 @@
 
         <nav>
             <ul class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
-                <li>
-                    <a href="https://sulebox.github.io/shifpen/equipment.html" class="link-button flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
-                        <i class="fas fa-shield-alt"></i>装備チェッカー
-                    </a>
+                <li class="relative">
+                    <button data-dropdown-toggle="equipment-dropdown" class="link-button w-full flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
+                        <i class="fas fa-shield-alt"></i>装備チェッカー<i class="fas fa-chevron-down text-xs ml-2"></i>
+                    </button>
+                    <div id="equipment-dropdown" class="dropdown-menu hidden absolute left-0 mt-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                        <div class="py-1" role="menu" aria-orientation="vertical">
+                            <a href="https://sulebox.github.io/shifpen/equipment.html" class="block text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">ステータス</a>
+                            <a href="https://sulebox.github.io/shifpen/senzai.html" class="block text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">潜在能力</a>
+                        </div>
+                    </div>
                 </li>
                 <li>
                     <a href="https://sulebox.github.io/shifpen/dps.html" class="link-button flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
@@ -71,11 +77,11 @@
                     </a>
                 </li>
                 <li class="relative">
-                    <button id="yonkoma-button" class="link-button w-full flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
+                    <button data-dropdown-toggle="yonkoma-dropdown" class="link-button w-full flex items-center justify-center bg-clubhouse-accent hover:bg-clubhouse-accent-darker text-white font-bold py-3 px-4 rounded-xl text-lg transition-all duration-300 ease-in-out shadow-md hover:shadow-lg transform hover:scale-105">
                         <i class="fas fa-laugh-beam"></i>４コマ<i class="fas fa-chevron-down text-xs ml-2"></i>
                     </button>
-                    <div id="yonkoma-dropdown" class="hidden absolute left-0 mt-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                        <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="yonkoma-button">
+                    <div id="yonkoma-dropdown" class="dropdown-menu hidden absolute left-0 mt-2 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                        <div class="py-1" role="menu" aria-orientation="vertical">
                             <a href="https://sulebox.github.io/shifpen/yonkoma.html" class="block text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">ふつうのやつ</a>
                             <a href="https://sulebox.github.io/shifpen/yonkoma_voice.html" class="block text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">声が出るやつ</a>
                         </div>
@@ -91,24 +97,42 @@
 
         <div class="mt-10 text-center">
             <a href="https://genso.game/ja/" target="_blank" rel="noopener noreferrer" class="inline-block transition-transform duration-300 hover:scale-105">
-                <img src="site_logo_s.png" alt="元素騎士オンライン" class="h-12">
+                <img src="site_logo_s.png" alt="元素騎士オンライン" style="height: 4.5rem;">
             </a>
         </div>
     </div>
 
     <script>
-        const yonkomaButton = document.getElementById('yonkoma-button');
-        const yonkomaDropdown = document.getElementById('yonkoma-dropdown');
+        // --- Dropdown Logic ---
+        // Get all buttons that toggle a dropdown
+        const dropdownButtons = document.querySelectorAll('[data-dropdown-toggle]');
 
-        yonkomaButton.addEventListener('click', () => {
-            yonkomaDropdown.classList.toggle('hidden');
+        dropdownButtons.forEach(button => {
+            button.addEventListener('click', function (event) {
+                const dropdownId = this.getAttribute('data-dropdown-toggle');
+                const dropdown = document.getElementById(dropdownId);
+                
+                // Hide all other dropdowns before toggling the new one
+                document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                    if (menu.id !== dropdownId) {
+                        menu.classList.add('hidden');
+                    }
+                });
+
+                // Toggle the visibility of the current dropdown
+                dropdown.classList.toggle('hidden');
+                // Prevent the window click listener from firing immediately and closing the dropdown
+                event.stopPropagation();
+            });
         });
 
-        // Close the dropdown if the user clicks outside of it
-        window.addEventListener('click', (event) => {
-            if (!yonkomaButton.contains(event.target) && !yonkomaDropdown.contains(event.target)) {
-                yonkomaDropdown.classList.add('hidden');
-            }
+        // Close all dropdowns when clicking anywhere else on the page
+        window.addEventListener('click', function (event) {
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                if (!menu.classList.contains('hidden')) {
+                    menu.classList.add('hidden');
+                }
+            });
         });
     </script>
 </body>
