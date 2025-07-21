@@ -46,6 +46,7 @@
             <a href="https://sulebox.github.io/shifpen/3dview.html" target="_blank" rel="noopener noreferrer" class="inline-block transition-transform duration-300 hover:scale-105">
                 <img src="https://sulebox.github.io/shifpen/penpenshi_b.gif" alt="ペンギンのGIFアニメ" class="rounded-lg mx-auto" style="max-width: 70%; height: auto;">
             </a>
+            <p id="shifpen-word" class="mt-4 text-lg text-clubhouse-title font-medium h-8 flex items-center justify-center"></p>
         </section>
 
         <nav>
@@ -103,8 +104,25 @@
     </div>
 
     <script>
+        // --- Shifpen's Word Logic ---
+        const words = [
+            "おふとんフカフカ", "おすし屋さんいきたい", "きょうもたのしんそう", "ラーメンはのみもの？w", "ネコあるいてる🐈", 
+            "どくけしのむ？", "お昼寝する", "友だちたくさん", "おなかすいた、、", "きのうたくさんねた◎", "ねこもフカフカ", 
+            "なんにもしてないをしてる", "雨たくさん", "くよくよしてる", "スープたくさん", "ねことあそんでる^^", "いぬもフカフカ", 
+            "ねこも干してる", "ちょときゅうけい", "ぼく何さいかなぁ", "ポーションのみたい", "骨にやられたかも", "空はれてる", 
+            "おすしとラーメン", "アイス当たった^^", "すきるむつかしい", "冒険してる^^", "ドラ◎ンボールたくさん", "ドラ◎ンボールきれい", 
+            "ねむい、、", "ごはんおいしい", "お水のんでる", "元気玉つかえた", "ころんだ、、", "まぁいっか", "もうねる", "そか^^", 
+            "おすしおいしい^^", "ラーメンおいしい^^", "けづくろいしてる", "しかえしやめた", "ヒーローごっこしてる^^", "ねぇねぇ", 
+            "ちょと気になる＾＾", "すぐ忘れる、、", "フカフカチェックしてる", "お空飛べない、、", "おさかな追いかけてる", 
+            "きょうも平和だって", "いっしょにごはんたべてる", "マグロおいしい^^", "ごはんあったかい", "にこにこしてる", "もう干すやつない"
+        ];
+        const wordElement = document.getElementById('shifpen-word');
+        if (wordElement) {
+            const randomIndex = Math.floor(Math.random() * words.length);
+            wordElement.textContent = `.｡oO（ ${words[randomIndex]} ）`;
+        }
+
         // --- Dropdown Logic ---
-        // Get all buttons that toggle a dropdown
         const dropdownButtons = document.querySelectorAll('[data-dropdown-toggle]');
 
         dropdownButtons.forEach(button => {
@@ -112,21 +130,17 @@
                 const dropdownId = this.getAttribute('data-dropdown-toggle');
                 const dropdown = document.getElementById(dropdownId);
                 
-                // Hide all other dropdowns before toggling the new one
                 document.querySelectorAll('.dropdown-menu').forEach(menu => {
                     if (menu.id !== dropdownId) {
                         menu.classList.add('hidden');
                     }
                 });
 
-                // Toggle the visibility of the current dropdown
                 dropdown.classList.toggle('hidden');
-                // Prevent the window click listener from firing immediately and closing the dropdown
                 event.stopPropagation();
             });
         });
 
-        // Close all dropdowns when clicking anywhere else on the page
         window.addEventListener('click', function (event) {
             document.querySelectorAll('.dropdown-menu').forEach(menu => {
                 if (!menu.classList.contains('hidden')) {
