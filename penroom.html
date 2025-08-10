@@ -190,7 +190,6 @@
       eat:    'おなかすいた',
       window: 'そとなにあるかな',
       sleep:  'もうねよっと',
-      wave:   'ばいばーい',
       sit:    'ちょときゅうけい'
     };
     const bubbleEl = document.getElementById('bubble');
@@ -259,13 +258,12 @@
     function chooseNextAction(){
       if (!penguin) return;
       const r = Math.random();
-      if (r < 0.30) setState('wander');
-      else if (r < 0.45) setState('lounge');
-      else if (r < 0.60) setState('play');
-      else if (r < 0.75) setState('eat');
-      else if (r < 0.85) setState('window');
-      else if (r < 0.90) setState('sleep');
-      else if (r < 0.95) setState('wave');
+      if (r < 0.32) setState('wander');
+      else if (r < 0.47) setState('lounge');
+      else if (r < 0.62) setState('play');
+      else if (r < 0.77) setState('eat');
+      else if (r < 0.89) setState('window');
+      else if (r < 0.95) setState('sleep');
       else setState('sit');
     }
 
@@ -278,7 +276,7 @@
       else if(state === 'play'){ ud.speed = 0.8; ud.target.set(RING_X,0,RING_Z); }
       else if(state === 'eat'){ ud.speed = 1.0; ud.target.copy(dish.position); }
       else if(state === 'window'){ ud.speed = 1.0; ud.target.set(7.4, 0, 0); }
-      else if(state === 'wave'){ ud.speed = 0; }
+      
       else if(state === 'sit'){ ud.speed = 0; }
       else if(state === 'sleep'){ ud.speed = 1.0; ud.target.set(BED_SLEEP.x, 0, BED_SLEEP.z); ud.goingToBed = true; }
       else if(state === 'wake'){ ud.speed = 0; }
@@ -303,8 +301,8 @@
 
       if (['wander', 'play', 'eat', 'window'].includes(ud.state) || (ud.state === 'sleep' && ud.goingToBed)) {
         const target = ud.target;
-        const v = new THREE.Vector3().subVectors(target, penguin.position);
-        const dist = v.length();
+        const v = new THREE.Vector3(target.x - penguin.position.x, 0, target.z - penguin.position.z);
+        const dist = Math.hypot(v.x, v.z);
         if (dist > 0.02) {
           v.normalize();
           const speed = ud.speed * dt * 0.9;
@@ -335,6 +333,9 @@
           }
         }
       } else if (ud.state === 'lounge') {
+        penguin.rotation.z = 0;
+        if (ud.timer > (2 + Math.random() * 3)) chooseNextAction();
+      } else if (ud.state === 'sit') {
         penguin.rotation.z = 0;
         if (ud.timer > (2 + Math.random() * 3)) chooseNextAction();
       } else if (ud.state === 'sleep') {
