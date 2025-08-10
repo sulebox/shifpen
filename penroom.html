@@ -23,7 +23,7 @@
   <div class="hud">クリック/タップで次の行動にスキップ</div>
   <div class="picker"><button id="pickBtn">GLBを選ぶ</button><input type="file" id="file" accept=".glb,.gltf" style="display:none"/></div>
   <div class="drop" id="drop"><div style="background:#fff;padding:16px 18px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12)">ここにGLBをドロップ</div></div>
-  <div class="bubble" id="bubble" style="opacity:1"></div></div>
+  <div class="bubble" id="bubble" style="opacity:1"></div>
 
   <!-- Import map so example modules can resolve the bare specifier "three" on GitHub Pages -->
   <script type="importmap">
@@ -252,7 +252,7 @@
       else if(state === 'sit'){ ud.speed = 0; }
       else if(state === 'sleep'){ ud.speed = 0; }
       else if(state === 'wake'){ ud.speed = 0; }
-    
+    }
 
     const clock = new THREE.Clock();
     let looseFish = null;
