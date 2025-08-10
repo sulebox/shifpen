@@ -94,7 +94,7 @@
     const wallMat = new THREE.MeshStandardMaterial({ color: 0xF7CD8F });
     const mkWall = (w,h,t) => new THREE.Mesh(new THREE.BoxGeometry(w,h,t), wallMat);
     const back = mkWall(18, wallH, wallT); back.position.set(0, wallH/2, -7); room.add(back);
-    const front = mkWall(18, wallH, wallT); front.position.set(0, wallH/2, 7); room.add(front);
+    // front wall removed for open view
     const left = mkWall(wallT, wallH, 14); left.position.set(-9, wallH/2, 0); room.add(left);
 
     // right wall with window
@@ -114,10 +114,10 @@
     const toys = new THREE.Group(); scene.add(toys);
     const addBlock = (x,z,color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.9,0.9,0.9), new THREE.MeshStandardMaterial({ color })); m.position.set(x,0.45,z); toys.add(m); return m; };
     addBlock(-4,-2,0xf9a825); addBlock(-5,-1,0x4fc3f7); addBlock(-3,-1,0x81c784);
-    const ring = (radius, y, color) => { const g=new THREE.TorusGeometry(radius,0.15,12,32); const m=new THREE.MeshStandardMaterial({ color }); const t=new THREE.Mesh(g,m); t.rotation.x=Math.PI/2; t.position.set(5,y,-3); toys.add(t); return t; };
+    const ring = (radius, y, color) => { const g=new THREE.TorusGeometry(radius,0.15,12,32); const m=new THREE.MeshStandardMaterial({ color }); const t=new THREE.Mesh(g,m); t.rotation.x=Math.PI/2; t.position.set(-5.2, y, -4.2); toys.add(t); return t; };
     ring(0.8, 0.35, 0xff8a65); ring(0.65, 0.55, 0x4db6ac); ring(0.5, 0.75, 0x9575cd);
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,1.2,16), new THREE.MeshStandardMaterial({ color: 0xd7ccc8 })); pole.position.set(5,0.6,-3); toys.add(pole);
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,0.2,20), new THREE.MeshStandardMaterial({ color: 0xef9a9a })); base.position.set(5,0.1,-3); toys.add(base);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,1.2,16), new THREE.MeshStandardMaterial({ color: 0xd7ccc8 })); pole.position.set(-5.2,0.6,-4.2); toys.add(pole);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,0.2,20), new THREE.MeshStandardMaterial({ color: 0xef9a9a })); base.position.set(-5.2,0.1,-4.2); toys.add(base);
 
     const dish = new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.1,24), new THREE.MeshStandardMaterial({ color: 0x90caf9 })); dish.position.set(2, 0.05, 2); scene.add(dish);
 
