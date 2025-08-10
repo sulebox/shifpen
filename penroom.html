@@ -208,11 +208,19 @@
       else setState('sleep');
     }
 
-    function setState(state) {
-      if (!penguin) return;
+    function setState(state){
+      if(!penguin) return;
       const ud = penguin.userData;
-      ud.state = state; ud.timer = 0;
-      if (state === 'wander') { ud.target.copy(randomPointNear(penguin.position.x, penguin.position.z, 6)); ud.speed = 0.9 + Math.random() * 0.4; }
+      ud.state = state; ud.timer = 0; setBubbleByState(state);
+      if(state === 'wander'){ ud.target.copy(randomPointNear(penguin.position.x, penguin.position.z, 6)); ud.speed = 0.9 + Math.random()*0.4; }
+      else if(state === 'lounge'){ ud.speed = 0; }
+      else if(state === 'play'){ ud.speed = 0.8; ud.target.set(5,0,-3); }
+      else if(state === 'eat'){ ud.speed = 1.0; ud.target.copy(dish.position); }
+      else if(state === 'window'){ ud.speed = 1.0; ud.target.set(7.4, 0, 0); }
+      else if(state === 'wave'){ ud.speed = 0; }
+      else if(state === 'sit'){ ud.speed = 0; }
+      else if(state === 'sleep'){ ud.speed = 0; }
+    }
       else if (state === 'lounge') { ud.speed = 0; }
       else if (state === 'play') { ud.speed = 0.8; ud.target.set(5, 0, -3); }
       else if (state === 'eat') { ud.speed = 1.0; ud.target.copy(dish.position); }
