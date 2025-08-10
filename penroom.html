@@ -23,6 +23,15 @@
   <div class="picker"><button id="pickBtn">GLBを選ぶ</button><input type="file" id="file" accept=".glb,.gltf" style="display:none"/></div>
   <div class="drop" id="drop"><div style="background:#fff;padding:16px 18px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12)">ここにGLBをドロップ</div></div>
 
+  <!-- Import map so example modules can resolve the bare specifier "three" on GitHub Pages -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+    }
+  }
+  </script>
+
   <script type="module">
     // ---- Imports from CDN (works on GitHub Pages) ----
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
@@ -122,7 +131,7 @@
     let penguin = null;
     const gltfLoader = new GLTFLoader();
     const draco = new DRACOLoader();
-    draco.setDecoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/draco/');
+    draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/');
     gltfLoader.setDRACOLoader(draco);
 
     const bounds = { xMin: -7.5, xMax: 7.5, zMin: -5.5, zMax: 5.5 };
