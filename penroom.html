@@ -101,19 +101,19 @@
     const rightGroup = new THREE.Group(); room.add(rightGroup); const rightX = 9;
     const beamMat = new THREE.MeshStandardMaterial({ color: 0xE9A86B });
     const beamT = wallT;
-    const frameTop = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.4, 12), beamMat); frameTop.position.set(rightX, 4.2, 0); rightGroup.add(frameTop);
-    const frameBottom = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.4, 12), beamMat); frameBottom.position.set(rightX, 1.6, 0); rightGroup.add(frameBottom);
-    const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(beamT, 2.2, 0.3), beamMat); frameLeft.position.set(rightX, 2.9, -6.0); rightGroup.add(frameLeft);
-    const frameRight = new THREE.Mesh(new THREE.BoxGeometry(beamT, 2.2, 0.3), beamMat); frameRight.position.set(rightX, 2.9, 6.0); rightGroup.add(frameRight);
+    const frameTop = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.4, 13), beamMat); frameTop.position.set(rightX, 4.2, 0); rightGroup.add(frameTop);
+    const frameBottom = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.4, 13), beamMat); frameBottom.position.set(rightX, 1.6, 0); rightGroup.add(frameBottom);
+    const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(beamT, 2.2, 0.3), beamMat); frameLeft.position.set(rightX, 2.9, -6.5); rightGroup.add(frameLeft);
+    const frameRight = new THREE.Mesh(new THREE.BoxGeometry(beamT, 2.2, 0.3), beamMat); frameRight.position.set(rightX, 2.9, 6.5); rightGroup.add(frameRight);
     const rightTopWall = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.5, 14), wallMat); rightTopWall.position.set(rightX, 4.75, 0); room.add(rightTopWall);
     const rightBottomWall = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.5, 14), wallMat); rightBottomWall.position.set(rightX, 1.0, 0); room.add(rightBottomWall);
     const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xA7D0FF, transmission: 0.9, thickness: 0.02, roughness: 0.1, transparent: true, opacity: 0.6 });
-    const glass = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.2, 12), glassMat); glass.position.set(rightX - 0.02, 2.9, 0); rightGroup.add(glass);
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.2, 13), glassMat); glass.position.set(rightX - 0.02, 2.9, 0); rightGroup.add(glass);
 
     // ---- Toys & props ----
     const toys = new THREE.Group(); scene.add(toys);
     // play stack (rings) new target position
-    const RING_X = 3.6, RING_Z = 0.8;
+    const RING_X = 4.0, RING_Z = 1.0;
     const addBlock = (x,z,color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.9,0.9,0.9), new THREE.MeshStandardMaterial({ color })); m.position.set(x,0.45,z); toys.add(m); return m; };
     addBlock(-4,-2,0xf9a825); addBlock(-5,-1,0x4fc3f7); addBlock(-3,-1,0x81c784);
     const ring = (radius, y, color) => { const g=new THREE.TorusGeometry(radius,0.15,12,32); const m=new THREE.MeshStandardMaterial({ color }); const t=new THREE.Mesh(g,m); t.rotation.x=Math.PI/2; t.position.set(RING_X, y, RING_Z); toys.add(t); return t; };
@@ -133,7 +133,7 @@
     const headBoard = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.6, 0.12), woodMat); headBoard.position.set(bedX, 0.55, bedZ - 0.95); bed.add(headBoard);
     const mattress = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.22, 1.6), fabricMat); mattress.position.set(bedX, 0.36, bedZ); bed.add(mattress);
     const blanket = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.12, 1.2), blanketMat); blanket.position.set(bedX + 0.2, 0.48, bedZ + 0.05); bed.add(blanket);
-    const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.15, 0.45), new THREE.MeshStandardMaterial({ color: 0xffffff })); pillow.position.set(bedX - 1.1, 0.5, bedZ - 0.55); bed.add(pillow);
+    const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.15, 0.45), new THREE.MeshStandardMaterial({ color: 0xffffff })); pillow.position.set(bedX - 1.1, 0.5, bedZ - 0.55); pillow.rotation.y = Math.PI / 2; bed.add(pillow);
 
     // cute mobile
     const mobile = new THREE.Group(); scene.add(mobile); mobile.position.set(-5, 3.8, -4.5);
