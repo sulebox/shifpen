@@ -24,7 +24,6 @@
   <div class="drop" id="drop"><div style="background:#fff;padding:16px 18px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12)">ここにGLBをドロップ</div></div>
 
   <script type="module">
-    try {
     // ---- Imports from CDN (works on GitHub Pages) ----
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
     import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
@@ -310,11 +309,6 @@
     // expose for console
     window.__penguin = { scene, camera, setState, chooseNextAction, get penguin(){ return penguin; } };
     setStatus('initialized OK');
-    } catch (err) {
-      console.error(err);
-      const el = document.getElementById('status');
-      if (el) el.textContent = 'init error: ' + (err?.message || err);
-    }
   </script>
 </body>
 </html>
