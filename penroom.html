@@ -136,6 +136,7 @@
 
     const bounds = { xMin: -7.5, xMax: 7.5, zMin: -5.5, zMax: 5.5 };
     const targetHeight = 2.2; // units in scene
+    const HEADING_OFFSET = Math.PI; // flip forward (model faces -Z)
 
     function fitAndFloor(model) {
       const tmp = new THREE.Group(); tmp.add(model); scene.add(tmp);
@@ -245,7 +246,7 @@
           const speed = ud.speed * dt * 0.9;
           penguin.position.addScaledVector(v, Math.min(speed, dist));
           const yaw = Math.atan2(v.x, v.z);
-          penguin.rotation.y = yaw;
+          penguin.rotation.y = yaw + HEADING_OFFSET;
           penguin.rotation.z = Math.sin(performance.now() / 1000 * 8) * 0.05;
         } else {
           if (ud.state === 'wander') { if (ud.timer > 1.0) setState('lounge'); }
@@ -260,7 +261,7 @@
               if (looseFish.position.distanceTo(beakPos) < 0.06) { scene.remove(looseFish); looseFish = null; chooseNextAction(); }
             }
           } else if (ud.state === 'window') {
-            penguin.rotation.y = Math.PI / 2;
+            penguin.rotation.y = Math.PI / 2 + HEADING_OFFSET;
             if (ud.timer > (2 + Math.random() * 2)) chooseNextAction();
           }
         }
