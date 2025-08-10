@@ -101,23 +101,25 @@
     const rightGroup = new THREE.Group(); room.add(rightGroup); const rightX = 9;
     const beamMat = new THREE.MeshStandardMaterial({ color: 0xE9A86B });
     const beamT = wallT;
-    const frameTop = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.4, 8), beamMat); frameTop.position.set(rightX, 4.2, 0); rightGroup.add(frameTop);
-    const frameBottom = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.4, 8), beamMat); frameBottom.position.set(rightX, 1.6, 0); rightGroup.add(frameBottom);
-    const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(beamT, 2.2, 0.3), beamMat); frameLeft.position.set(rightX, 2.9, -3.8); rightGroup.add(frameLeft);
-    const frameRight = new THREE.Mesh(new THREE.BoxGeometry(beamT, 2.2, 0.3), beamMat); frameRight.position.set(rightX, 2.9, 3.8); rightGroup.add(frameRight);
-    const rightTopWall = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.8, 14), wallMat); rightTopWall.position.set(rightX, 4.6, 0); room.add(rightTopWall);
-    const rightBottomWall = new THREE.Mesh(new THREE.BoxGeometry(beamT, 1.0, 14), wallMat); rightBottomWall.position.set(rightX, 1.0, 0); room.add(rightBottomWall);
+    const frameTop = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.4, 12), beamMat); frameTop.position.set(rightX, 4.2, 0); rightGroup.add(frameTop);
+    const frameBottom = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.4, 12), beamMat); frameBottom.position.set(rightX, 1.6, 0); rightGroup.add(frameBottom);
+    const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(beamT, 2.2, 0.3), beamMat); frameLeft.position.set(rightX, 2.9, -6.0); rightGroup.add(frameLeft);
+    const frameRight = new THREE.Mesh(new THREE.BoxGeometry(beamT, 2.2, 0.3), beamMat); frameRight.position.set(rightX, 2.9, 6.0); rightGroup.add(frameRight);
+    const rightTopWall = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.5, 14), wallMat); rightTopWall.position.set(rightX, 4.75, 0); room.add(rightTopWall);
+    const rightBottomWall = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.5, 14), wallMat); rightBottomWall.position.set(rightX, 1.0, 0); room.add(rightBottomWall);
     const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xA7D0FF, transmission: 0.9, thickness: 0.02, roughness: 0.1, transparent: true, opacity: 0.6 });
-    const glass = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.2, 8), glassMat); glass.position.set(rightX - 0.02, 2.9, 0); rightGroup.add(glass);
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.2, 12), glassMat); glass.position.set(rightX - 0.02, 2.9, 0); rightGroup.add(glass);
 
     // ---- Toys & props ----
     const toys = new THREE.Group(); scene.add(toys);
+    // play stack (rings) new target position
+    const RING_X = 3.6, RING_Z = 0.8;
     const addBlock = (x,z,color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.9,0.9,0.9), new THREE.MeshStandardMaterial({ color })); m.position.set(x,0.45,z); toys.add(m); return m; };
     addBlock(-4,-2,0xf9a825); addBlock(-5,-1,0x4fc3f7); addBlock(-3,-1,0x81c784);
-    const ring = (radius, y, color) => { const g=new THREE.TorusGeometry(radius,0.15,12,32); const m=new THREE.MeshStandardMaterial({ color }); const t=new THREE.Mesh(g,m); t.rotation.x=Math.PI/2; t.position.set(-5.2, y, -4.2); toys.add(t); return t; };
+    const ring = (radius, y, color) => { const g=new THREE.TorusGeometry(radius,0.15,12,32); const m=new THREE.MeshStandardMaterial({ color }); const t=new THREE.Mesh(g,m); t.rotation.x=Math.PI/2; t.position.set(RING_X, y, RING_Z); toys.add(t); return t; };
     ring(0.8, 0.35, 0xff8a65); ring(0.65, 0.55, 0x4db6ac); ring(0.5, 0.75, 0x9575cd);
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,1.2,16), new THREE.MeshStandardMaterial({ color: 0xd7ccc8 })); pole.position.set(-5.2,0.6,-4.2); toys.add(pole);
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,0.2,20), new THREE.MeshStandardMaterial({ color: 0xef9a9a })); base.position.set(-5.2,0.1,-4.2); toys.add(base);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,1.2,16), new THREE.MeshStandardMaterial({ color: 0xd7ccc8 })); pole.position.set(RING_X,0.6,RING_Z); toys.add(pole);
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,0.2,20), new THREE.MeshStandardMaterial({ color: 0xef9a9a })); base.position.set(RING_X,0.1,RING_Z); toys.add(base);
 
     const dish = new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.1,24), new THREE.MeshStandardMaterial({ color: 0x90caf9 })); dish.position.set(2, 0.05, 2); scene.add(dish);
 
@@ -245,7 +247,7 @@
       ud.state = state; ud.timer = 0; setBubbleByState(state);
       if(state === 'wander'){ ud.target.copy(randomPointNear(penguin.position.x, penguin.position.z, 6)); ud.speed = 0.9 + Math.random()*0.4; }
       else if(state === 'lounge'){ ud.speed = 0; }
-      else if(state === 'play'){ ud.speed = 0.8; ud.target.set(5,0,-3); }
+      else if(state === 'play'){ ud.speed = 0.8; ud.target.set(RING_X,0,RING_Z); }
       else if(state === 'eat'){ ud.speed = 1.0; ud.target.copy(dish.position); }
       else if(state === 'window'){ ud.speed = 1.0; ud.target.set(7.4, 0, 0); }
       else if(state === 'wave'){ ud.speed = 0; }
