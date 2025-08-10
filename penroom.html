@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
   <title>Penguin Room — penroom.html</title>
   <style>
-    html, body { height: 100%; margin: 0; background: #f6e6c9; }
+    html, body { height: 100%; margin: 0; background: #f6e6c9; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     #app { position: fixed; inset: 0; }
     .hud { position: fixed; left: 12px; bottom: 12px; padding: 8px 10px; background: rgba(255,255,255,0.85); border-radius: 10px; font: 12px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; color: #333; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
     .status { position: fixed; left: 12px; top: 12px; padding: 6px 8px; background: rgba(0,0,0,.6); color: #fff; border-radius: 8px; font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; white-space: pre-wrap; max-width: 60ch; }
@@ -20,7 +20,7 @@
 <body>
   <div id="app"></div>
   <div class="status" id="status">初期化中…</div>
-  <div class="hud">俯瞰ビュー。放置でランダム行動（おさんぽ/くつろぐ/おもちゃ/ごはん/窓を見る/ねる）。<br>クリック/タップで次の行動にスキップ。<br><small>GLBの場所は <code>?model=Pen.glb</code>（同階層）で読み込み。必要なら <code>?model=assets/Pen.glb</code> のように指定可。右上からローカルGLB読み込みもできます。</small></div>
+  <div class="hud">クリック/タップで次の行動にスキップ</div>
   <div class="picker"><button id="pickBtn">GLBを選ぶ</button><input type="file" id="file" accept=".glb,.gltf" style="display:none"/></div>
   <div class="drop" id="drop"><div style="background:#fff;padding:16px 18px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12)">ここにGLBをドロップ</div></div>
   <div class="bubble" id="bubble" style="opacity:1"></div></div>
@@ -251,8 +251,8 @@
       else if(state === 'wave'){ ud.speed = 0; }
       else if(state === 'sit'){ ud.speed = 0; }
       else if(state === 'sleep'){ ud.speed = 0; }
+      else if(state === 'wake'){ ud.speed = 0; }
     
-    }
 
     const clock = new THREE.Clock();
     let looseFish = null;
@@ -303,8 +303,12 @@
         penguin.rotation.z = 0;
         if (ud.timer > (2 + Math.random() * 3)) chooseNextAction();
       } else if (ud.state === 'sleep') {
-        penguin.rotation.set(0, penguin.rotation.y, 0); penguin.rotation.x = Math.PI / 2 * 0.8;
-        if (ud.timer > (3 + Math.random() * 3)) chooseNextAction();
+        penguin.rotation.set(0, penguin.rotation.y, 0);
+        penguin.rotation.x = Math.PI / 2 * 0.8;
+        if (ud.timer > (3 + Math.random() * 3)) setState('wake');
+      } else if (ud.state === 'wake') {
+        penguin.rotation.x = THREE.MathUtils.damp(penguin.rotation.x, 0, 6, dt);
+        if (Math.abs(penguin.rotation.x) < 0.02) { penguin.rotation.x = 0; chooseNextAction(); }
       }
 
       penguin.position.x = THREE.MathUtils.clamp(penguin.position.x, bounds.xMin, bounds.xMax);
@@ -326,7 +330,10 @@
     animate();
 
     // ---- Interactions ----
-    addEventListener('click', () => chooseNextAction());
+    function handleAdvance(e){ const el = e.target; if (el && el.closest && (el.closest('.picker') || el.closest('.drop'))) return; chooseNextAction(); }
+    window.addEventListener('click', handleAdvance);
+    window.addEventListener('touchend', handleAdvance, { passive: true });
+    window.addEventListener('pointerup', handleAdvance);
 
     // Drag & Drop / File picker (optional)
     const drop = $('drop');
