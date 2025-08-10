@@ -357,9 +357,7 @@
     });
     // back button
     $('backBtn').onclick = () => { location.href = 'https://sulebox.github.io/shifpen/'; };
- if (!f) return; f.arrayBuffer().then((ab)=>{
-      gltfLoader.parse(ab, '', (gltf)=>{ if (penguin) scene.remove(penguin); penguin = new THREE.Group(); penguin.add(fitAndFloor(gltf.scene)); penguin.userData = { speed:0, state:'idle', target:new THREE.Vector3(), timer:0 }; scene.add(penguin); setState('wander'); setStatus('parsed.'); }, (err)=> setStatus('parse error: ' + (err?.message || err)) );
-    }); };
+
 
     // ---- Auto-load default URL ----
     const params = new URLSearchParams(location.search);
