@@ -55,15 +55,36 @@
     app.appendChild(renderer.domElement);
 
     // ---- Camera: fixed isometric-ish orthographic ----
-    const frustumSize = 22;
     let aspect = window.innerWidth / window.innerHeight;
-    const camera = new THREE.OrthographicCamera(
-      frustumSize * aspect / -2, frustumSize * aspect / 2,
-      frustumSize / 2, frustumSize / -2,
-      0.1, 100
-    );
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
     camera.position.set(14, 16, 14);
     camera.lookAt(0, 0, 0);
+
+    function fitCameraToRoom(){
+      // compute required ortho size so the whole room (including walls) fits, for any aspect
+      const corners = [
+        new THREE.Vector3(-9,0,-7), new THREE.Vector3(9,0,-7), new THREE.Vector3(-9,0,7), new THREE.Vector3(9,0,7),
+        new THREE.Vector3(-9,5,-7), new THREE.Vector3(9,5,-7), new THREE.Vector3(-9,5,7), new THREE.Vector3(9,5,7)
+      ];
+      const inv = new THREE.Matrix4().copy(camera.matrixWorldInverse);
+      let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+      for(const v of corners){ const vc = v.clone().applyMatrix4(inv); minX=Math.min(minX,vc.x); maxX=Math.max(maxX,vc.x); minY=Math.min(minY,vc.y); maxY=Math.max(maxY,vc.y); }
+      const pad = 0.6; // small margin
+      const width = (maxX-minX) + pad*2;
+      const height = (maxY-minY) + pad*2;
+      aspect = window.innerWidth / window.innerHeight;
+      const frustumSize = Math.max(height, width / aspect);
+      camera.left = -frustumSize * aspect / 2;
+      camera.right = frustumSize * aspect / 2;
+      camera.top = frustumSize / 2;
+      camera.bottom = -frustumSize / 2;
+      camera.updateProjectionMatrix();
+    }
+
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      fitCameraToRoom();
+    });
 
     addEventListener('resize', () => {
       aspect = window.innerWidth / window.innerHeight;
@@ -107,6 +128,9 @@
     const frameRight = new THREE.Mesh(new THREE.BoxGeometry(beamT, 2.2, 0.3), beamMat); frameRight.position.set(rightX, 2.9, 6.5); rightGroup.add(frameRight);
     const rightTopWall = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.5, 14), wallMat); rightTopWall.position.set(rightX, 4.75, 0); room.add(rightTopWall);
     const rightBottomWall = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.5, 14), wallMat); rightBottomWall.position.set(rightX, 1.0, 0); room.add(rightBottomWall);
+
+    // ensure camera fits the whole room on any screen
+    fitCameraToRoom();
     const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xA7D0FF, transmission: 0.9, thickness: 0.02, roughness: 0.1, transparent: true, opacity: 0.6 });
     const glass = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.2, 13), glassMat); glass.position.set(rightX - 0.02, 2.9, 0); rightGroup.add(glass);
 
