@@ -113,7 +113,7 @@
     // ---- Toys & props ----
     const toys = new THREE.Group(); scene.add(toys);
     // play stack (rings) new target position
-    const RING_X = 5.0, RING_Z = 2.0;
+    const RING_X = 5.0, RING_Z = 3.0;
     const addBlock = (x,z,color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.9,0.9,0.9), new THREE.MeshStandardMaterial({ color })); m.position.set(x,0.45,z); toys.add(m); return m; };
     addBlock(-4,-2,0xf9a825); addBlock(-5,-1,0x4fc3f7); addBlock(-3,-1,0x81c784);
     const ring = (radius, y, color) => { const g=new THREE.TorusGeometry(radius,0.15,12,32); const m=new THREE.MeshStandardMaterial({ color }); const t=new THREE.Mesh(g,m); t.rotation.x=Math.PI/2; t.position.set(RING_X, y, RING_Z); toys.add(t); return t; };
