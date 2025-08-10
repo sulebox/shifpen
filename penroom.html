@@ -21,7 +21,7 @@
   <div id="app"></div>
   <div class="status" id="status">初期化中…</div>
   <div class="hud">クリック/タップで次の行動にスキップ</div>
-  <div class="picker"><button id="backBtn">戻る</button></div>
+  <!-- back button removed -->
   <div class="drop" id="drop"><div style="background:#fff;padding:16px 18px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12)">ここにGLBをドロップ</div></div>
   <div class="bubble" id="bubble" style="opacity:1"></div>
 
@@ -59,9 +59,7 @@
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
     camera.position.set(14, 16, 14);
     camera.lookAt(0, 0, 0);
-
     function fitCameraToRoom(){
-      // compute required ortho size so the whole room (including walls) fits, for any aspect
       const corners = [
         new THREE.Vector3(-9,0,-7), new THREE.Vector3(9,0,-7), new THREE.Vector3(-9,0,7), new THREE.Vector3(9,0,7),
         new THREE.Vector3(-9,5,-7), new THREE.Vector3(9,5,-7), new THREE.Vector3(-9,5,7), new THREE.Vector3(9,5,7)
@@ -69,7 +67,7 @@
       const inv = new THREE.Matrix4().copy(camera.matrixWorldInverse);
       let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
       for(const v of corners){ const vc = v.clone().applyMatrix4(inv); minX=Math.min(minX,vc.x); maxX=Math.max(maxX,vc.x); minY=Math.min(minY,vc.y); maxY=Math.max(maxY,vc.y); }
-      const pad = 0.6; // small margin
+      const pad = 0.6;
       const width = (maxX-minX) + pad*2;
       const height = (maxY-minY) + pad*2;
       aspect = window.innerWidth / window.innerHeight;
@@ -81,20 +79,25 @@
       camera.updateProjectionMatrix();
     }
 
-    window.addEventListener('resize', () => {
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      fitCameraToRoom();
-    });
-
-    addEventListener('resize', () => {
+    function setDesktopOrtho(){
+      const frustumSize = 22; // desktop default
       aspect = window.innerWidth / window.innerHeight;
       camera.left = -frustumSize * aspect / 2;
       camera.right = frustumSize * aspect / 2;
       camera.top = frustumSize / 2;
       camera.bottom = -frustumSize / 2;
       camera.updateProjectionMatrix();
+    }
+
+    function isSmallScreen(){ return Math.min(window.innerWidth, window.innerHeight) < 800; }
+    function updateCameraMode(){
       renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+      if (isSmallScreen()) fitCameraToRoom(); else setDesktopOrtho();
+    }
+
+    window.addEventListener('resize', updateCameraMode);
+
+    
 
     // ---- Lights ----
     scene.add(new THREE.HemisphereLight(0xffffff, 0xf2d8a8, 0.85));
@@ -130,7 +133,7 @@
     const rightBottomWall = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.5, 14), wallMat); rightBottomWall.position.set(rightX, 1.0, 0); room.add(rightBottomWall);
 
     // ensure camera fits the whole room on any screen
-    fitCameraToRoom();
+    updateCameraMode();
     const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xA7D0FF, transmission: 0.9, thickness: 0.02, roughness: 0.1, transparent: true, opacity: 0.6 });
     const glass = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.2, 13), glassMat); glass.position.set(rightX - 0.02, 2.9, 0); rightGroup.add(glass);
 
@@ -380,8 +383,6 @@
       });
     });
     // back button
-    $('backBtn').onclick = () => { location.href = 'https://sulebox.github.io/shifpen/'; };
-
 
     // ---- Auto-load default URL ----
     const params = new URLSearchParams(location.search);
