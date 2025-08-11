@@ -340,32 +340,32 @@
               if (ud.fish.position.distanceTo(beakPos) < 0.06) { scene.remove(ud.fish); ud.fish = null; chooseNextAction(p); }
             }
           } else if (ud.state === 'sleep' && ud.goingToBed) {
-            penguin.position.y = BED_SLEEP.y;
-            penguin.rotation.y = Math.PI / 2 + HEADING_OFFSET;
+            p.position.y = BED_SLEEP.y;
+            p.rotation.y = Math.PI / 2 + HEADING_OFFSET;
             ud.goingToBed = false;
             ud.timer = 0;
           } else if (ud.state === 'window') {
-            penguin.rotation.y = Math.PI / 2 + HEADING_OFFSET;
+            p.rotation.y = Math.PI / 2 + HEADING_OFFSET;
             if (!ud.arrived) { ud.arrived = true; ud.timer = 0; } if (ud.timer > (1.0 + Math.random() * 1.0)) chooseNextAction(p);
           }
         }
       } else if (ud.state === 'lounge') {
-        penguin.rotation.z = 0;
+        p.rotation.z = 0;
         if (ud.timer > (2 + Math.random() * 3)) chooseNextAction(p);
       } else if (ud.state === 'sit') {
-        penguin.rotation.z = 0;
+        p.rotation.z = 0;
         if (ud.timer > (2 + Math.random() * 3)) chooseNextAction(p);
       } else if (ud.state === 'sleep') {
-        penguin.rotation.set(0, penguin.rotation.y, 0);
-        penguin.rotation.x = Math.PI / 2 * 0.8;
-        if (ud.timer > (3 + Math.random() * 3)) setState('wake');
+        p.rotation.set(0, p.rotation.y, 0);
+        p.rotation.x = Math.PI / 2 * 0.8;
+        if (ud.timer > (3 + Math.random() * 3)) setState(p,'wake');
       } else if (ud.state === 'wake') {
-        penguin.rotation.x = THREE.MathUtils.damp(penguin.rotation.x, 0, 6, dt);
-        if (Math.abs(penguin.rotation.x) < 0.02) { penguin.rotation.x = 0; chooseNextAction(p); }
+        p.rotation.x = THREE.MathUtils.damp(p.rotation.x, 0, 6, dt);
+        if (Math.abs(p.rotation.x) < 0.02) { p.rotation.x = 0; chooseNextAction(p); }
       }
 
-      penguin.position.x = THREE.MathUtils.clamp(penguin.position.x, bounds.xMin, bounds.xMax);
-      penguin.position.z = THREE.MathUtils.clamp(penguin.position.z, bounds.zMin, bounds.zMax);
+      p.position.x = THREE.MathUtils.clamp(p.position.x, bounds.xMin, bounds.xMax);
+      p.position.z = THREE.MathUtils.clamp(p.position.z, bounds.zMin, bounds.zMax);
     }
 
     // ---- Loop ----
@@ -408,8 +408,6 @@
         }, (err) => setStatus('parse error: ' + (err?.message || err)) );
       });
     });
-    });
-    // back button
 
     // ---- Auto-load default URL ----
     const params = new URLSearchParams(location.search);
