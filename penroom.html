@@ -465,7 +465,7 @@
       .catch(()=>{ const fb=fallbackPenguin(); if (start) fb.position.copy(start); scene.add(fb); penguins.push(fb); if (!penguin) penguin = fb; setState(fb,'wander'); });
     }
     spawn(modelUrl, new THREE.Vector3(-1,0,0));
-    ['Pen_b.glb','Pen_r.glb'].forEach((u,i)=> spawn(u, new THREE.Vector3(1.5*i,0,-1.5*i)));
+    ['Pen_b.glb','Pen_r.glb','Pen_y.glb','Pen_g.glb'].forEach((u,i)=>{ const starts=[ new THREE.Vector3(1.0,0,-1.2), new THREE.Vector3(-2.5,0,1.2), new THREE.Vector3(0,0,2.0), new THREE.Vector3(2.5,0,2.0) ]; spawn(u, starts[i]); });
 
     // expose for console
     window.__penguin = { scene, camera, setState, chooseNextAction, get penguin(){ return penguin; }, get penguins(){ return penguins; } };
