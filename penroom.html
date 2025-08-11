@@ -23,7 +23,7 @@
   <div class="hud">クリック/タップで次の行動にスキップ</div>
   <!-- back button removed -->
   <div class="drop" id="drop"><div style="background:#fff;padding:16px 18px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12)">ここにGLBをドロップ</div></div>
-  <div class="bubble" id="bubble" style="opacity:1"></div>
+  <div class="bubble" id="bubble" style="display:none"></div>
 
   <!-- Import map so example modules can resolve the bare specifier "three" on GitHub Pages -->
   <script type="importmap">
@@ -191,11 +191,32 @@
       eat:    'おなかすいた',
       window: 'そとなにあるかな',
       sleep:  'もうねよっと',
+      wake:   '',
       sit:    'ちょときゅうけい'
     };
-    const bubbleEl = document.getElementById('bubble');
-    function setBubbleByState(s){ if(!bubbleEl) return; bubbleEl.textContent = commentMap[s] || ''; bubbleEl.style.opacity = 1; }
-    function updateBubblePosition(){ if(!bubbleEl || !penguin) return; const world = penguin.position.clone().add(new THREE.Vector3(0,2.6,0)); const p = world.project(camera); const x = (p.x*0.5+0.5)*window.innerWidth; const y = (-p.y*0.5+0.5)*window.innerHeight; bubbleEl.style.left = x+'px'; bubbleEl.style.top = y+'px'; }
+    function ensureBubble(p){
+      if (!p.userData.bubbleEl) {
+        const el = document.createElement('div');
+        el.className = 'bubble';
+        document.body.appendChild(el);
+        p.userData.bubbleEl = el;
+      }
+      return p.userData.bubbleEl;
+    }
+    function setBubble(p, state){
+      const el = ensureBubble(p);
+      el.textContent = commentMap[state] || '';
+      el.style.opacity = el.textContent ? 1 : 0;
+    }
+    function updateBubblePositionFor(p){
+      const el = p.userData.bubbleEl; if (!el) return;
+      const world = p.position.clone().add(new THREE.Vector3(0,2.6,0));
+      const q = world.project(camera);
+      const x = (q.x*0.5+0.5)*window.innerWidth;
+      const y = (-q.y*0.5+0.5)*window.innerHeight;
+      el.style.left = x+'px';
+      el.style.top  = y+'px';
+    }
 
     function fitAndFloor(model) {
       const tmp = new THREE.Group(); tmp.add(model); scene.add(tmp);
@@ -271,7 +292,7 @@
     function setState(p, state){
       if(!p) return;
       const ud = p.userData;
-      ud.state = state; ud.timer = 0; ud.arrived = false; setBubbleByState(state);
+      ud.state = state; ud.timer = 0; ud.arrived = false; setBubble(p, state);
       if(state === 'wander'){ ud.target.copy(randomPointNear(p.position.x, p.position.z, 6)); ud.speed = 0.9 + Math.random()*0.4; }
       else if(state === 'lounge'){ ud.speed = 0; }
       else if(state === 'play'){ ud.speed = 0.8; ud.target.set(RING_X,0,RING_Z); }
@@ -375,8 +396,8 @@
       for (const p of penguins) updatePenguin(p, dt);
       const t = performance.now()/1000;
       mf1.rotation.y = Math.sin(t*1.6)*0.4; mf2.rotation.y = Math.cos(t*1.4)*0.4; mf3.rotation.y = Math.sin(t*1.8+0.7)*0.4;
-      penguin = penguins[0] || null; // bubble follows the first penguin
-      updateBubblePosition();
+      penguin = penguins[0] || null;
+      for (const p of penguins) updateBubblePositionFor(p);
       renderer.render(scene, camera);
     }
     animate();
