@@ -163,6 +163,17 @@
     const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.15, 0.45), new THREE.MeshStandardMaterial({ color: 0xffffff })); pillow.position.set(bedX - 1.3, 0.5, bedZ + 0.0); pillow.rotation.y = Math.PI / 2; bed.add(pillow);
     const BED_SLEEP = { x: bedX - 0.9, z: bedZ - 0.45, y: 0.55 };
 
+    // ---- Resource queues (play / eat / sleep) ----
+    const RES = {
+      play:  { holder: null, queue: [], pos: new THREE.Vector3(RING_X, 0, RING_Z), waitDir: new THREE.Vector3(-1,0,0) },
+      eat:   { holder: null, queue: [], pos: dish.position.clone(), waitDir: new THREE.Vector3(-1,0,0) },
+      sleep: { holder: null, queue: [], pos: new THREE.Vector3(BED_SLEEP.x, 0, BED_SLEEP.z), waitDir: new THREE.Vector3(1,0,0) }
+    };
+    function requestResource(p, name){ const r = RES[name]; if(!r.holder){ r.holder = p; return true; } if(!r.queue.includes(p)) r.queue.push(p); return false; }
+    function releaseResource(name){ const r = RES[name]; if(r.holder) r.holder = null; const next = r.queue.shift(); if(next) setState(next, name); }
+    function queueWaitPos(name, p){ const r = RES[name]; const idx = r.queue.indexOf(p); const spacing = 0.9; const off = r.waitDir.clone().multiplyScalar((idx+1)*spacing); return r.pos.clone().add(off); }
+    function dequeueAll(p){ ['play','eat','sleep'].forEach(n=>{ const r=RES[n]; const i=r.queue.indexOf(p); if(i>=0) r.queue.splice(i,1); if(r.holder===p) r.holder=null; }); }
+
     // cute mobile
     const mobile = new THREE.Group(); scene.add(mobile); mobile.position.set(-5, 3.8, -4.5);
     const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.2,12), new THREE.MeshStandardMaterial({ color: 0xd7ccc8 })); rod.rotation.z = Math.PI/2; mobile.add(rod);
@@ -292,8 +303,33 @@
     function setState(p, state){
       if(!p) return;
       const ud = p.userData;
-      ud.state = state; ud.timer = 0; ud.arrived = false; setBubble(p, state);
+      // cancel previous reservations if any
+      dequeueAll(p);
+      ud.timer = 0; ud.arrived = false;
+      let final = state; let bubbleKey = state;
       if(state === 'wander'){ ud.target.copy(randomPointNear(p.position.x, p.position.z, 6)); ud.speed = 0.9 + Math.random()*0.4; }
+      else if(state === 'lounge'){ ud.speed = 0; }
+      else if(state === 'play'){
+        ud.speed = 0.8;
+        if (requestResource(p,'play')) { ud.target.set(RING_X,0,RING_Z); }
+        else { final = 'playWait'; ud.target.copy(queueWaitPos('play',p)); bubbleKey = 'play'; }
+      }
+      else if(state === 'eat'){
+        ud.speed = 1.0;
+        if (requestResource(p,'eat')) { ud.target.copy(dish.position); }
+        else { final = 'eatWait'; ud.target.copy(queueWaitPos('eat',p)); bubbleKey = 'eat'; }
+      }
+      else if(state === 'window'){ ud.speed = 1.0; ud.target.set(7.4, 0, 0); }
+      else if(state === 'sit'){ ud.speed = 0; }
+      else if(state === 'sleep'){
+        ud.speed = 1.0;
+        if (requestResource(p,'sleep')) { ud.target.set(BED_SLEEP.x, 0, BED_SLEEP.z); ud.goingToBed = true; }
+        else { final = 'sleepWait'; ud.target.copy(queueWaitPos('sleep',p)); bubbleKey = 'sleep'; }
+      }
+      else if(state === 'wake'){ ud.speed = 0; }
+      ud.state = final;
+      setBubble(p, bubbleKey);
+    }
       else if(state === 'lounge'){ ud.speed = 0; }
       else if(state === 'play'){ ud.speed = 0.8; ud.target.set(RING_X,0,RING_Z); }
       else if(state === 'eat'){ ud.speed = 1.0; ud.target.copy(dish.position); }
@@ -321,7 +357,7 @@
       ud.timer += dt;
       if (ud.state !== 'sit' && ud.state !== 'sleep') { p.position.y = Math.max(0, Math.sin(performance.now() / 1000 * 6) * 0.03); }
 
-      if (['wander', 'play', 'eat', 'window'].includes(ud.state) || (ud.state === 'sleep' && ud.goingToBed)) {
+      if (['wander', 'play', 'eat', 'window','playWait','eatWait','sleepWait'].includes(ud.state) || (ud.state === 'sleep' && ud.goingToBed)) {
         const target = ud.target;
         const v = new THREE.Vector3(target.x - p.position.x, 0, target.z - p.position.z);
         // separation (avoid overlap with friends)
@@ -352,13 +388,13 @@
           if (ud.state === 'wander') { if (ud.timer > 1.0) setState(p,'lounge'); }
           else if (ud.state === 'play') { if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
             toys.children.forEach(t => { if (t.geometry && t.geometry.type === 'TorusGeometry') t.position.y = 0.35 + Math.sin(performance.now() / 1000 * 6) * 0.07; });
-            if (ud.timer > (1.0 + Math.random() * 1.0)) chooseNextAction(p);
+            if (ud.timer > (1.0 + Math.random() * 1.0)) { releaseResource('play'); chooseNextAction(p); }
           } else if (ud.state === 'eat') {
             if (!ud.fish) { ud.fish = makeFish(); ud.fish.position.copy(dish.position).add(new THREE.Vector3(Math.random() * 0.3, 0.2, Math.random() * 0.3)); scene.add(ud.fish); }
             else {
               const beakPos = beakWorldPos(p);
               ud.fish.position.lerp(beakPos, Math.min(1, dt * 1.5));
-              if (ud.fish.position.distanceTo(beakPos) < 0.06) { scene.remove(ud.fish); ud.fish = null; chooseNextAction(p); }
+              if (ud.fish.position.distanceTo(beakPos) < 0.06) { scene.remove(ud.fish); ud.fish = null; releaseResource('eat'); chooseNextAction(p); }
             }
           } else if (ud.state === 'sleep' && ud.goingToBed) {
             p.position.y = BED_SLEEP.y;
@@ -382,7 +418,7 @@
         if (ud.timer > (3 + Math.random() * 3)) setState(p,'wake');
       } else if (ud.state === 'wake') {
         p.rotation.x = THREE.MathUtils.damp(p.rotation.x, 0, 6, dt);
-        if (Math.abs(p.rotation.x) < 0.02) { p.rotation.x = 0; chooseNextAction(p); }
+        if (Math.abs(p.rotation.x) < 0.02) { p.rotation.x = 0; releaseResource('sleep'); chooseNextAction(p); }
       }
 
       p.position.x = THREE.MathUtils.clamp(p.position.x, bounds.xMin, bounds.xMax);
