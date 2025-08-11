@@ -316,7 +316,7 @@
       }
       else if(state === 'eat'){
         ud.speed = 1.0;
-        if (requestResource(p,'eat')) { ud.target.copy(dish.position); }
+        if (requestResource(p,'eat')) { ud.target.copy(dish.position).add(new THREE.Vector3(-0.9,0,0)); }
         else { final = 'eatWait'; ud.target.copy(queueWaitPos('eat',p)); bubbleKey = 'eat'; }
       }
       else if(state === 'window'){ ud.speed = 1.0; ud.target.set(7.4, 0, 0); }
@@ -329,16 +329,6 @@
       else if(state === 'wake'){ ud.speed = 0; }
       ud.state = final;
       setBubble(p, bubbleKey);
-    }
-      else if(state === 'lounge'){ ud.speed = 0; }
-      else if(state === 'play'){ ud.speed = 0.8; ud.target.set(RING_X,0,RING_Z); }
-      else if(state === 'eat'){ ud.speed = 1.0; ud.target.copy(dish.position); }
-      else if(state === 'window'){ ud.speed = 1.0; ud.target.set(7.4, 0, 0); }
-      
-      else if(state === 'sit'){ ud.speed = 0; }
-      else if(state === 'sleep'){ ud.speed = 1.0; ud.target.set(BED_SLEEP.x, 0, BED_SLEEP.z); ud.goingToBed = true; }
-      else if(state === 'wake'){ ud.speed = 0; }
-    }
 
     const clock = new THREE.Clock();
     // per-penguin fish handled in userData (ud.fish)
