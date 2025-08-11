@@ -119,7 +119,10 @@
     const mkWall = (w,h,t) => new THREE.Mesh(new THREE.BoxGeometry(w,h,t), wallMat);
     const back = mkWall(18, wallH, wallT); back.position.set(0, wallH/2, -7); room.add(back);
     // front wall removed for open view
-    const left = mkWall(wallT, wallH, 14); left.position.set(-9, wallH/2, 0); room.add(left);
+    // left wall with a doorway near the front-left corner
+    const DOOR_X = -9, DOOR_Z_MIN = 3.5, DOOR_Z_MAX = 6.5;
+    const leftA = mkWall(wallT, wallH, (DOOR_Z_MIN - (-7))); leftA.position.set(-9, wallH/2, (-7 + DOOR_Z_MIN)/2); room.add(leftA);
+    const leftB = mkWall(wallT, wallH, (7 - DOOR_Z_MAX));   leftB.position.set(-9, wallH/2, (7 + DOOR_Z_MAX)/2);   room.add(leftB);
 
     // right wall with window
     const rightGroup = new THREE.Group(); room.add(rightGroup); const rightX = 9;
@@ -136,6 +139,21 @@
     updateCameraMode();
     const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xA7D0FF, transmission: 0.9, thickness: 0.02, roughness: 0.1, transparent: true, opacity: 0.6 });
     const glass = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.2, 13), glassMat); glass.position.set(rightX - 0.02, 2.9, 0); rightGroup.add(glass);
+
+    // ---- Garden (lawn + tree + pond) ----
+    const garden = new THREE.Group(); scene.add(garden);
+    const lawnMat = new THREE.MeshStandardMaterial({ color: 0xCDE7B0, roughness: 0.95 });
+    const frontLawn = new THREE.Mesh(new THREE.PlaneGeometry(18, 8), lawnMat); frontLawn.rotation.x = -Math.PI/2; frontLawn.position.set(0, 0, 11); garden.add(frontLawn);
+    const leftLawn  = new THREE.Mesh(new THREE.PlaneGeometry(8, 14), lawnMat); leftLawn.rotation.x = -Math.PI/2; leftLawn.position.set(-13, 0, 0); garden.add(leftLawn);
+    // tree
+    const tree = new THREE.Group(); garden.add(tree); tree.position.set(-12, 0, 3.5);
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 2.2, 12), new THREE.MeshStandardMaterial({ color: 0x8D6E63 })); trunk.position.y = 1.1; tree.add(trunk);
+    const crown1 = new THREE.Mesh(new THREE.SphereGeometry(1.2, 16, 12), new THREE.MeshStandardMaterial({ color: 0x7CB342 })); crown1.position.y = 2.2; tree.add(crown1);
+    const crown2 = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 12), new THREE.MeshStandardMaterial({ color: 0x8BC34A })); crown2.position.set(0.9, 2.9, 0.2); tree.add(crown2);
+    // pond
+    const pond = new THREE.Group(); garden.add(pond);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.12, 48), new THREE.MeshStandardMaterial({ color: 0xA1887F })); rim.position.set(-2.0, 0.06, 10.0); pond.add(rim);
+    const water = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 0.05, 48), new THREE.MeshPhysicalMaterial({ color: 0x77BDF5, roughness: 0.2, transmission: 0.7, transparent: true, opacity: 0.8 })); water.position.set(-2.0, 0.08, 10.0); pond.add(water);
 
     // ---- Toys & props ----
     const toys = new THREE.Group(); scene.add(toys);
@@ -190,7 +208,7 @@
     draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/');
     gltfLoader.setDRACOLoader(draco);
 
-    const bounds = { xMin: -7.5, xMax: 7.5, zMin: -5.5, zMax: 5.5 };
+    const bounds = { xMin: -16, xMax: 7.5, zMin: -5.5, zMax: 13 };
     const targetHeight = 2.2; // units in scene
     const HEADING_OFFSET = Math.PI; // flip forward (model faces -Z)
 
@@ -288,6 +306,20 @@
       return new THREE.Vector3(x, 0, z);
     }
 
+    // ---- Door routing helpers ----
+    function doorWaypoint(from, to){
+      if ((from.x > DOOR_X && to.x < DOOR_X) || (from.x < DOOR_X && to.x > DOOR_X)) {
+        return new THREE.Vector3(DOOR_X, 0, (DOOR_Z_MIN + DOOR_Z_MAX) / 2);
+      }
+      return null;
+    }
+    function setRoute(p, dest){
+      const d = doorWaypoint(p.position, dest);
+      p.userData.way = [];
+      if (d) { p.userData.way = [dest.clone()]; p.userData.target.copy(d); }
+      else { p.userData.target.copy(dest); }
+    }
+
     function chooseNextAction(p){
       if (!p) return;
       const r = Math.random();
@@ -307,24 +339,24 @@
       dequeueAll(p);
       ud.timer = 0; ud.arrived = false;
       let final = state; let bubbleKey = state;
-      if(state === 'wander'){ ud.target.copy(randomPointNear(p.position.x, p.position.z, 6)); ud.speed = 0.9 + Math.random()*0.4; }
+      if(state === 'wander'){ const dest = randomPointNear(p.position.x, p.position.z, 6); setRoute(p, dest); ud.speed = 0.9 + Math.random()*0.4; }
       else if(state === 'lounge'){ ud.speed = 0; }
       else if(state === 'play'){
         ud.speed = 0.8;
-        if (requestResource(p,'play')) { ud.target.set(RING_X,0,RING_Z); }
-        else { final = 'playWait'; ud.target.copy(queueWaitPos('play',p)); bubbleKey = 'play'; }
+        if (requestResource(p,'play')) { setRoute(p, new THREE.Vector3(RING_X,0,RING_Z)); }
+        else { final = 'playWait'; setRoute(p, queueWaitPos('play',p)); bubbleKey = 'play'; }
       }
       else if(state === 'eat'){
         ud.speed = 1.0;
-        if (requestResource(p,'eat')) { ud.target.copy(dish.position).add(new THREE.Vector3(-0.9,0,0)); }
-        else { final = 'eatWait'; ud.target.copy(queueWaitPos('eat',p)); bubbleKey = 'eat'; }
+        if (requestResource(p,'eat')) { setRoute(p, dish.position.clone().add(new THREE.Vector3(-0.9,0,0))); }
+        else { final = 'eatWait'; setRoute(p, queueWaitPos('eat',p)); bubbleKey = 'eat'; }
       }
-      else if(state === 'window'){ ud.speed = 1.0; ud.target.set(7.4, 0, 0); }
+      else if(state === 'window'){ ud.speed = 1.0; setRoute(p, new THREE.Vector3(7.4,0,0)); }
       else if(state === 'sit'){ ud.speed = 0; }
       else if(state === 'sleep'){
         ud.speed = 1.0;
-        if (requestResource(p,'sleep')) { ud.target.set(BED_SLEEP.x, 0, BED_SLEEP.z); ud.goingToBed = true; }
-        else { final = 'sleepWait'; ud.target.copy(queueWaitPos('sleep',p)); bubbleKey = 'sleep'; }
+        if (requestResource(p,'sleep')) { setRoute(p, new THREE.Vector3(BED_SLEEP.x, 0, BED_SLEEP.z)); ud.goingToBed = true; }
+        else { final = 'sleepWait'; setRoute(p, queueWaitPos('sleep',p)); bubbleKey = 'sleep'; }
       }
       else if(state === 'wake'){ ud.speed = 0; }
       ud.state = final;
@@ -376,6 +408,8 @@
           p.rotation.y = yaw + HEADING_OFFSET;
           p.rotation.z = Math.sin(performance.now() / 1000 * 8) * 0.05;
         } else {
+          // reached current waypoint; if we have queued waypoints, continue to next
+          if (ud.way && ud.way.length) { ud.target.copy(ud.way.shift()); return; }
           if (ud.state === 'wander') { if (ud.timer > 1.0) setState(p,'lounge'); }
           else if (ud.state === 'play') { if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
             toys.children.forEach(t => { if (t.geometry && t.geometry.type === 'TorusGeometry') t.position.y = 0.35 + Math.sin(performance.now() / 1000 * 6) * 0.07; });
