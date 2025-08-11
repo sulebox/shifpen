@@ -270,7 +270,7 @@
     function setState(state){
       if(!penguin) return;
       const ud = penguin.userData;
-      ud.state = state; ud.timer = 0; setBubbleByState(state);
+      ud.state = state; ud.timer = 0; ud.arrived = false; setBubbleByState(state);
       if(state === 'wander'){ ud.target.copy(randomPointNear(penguin.position.x, penguin.position.z, 6)); ud.speed = 0.9 + Math.random()*0.4; }
       else if(state === 'lounge'){ ud.speed = 0; }
       else if(state === 'play'){ ud.speed = 0.8; ud.target.set(RING_X,0,RING_Z); }
@@ -312,9 +312,9 @@
           penguin.rotation.z = Math.sin(performance.now() / 1000 * 8) * 0.05;
         } else {
           if (ud.state === 'wander') { if (ud.timer > 1.0) setState('lounge'); }
-          else if (ud.state === 'play') {
+          else if (ud.state === 'play') { if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
             toys.children.forEach(t => { if (t.geometry && t.geometry.type === 'TorusGeometry') t.position.y = 0.35 + Math.sin(performance.now() / 1000 * 6) * 0.07; });
-            if (ud.timer > (2.5 + Math.random() * 2)) chooseNextAction();
+            if (ud.timer > (1.0 + Math.random() * 1.0)) chooseNextAction();
           } else if (ud.state === 'eat') {
             if (!looseFish) { looseFish = makeFish(); looseFish.position.copy(dish.position).add(new THREE.Vector3(Math.random() * 0.3, 0.2, Math.random() * 0.3)); scene.add(looseFish); }
             else {
@@ -329,7 +329,7 @@
             ud.timer = 0;
           } else if (ud.state === 'window') {
             penguin.rotation.y = Math.PI / 2 + HEADING_OFFSET;
-            if (ud.timer > (2 + Math.random() * 2)) chooseNextAction();
+            if (!ud.arrived) { ud.arrived = true; ud.timer = 0; } if (ud.timer > (1.0 + Math.random() * 1.0)) chooseNextAction();
           }
         }
       } else if (ud.state === 'lounge') {
