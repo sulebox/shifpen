@@ -172,7 +172,8 @@
     const mf1 = hangFish(-0.35), mf2 = hangFish(0), mf3 = hangFish(0.35);
 
     // ---- Penguin Loader (GLB) ----
-    let penguin = null;
+    let penguin = null; // primary penguin (for UI like bubble)
+    const penguins = []; // all penguins
     const gltfLoader = new GLTFLoader();
     const draco = new DRACOLoader();
     draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/');
@@ -255,23 +256,23 @@
       return new THREE.Vector3(x, 0, z);
     }
 
-    function chooseNextAction(){
-      if (!penguin) return;
+    function chooseNextAction(p){
+      if (!p) return;
       const r = Math.random();
-      if (r < 0.32) setState('wander');
-      else if (r < 0.47) setState('lounge');
-      else if (r < 0.62) setState('play');
-      else if (r < 0.77) setState('eat');
-      else if (r < 0.89) setState('window');
-      else if (r < 0.95) setState('sleep');
-      else setState('sit');
+      if (r < 0.32) setState(p,'wander');
+      else if (r < 0.47) setState(p,'lounge');
+      else if (r < 0.62) setState(p,'play');
+      else if (r < 0.77) setState(p,'eat');
+      else if (r < 0.89) setState(p,'window');
+      else if (r < 0.95) setState(p,'sleep');
+      else setState(p,'sit');
     }
 
-    function setState(state){
-      if(!penguin) return;
-      const ud = penguin.userData;
+    function setState(p, state){
+      if(!p) return;
+      const ud = p.userData;
       ud.state = state; ud.timer = 0; ud.arrived = false; setBubbleByState(state);
-      if(state === 'wander'){ ud.target.copy(randomPointNear(penguin.position.x, penguin.position.z, 6)); ud.speed = 0.9 + Math.random()*0.4; }
+      if(state === 'wander'){ ud.target.copy(randomPointNear(p.position.x, p.position.z, 6)); ud.speed = 0.9 + Math.random()*0.4; }
       else if(state === 'lounge'){ ud.speed = 0; }
       else if(state === 'play'){ ud.speed = 0.8; ud.target.set(RING_X,0,RING_Z); }
       else if(state === 'eat'){ ud.speed = 1.0; ud.target.copy(dish.position); }
@@ -283,44 +284,60 @@
     }
 
     const clock = new THREE.Clock();
-    let looseFish = null;
-    function beakWorldPos() {
-      if (!penguin) return new THREE.Vector3();
-      const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(penguin.quaternion);
-      return penguin.position.clone().add(new THREE.Vector3(0, 1.0, 0)).add(forward.multiplyScalar(0.7));
+    // per-penguin fish handled in userData (ud.fish)
+    function beakWorldPos(p) {
+      if (!p) return new THREE.Vector3();
+      const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(p.quaternion);
+      return p.position.clone().add(new THREE.Vector3(0, 1.0, 0)).add(forward.multiplyScalar(0.7));
     }
 
-    function updatePenguin(dt) {
-      if (!penguin) return;
-      const ud = penguin.userData;
+    function updatePenguin(p, dt) {
+      if (!p) return;
+      const ud = p.userData;
 
       if (ud.mixer) ud.mixer.update(dt);
 
       ud.timer += dt;
-      if (ud.state !== 'sit' && ud.state !== 'sleep') { penguin.position.y = Math.max(0, Math.sin(performance.now() / 1000 * 6) * 0.03); }
+      if (ud.state !== 'sit' && ud.state !== 'sleep') { p.position.y = Math.max(0, Math.sin(performance.now() / 1000 * 6) * 0.03); }
 
       if (['wander', 'play', 'eat', 'window'].includes(ud.state) || (ud.state === 'sleep' && ud.goingToBed)) {
         const target = ud.target;
-        const v = new THREE.Vector3(target.x - penguin.position.x, 0, target.z - penguin.position.z);
+        const v = new THREE.Vector3(target.x - p.position.x, 0, target.z - p.position.z);
+        // separation (avoid overlap with friends)
+        const sep = new THREE.Vector3();
+        for (const other of penguins) {
+          if (other === p) continue;
+          const dx = p.position.x - other.position.x;
+          const dz = p.position.z - other.position.z;
+          const d2 = dx*dx + dz*dz;
+          const minD = 1.2;
+          if (d2 > 1e-4 && d2 < minD*minD) {
+            const d = Math.sqrt(d2);
+            const f = (minD - d) / minD; // 0..1
+            sep.x += (dx / d) * f;
+            sep.z += (dz / d) * f;
+          }
+        }
+        v.add(sep.multiplyScalar(0.8));
         const dist = Math.hypot(v.x, v.z);
         if (dist > 0.02) {
           v.normalize();
           const speed = ud.speed * dt * 0.9;
-          penguin.position.addScaledVector(v, Math.min(speed, dist));
+          p.position.addScaledVector(v.normalize(), Math.min(speed, dist));
           const yaw = Math.atan2(v.x, v.z);
-          penguin.rotation.y = yaw + HEADING_OFFSET;
-          penguin.rotation.z = Math.sin(performance.now() / 1000 * 8) * 0.05;
+          p.rotation.y = yaw + HEADING_OFFSET;
+          p.rotation.z = Math.sin(performance.now() / 1000 * 8) * 0.05;
         } else {
-          if (ud.state === 'wander') { if (ud.timer > 1.0) setState('lounge'); }
+          if (ud.state === 'wander') { if (ud.timer > 1.0) setState(p,'lounge'); }
           else if (ud.state === 'play') { if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
             toys.children.forEach(t => { if (t.geometry && t.geometry.type === 'TorusGeometry') t.position.y = 0.35 + Math.sin(performance.now() / 1000 * 6) * 0.07; });
-            if (ud.timer > (1.0 + Math.random() * 1.0)) chooseNextAction();
+            if (ud.timer > (1.0 + Math.random() * 1.0)) chooseNextAction(p);
           } else if (ud.state === 'eat') {
-            if (!looseFish) { looseFish = makeFish(); looseFish.position.copy(dish.position).add(new THREE.Vector3(Math.random() * 0.3, 0.2, Math.random() * 0.3)); scene.add(looseFish); }
+            if (!ud.fish) { ud.fish = makeFish(); ud.fish.position.copy(dish.position).add(new THREE.Vector3(Math.random() * 0.3, 0.2, Math.random() * 0.3)); scene.add(ud.fish); }
             else {
-              const beakPos = beakWorldPos();
-              looseFish.position.lerp(beakPos, Math.min(1, dt * 1.5));
-              if (looseFish.position.distanceTo(beakPos) < 0.06) { scene.remove(looseFish); looseFish = null; chooseNextAction(); }
+              const beakPos = beakWorldPos(p);
+              ud.fish.position.lerp(beakPos, Math.min(1, dt * 1.5));
+              if (ud.fish.position.distanceTo(beakPos) < 0.06) { scene.remove(ud.fish); ud.fish = null; chooseNextAction(p); }
             }
           } else if (ud.state === 'sleep' && ud.goingToBed) {
             penguin.position.y = BED_SLEEP.y;
@@ -329,22 +346,22 @@
             ud.timer = 0;
           } else if (ud.state === 'window') {
             penguin.rotation.y = Math.PI / 2 + HEADING_OFFSET;
-            if (!ud.arrived) { ud.arrived = true; ud.timer = 0; } if (ud.timer > (1.0 + Math.random() * 1.0)) chooseNextAction();
+            if (!ud.arrived) { ud.arrived = true; ud.timer = 0; } if (ud.timer > (1.0 + Math.random() * 1.0)) chooseNextAction(p);
           }
         }
       } else if (ud.state === 'lounge') {
         penguin.rotation.z = 0;
-        if (ud.timer > (2 + Math.random() * 3)) chooseNextAction();
+        if (ud.timer > (2 + Math.random() * 3)) chooseNextAction(p);
       } else if (ud.state === 'sit') {
         penguin.rotation.z = 0;
-        if (ud.timer > (2 + Math.random() * 3)) chooseNextAction();
+        if (ud.timer > (2 + Math.random() * 3)) chooseNextAction(p);
       } else if (ud.state === 'sleep') {
         penguin.rotation.set(0, penguin.rotation.y, 0);
         penguin.rotation.x = Math.PI / 2 * 0.8;
         if (ud.timer > (3 + Math.random() * 3)) setState('wake');
       } else if (ud.state === 'wake') {
         penguin.rotation.x = THREE.MathUtils.damp(penguin.rotation.x, 0, 6, dt);
-        if (Math.abs(penguin.rotation.x) < 0.02) { penguin.rotation.x = 0; chooseNextAction(); }
+        if (Math.abs(penguin.rotation.x) < 0.02) { penguin.rotation.x = 0; chooseNextAction(p); }
       }
 
       penguin.position.x = THREE.MathUtils.clamp(penguin.position.x, bounds.xMin, bounds.xMax);
@@ -352,21 +369,20 @@
     }
 
     // ---- Loop ----
-    function animate() {
+    function animate(){
       requestAnimationFrame(animate);
       const dt = clock.getDelta();
-      updatePenguin(dt);
-      const t = performance.now() / 1000;
-      mf1.rotation.y = Math.sin(t * 1.6) * 0.4;
-      mf2.rotation.y = Math.cos(t * 1.4) * 0.4;
-      mf3.rotation.y = Math.sin(t * 1.8 + 0.7) * 0.4;
+      for (const p of penguins) updatePenguin(p, dt);
+      const t = performance.now()/1000;
+      mf1.rotation.y = Math.sin(t*1.6)*0.4; mf2.rotation.y = Math.cos(t*1.4)*0.4; mf3.rotation.y = Math.sin(t*1.8+0.7)*0.4;
+      penguin = penguins[0] || null; // bubble follows the first penguin
       updateBubblePosition();
       renderer.render(scene, camera);
     }
     animate();
 
     // ---- Interactions ----
-    function handleAdvance(e){ const el = e.target; if (el && el.closest && (el.closest('.picker') || el.closest('.drop'))) return; chooseNextAction(); }
+    function handleAdvance(e){ const el = e.target; if (el && el.closest && (el.closest('.picker') || el.closest('.drop'))) return; for (const p of penguins) chooseNextAction(p); }
     window.addEventListener('click', handleAdvance);
     window.addEventListener('touchend', handleAdvance, { passive: true });
     window.addEventListener('pointerup', handleAdvance);
@@ -380,19 +396,33 @@
       const f = e.dataTransfer.files?.[0]; if (!f) return;
       setStatus('reading ' + f.name + ' ...');
       f.arrayBuffer().then((ab) => {
-        gltfLoader.parse(ab, '', (gltf) => { setStatus('parsed.'); if (penguin) scene.remove(penguin); penguin = new THREE.Group(); penguin.add(fitAndFloor(gltf.scene)); penguin.userData = { speed:0, state:'idle', target:new THREE.Vector3(), timer:0 }; scene.add(penguin); setState('wander'); }, (err) => setStatus('parse error: ' + (err?.message || err)) );
+        gltfLoader.parse(ab, '', (gltf) => {
+          setStatus('parsed.');
+          const g = new THREE.Group();
+          const model = fitAndFloor(gltf.scene);
+          g.add(model);
+          g.userData = { speed:0, state:'idle', target:new THREE.Vector3(), timer:0, model };
+          scene.add(g);
+          if (!penguin) penguin = g; penguins.push(g);
+          setState(g,'wander');
+        }, (err) => setStatus('parse error: ' + (err?.message || err)) );
       });
+    });
     });
     // back button
 
     // ---- Auto-load default URL ----
     const params = new URLSearchParams(location.search);
-    const modelUrl = params.get('model') || 'Pen.glb'; // place Pen.glb next to this HTML in repo
-    loadPenguin(modelUrl).then((g)=>{ if (penguin) scene.remove(penguin); penguin = g; scene.add(penguin); setState('wander'); })
-    .catch(()=>{ penguin = fallbackPenguin(); scene.add(penguin); setState('wander'); });
+    const modelUrl = params.get('model') || 'Pen.glb';
+    function spawn(url, start){
+      loadPenguin(url).then((g)=>{ if (start) g.position.copy(start); scene.add(g); penguins.push(g); if (!penguin) penguin = g; setState(g,'wander'); })
+      .catch(()=>{ const fb=fallbackPenguin(); if (start) fb.position.copy(start); scene.add(fb); penguins.push(fb); if (!penguin) penguin = fb; setState(fb,'wander'); });
+    }
+    spawn(modelUrl, new THREE.Vector3(-1,0,0));
+    ['Pen_b.glb','Pen_r.glb'].forEach((u,i)=> spawn(u, new THREE.Vector3(1.5*i,0,-1.5*i)));
 
     // expose for console
-    window.__penguin = { scene, camera, setState, chooseNextAction, get penguin(){ return penguin; } };
+    window.__penguin = { scene, camera, setState, chooseNextAction, get penguin(){ return penguin; }, get penguins(){ return penguins; } };
     setStatus('initialized OK');
   </script>
 </body>
