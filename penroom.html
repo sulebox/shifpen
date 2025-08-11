@@ -153,7 +153,24 @@
     // pond
     const pond = new THREE.Group(); garden.add(pond);
     const rim = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.12, 48), new THREE.MeshStandardMaterial({ color: 0xA1887F })); rim.position.set(-2.0, 0.06, 10.0); pond.add(rim);
-    const water = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 0.05, 48), new THREE.MeshPhysicalMaterial({ color: 0x77BDF5, roughness: 0.2, transmission: 0.7, transparent: true, opacity: 0.8 })); water.position.set(-2.0, 0.08, 10.0); pond.add(water);
+    const water = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 0.05, 48), new THREE.MeshPhysicalMaterial({ color: 0xB3E5FF, roughness: 0.15, transmission: 0.8, transparent: true, opacity: 0.85 })); water.position.set(-2.0, 0.08, 10.0); pond.add(water);
+
+    // white cat in the garden
+    const cat = new THREE.Group(); garden.add(cat); cat.position.set(-11.2, 0, 2.5);
+    const catMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
+    const catBody = new THREE.Mesh(new THREE.SphereGeometry(0.45, 18, 14), catMat); catBody.scale.set(1.4, 0.9, 1.8); catBody.position.y = 0.45; cat.add(catBody);
+    const catHead = new THREE.Mesh(new THREE.SphereGeometry(0.28, 18, 14), catMat); catHead.position.set(0, 0.9, 0.2); cat.add(catHead);
+    const earMat = new THREE.MeshStandardMaterial({ color: 0xFFE0E0 });
+    const earL = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.18, 12), earMat); earL.position.set(-0.12, 1.05, 0.18); cat.add(earL);
+    const earR = earL.clone(); earR.position.x = 0.12; cat.add(earR);
+    const eyeMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.03, 12, 8), eyeMat); eyeL.position.set(-0.07, 0.93, 0.35); cat.add(eyeL);
+    const eyeR = eyeL.clone(); eyeR.position.x = 0.07; cat.add(eyeR);
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.025, 10, 8), new THREE.MeshStandardMaterial({ color: 0xF8BBD0 })); nose.position.set(0, 0.9, 0.4); cat.add(nose);
+    const legGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.22, 10);
+    for (let i=0;i<4;i++){ const leg = new THREE.Mesh(legGeo, catMat); leg.position.set(i<2?-0.15:0.15, 0.11, i%2?0.1:-0.25); cat.add(leg); }
+    const catTail = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 10), catMat); catTail.position.set(0, 0.6, -0.45); catTail.rotation.x = Math.PI/3; cat.add(catTail);
+    garden.userData.catHead = catHead; garden.userData.catTail = catTail;
 
     // ---- Toys & props ----
     const toys = new THREE.Group(); scene.add(toys);
@@ -459,6 +476,10 @@
       mf1.rotation.y = Math.sin(t*1.6)*0.4; mf2.rotation.y = Math.cos(t*1.4)*0.4; mf3.rotation.y = Math.sin(t*1.8+0.7)*0.4;
       penguin = penguins[0] || null;
       for (const p of penguins) updateBubblePositionFor(p);
+      if (garden.userData && garden.userData.catHead) {
+        garden.userData.catHead.rotation.y = Math.sin(t*0.7)*0.3;
+        garden.userData.catTail.rotation.z = Math.sin(t*2.4)*0.35;
+      }
       renderer.render(scene, camera);
     }
     animate();
