@@ -71,7 +71,7 @@
       const pad = 0.6; // base margin
       let width = (maxX-minX) + pad*2;
       let height = (maxY-minY) + pad*2;
-      const extra = (typeof isSmallScreen==='function' && isSmallScreen()) ? 1.08 : 1.0; // mobile only: zoom out ~15%
+      const extra = (typeof isSmallScreen==='function' && isSmallScreen()) ? 1.04 : 1.0; // mobile only: zoom out ~15%
       width *= extra; height *= extra;
       aspect = window.innerWidth / window.innerHeight;
       const frustumSize = Math.max(height, width / aspect);
@@ -480,7 +480,17 @@
       const t = performance.now()/1000;
       mf1.rotation.y = Math.sin(t*1.6)*0.4; mf2.rotation.y = Math.cos(t*1.4)*0.4; mf3.rotation.y = Math.sin(t*1.8+0.7)*0.4;
       penguin = penguins[0] || null;
-      for (const p of penguins) updateBubblePositionFor(p);
+      for (const p of penguins){
+        // ensure each penguin has a bubble and text
+        const el = ensureBubble(p);
+        const key = p.userData?.state || '';
+        if (commentMap[key] && (!el.textContent || el.style.display === 'none')){
+          el.textContent = commentMap[key];
+          el.style.display = 'block';
+          el.style.opacity = 1;
+        }
+        updateBubblePositionFor(p);
+      }
       if (garden.userData && garden.userData.catHead) {
         garden.userData.catHead.rotation.y = Math.sin(t*0.7)*0.3;
         garden.userData.catTail.rotation.z = Math.sin(t*2.4)*0.35;
