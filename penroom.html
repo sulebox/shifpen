@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>Penguin Room — penroom.html</title>
+  <title>Penguin Room — penroom.html (v40)</title>
   <style>
     html, body { height: 100%; margin: 0; background: #f6e6c9; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     #app { position: fixed; inset: 0; }
@@ -96,8 +96,6 @@
     }
 
     window.addEventListener('resize', updateCameraMode);
-
-    
 
     // ---- Lights ----
     scene.add(new THREE.HemisphereLight(0xffffff, 0xf2d8a8, 0.85));
@@ -214,7 +212,7 @@
     const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.15, 0.45), new THREE.MeshStandardMaterial({ color: 0xffffff })); pillow.position.set(bedX - 1.3, 0.5, bedZ + 0.0); pillow.rotation.y = Math.PI / 2; bed.add(pillow);
     const BED_SLEEP = { x: bedX - 0.9, z: bedZ - 0.45, y: 0.55 };
 
-    // ---- Resource queues (play / eat / sleep) ----
+    // ---- Resource queues (play / eat / sleep / pond) ----
     const RES = {
       play:  { holder: null, queue: [], pos: new THREE.Vector3(RING_X, 0, RING_Z), waitDir: new THREE.Vector3(-1,0,0) },
       eat:   { holder: null, queue: [], pos: dish.position.clone(), waitDir: new THREE.Vector3(-1,0,0) },
@@ -224,7 +222,7 @@
     function requestResource(p, name){ const r = RES[name]; if(!r.holder){ r.holder = p; return true; } if(!r.queue.includes(p)) r.queue.push(p); return false; }
     function releaseResource(name){ const r = RES[name]; if(r.holder) r.holder = null; const next = r.queue.shift(); if(next) setState(next, name); }
     function queueWaitPos(name, p){ const r = RES[name]; const idx = r.queue.indexOf(p); const spacing = 0.9; const off = r.waitDir.clone().multiplyScalar((idx+1)*spacing); return r.pos.clone().add(off); }
-    function dequeueAll(p){ ['play','eat','sleep'].forEach(n=>{ const r=RES[n]; const i=r.queue.indexOf(p); if(i>=0) r.queue.splice(i,1); if(r.holder===p) r.holder=null; }); }
+    function dequeueAll(p){ ['play','eat','sleep','pond'].forEach(n=>{ const r=RES[n]; const i=r.queue.indexOf(p); if(i>=0) r.queue.splice(i,1); if(r.holder===p) r.holder=null; }); }
 
     // cute mobile
     const mobile = new THREE.Group(); scene.add(mobile); mobile.position.set(-5, 3.8, -4.5);
@@ -256,7 +254,7 @@
       sleep:  'もうねよっと',
       wake:   '',
       sit:    'ちょときゅうけい',
-      pond:  'ちょとあつい'
+      pond:   'ちょとあつい'
     };
     function ensureBubble(p){
       if (!p.userData.bubbleEl) {
@@ -375,7 +373,11 @@
       dequeueAll(p);
       ud.timer = 0; ud.arrived = false;
       let final = state; let bubbleKey = state;
-      if(state === 'wander'){ const dest = randomPointNear(p.position.x, p.position.z, 6); setRoute(p, dest); ud.speed = 0.9 + Math.random()*0.4; }
+
+      if(state === 'wander'){
+        const dest = randomPointNear(p.position.x, p.position.z, 6);
+        setRoute(p, dest); ud.speed = 0.9 + Math.random()*0.4;
+      }
       else if(state === 'lounge'){ ud.speed = 0; }
       else if(state === 'play'){
         ud.speed = 0.8;
@@ -400,28 +402,7 @@
         else { final = 'sleepWait'; setRoute(p, queueWaitPos('sleep',p)); bubbleKey = 'sleep'; }
       }
       else if(state === 'wake'){ ud.speed = 0; }
-      ud.state = final;
-      setBubble(p, bubbleKey);
-    }
-      else if(state === 'lounge'){ ud.speed = 0; }
-      else if(state === 'play'){
-        ud.speed = 0.8;
-        if (requestResource(p,'play')) { setRoute(p, new THREE.Vector3(RING_X,0,RING_Z)); }
-        else { final = 'playWait'; setRoute(p, queueWaitPos('play',p)); bubbleKey = 'play'; }
-      }
-      else if(state === 'eat'){
-        ud.speed = 1.0;
-        if (requestResource(p,'eat')) { setRoute(p, dish.position.clone().add(new THREE.Vector3(-0.9,0,0))); }
-        else { final = 'eatWait'; setRoute(p, queueWaitPos('eat',p)); bubbleKey = 'eat'; }
-      }
-      else if(state === 'window'){ ud.speed = 1.0; setRoute(p, new THREE.Vector3(7.4,0,0)); }
-      else if(state === 'sit'){ ud.speed = 0; }
-      else if(state === 'sleep'){
-        ud.speed = 1.0;
-        if (requestResource(p,'sleep')) { setRoute(p, new THREE.Vector3(BED_SLEEP.x, 0, BED_SLEEP.z)); ud.goingToBed = true; }
-        else { final = 'sleepWait'; setRoute(p, queueWaitPos('sleep',p)); bubbleKey = 'sleep'; }
-      }
-      else if(state === 'wake'){ ud.speed = 0; }
+
       ud.state = final;
       setBubble(p, bubbleKey);
     }
@@ -491,7 +472,21 @@
             ud.timer = 0;
           } else if (ud.state === 'window') {
             p.rotation.y = Math.PI / 2 + HEADING_OFFSET;
-            if (!ud.arrived) { ud.arrived = true; ud.timer = 0; } if (ud.timer > (1.0 + Math.random() * 1.0)) chooseNextAction(p);
+            if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
+            if (ud.timer > (1.0 + Math.random() * 1.0)) chooseNextAction(p);
+          } else if (ud.state === 'pond') {
+            // Pond arrived: splash and pause a bit
+            if (!ud.arrived) {
+              ud.arrived = true; ud.timer = 0;
+              spawnSplash(p.position.clone().setY(0.08), 8);
+            }
+            // bobbing effect while bathing
+            p.position.y = Math.sin(performance.now()/1000 * 8) * 0.03;
+            if (ud.timer > (1.4 + Math.random()*0.8)) {
+              p.position.y = 0;
+              releaseResource('pond');
+              chooseNextAction(p);
+            }
           }
         }
       } else if (ud.state === 'lounge') {
@@ -582,7 +577,7 @@
     setStatus('initialized OK');
   </script>
   
-  <!-- Eruda: mobile devtools for v=39 debug -->
+  <!-- Eruda: mobile devtools for v=40 debug -->
   <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
   <script>try{ eruda.init({ defaults: { displaySize: 50 }, tool: [ 'console','network','resources' ] }); console.log('Eruda ready'); }catch(e){ console.warn('Eruda init failed', e); }</script>
 </body>
