@@ -14,7 +14,7 @@
     .drop { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; border: 2px dashed rgba(0,0,0,.15); border-radius: 16px; pointer-events: none; opacity: 0; transition: .2s; }
     .drop.on { opacity: 1; }
     a { color: inherit; }
-    .bubble { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -100%); padding: 6px 10px; background: rgba(255,255,255,.95); border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.12); font: 12px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; pointer-events: none; transition: opacity .2s; }
+    .bubble {$1 white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -60,16 +60,19 @@
     camera.position.set(14, 16, 14);
     camera.lookAt(0, 0, 0);
     function fitCameraToRoom(){
+      // include garden extents too (room: x[-9,9] z[-7,7], garden: x[-17,9] z[-7,15])
       const corners = [
-        new THREE.Vector3(-9,0,-7), new THREE.Vector3(9,0,-7), new THREE.Vector3(-9,0,7), new THREE.Vector3(9,0,7),
-        new THREE.Vector3(-9,5,-7), new THREE.Vector3(9,5,-7), new THREE.Vector3(-9,5,7), new THREE.Vector3(9,5,7)
+        new THREE.Vector3(-17,0,-7), new THREE.Vector3(9,0,-7), new THREE.Vector3(-17,0,15), new THREE.Vector3(9,0,15),
+        new THREE.Vector3(-17,5,-7), new THREE.Vector3(9,5,-7), new THREE.Vector3(-17,5,15), new THREE.Vector3(9,5,15)
       ];
       const inv = new THREE.Matrix4().copy(camera.matrixWorldInverse);
       let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
       for(const v of corners){ const vc = v.clone().applyMatrix4(inv); minX=Math.min(minX,vc.x); maxX=Math.max(maxX,vc.x); minY=Math.min(minY,vc.y); maxY=Math.max(maxY,vc.y); }
-      const pad = 0.6;
-      const width = (maxX-minX) + pad*2;
-      const height = (maxY-minY) + pad*2;
+      const pad = 0.6; // base margin
+      let width = (maxX-minX) + pad*2;
+      let height = (maxY-minY) + pad*2;
+      const extra = (typeof isSmallScreen==='function' && isSmallScreen()) ? 1.15 : 1.0; // mobile only: zoom out ~15%
+      width *= extra; height *= extra;
       aspect = window.innerWidth / window.innerHeight;
       const frustumSize = Math.max(height, width / aspect);
       camera.left = -frustumSize * aspect / 2;
