@@ -3,17 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>Penguin Room — penroom.html (v41)</title>
+  <title>Penguin Room — penroom.html (v43)</title>
   <style>
     html, body { height: 100%; margin: 0; background: #f6e6c9; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     #app { position: fixed; inset: 0; }
     .hud { position: fixed; left: 12px; bottom: 12px; padding: 8px 10px; background: rgba(255,255,255,0.85); border-radius: 10px; font: 12px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; color: #333; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
     .status { position: fixed; left: 12px; top: 12px; padding: 6px 8px; background: rgba(0,0,0,.6); color: #fff; border-radius: 8px; font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; white-space: pre-wrap; max-width: 60ch; }
-    .picker { position: fixed; right: 12px; top: 12px; }
-    .picker button { font: 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); background: #fff; }
     .drop { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; border: 2px dashed rgba(0,0,0,.15); border-radius: 16px; pointer-events: none; opacity: 0; transition: .2s; }
     .drop.on { opacity: 1; }
-    a { color: inherit; }
     .bubble { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -100%); padding: 6px 10px; background: rgba(255,255,255,.95); border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.12); font: 12px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; pointer-events: none; transition: opacity .2s; }
   </style>
 </head>
@@ -21,7 +18,6 @@
   <div id="app"></div>
   <div class="status" id="status">初期化中…</div>
   <div class="hud">クリック/タップで次の行動にスキップ</div>
-  <!-- back button removed -->
   <div class="drop" id="drop"><div style="background:#fff;padding:16px 18px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12)">ここにGLBをドロップ</div></div>
   <div class="bubble" id="bubble" style="display:none"></div>
 
@@ -34,14 +30,16 @@
   </script>
 
   <script type="module">
+    // ---- Imports ----
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
     import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
     import { DRACOLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/DRACOLoader.js';
 
+    // ---- Helpers ----
     const $ = (id) => document.getElementById(id);
     const setStatus = (m) => { $('status').textContent = m; console.log(m); };
 
-    // Renderer / Scene
+    // ---- Renderer / Scene ----
     const app = $('app');
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xF8EBD5);
@@ -51,11 +49,12 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     app.appendChild(renderer.domElement);
 
-    // Camera
+    // ---- Camera (ortho) ----
     let aspect = window.innerWidth / window.innerHeight;
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
     camera.position.set(14, 16, 14);
     camera.lookAt(0, 0, 0);
+
     function fitCameraToRoom(){
       const corners = [
         new THREE.Vector3(-9,0,-7), new THREE.Vector3(9,0,-7), new THREE.Vector3(-9,0,7), new THREE.Vector3(9,0,7),
@@ -76,7 +75,7 @@
       camera.updateProjectionMatrix();
     }
     function setDesktopOrtho(){
-      const frustumSize = 22; // desktop default
+      const frustumSize = 22;
       aspect = window.innerWidth / window.innerHeight;
       camera.left = -frustumSize * aspect / 2;
       camera.right = frustumSize * aspect / 2;
@@ -91,105 +90,69 @@
     }
     window.addEventListener('resize', updateCameraMode);
 
-    // Lights
+    // ---- Lights ----
     scene.add(new THREE.HemisphereLight(0xffffff, 0xf2d8a8, 0.85));
     const dir = new THREE.DirectionalLight(0xffffff, 0.8);
     dir.position.set(5, 10, 2);
     scene.add(dir);
 
-    // Room
+    // ---- Room ----
     const room = new THREE.Group();
     scene.add(room);
-    const floorGeo = new THREE.PlaneGeometry(18, 14);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0xF4D9A0, roughness: 0.95 });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    room.add(floor);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(18, 14), new THREE.MeshStandardMaterial({ color: 0xF4D9A0, roughness: 0.95 }));
+    floor.rotation.x = -Math.PI / 2; room.add(floor);
 
     const wallH = 5, wallT = 0.3;
     const wallMat = new THREE.MeshStandardMaterial({ color: 0xF7CD8F });
     const mkWall = (w,h,t) => new THREE.Mesh(new THREE.BoxGeometry(w,h,t), wallMat);
+    // front wall 開放、背面壁も撤去済み。左側はドアだけ残す
     const DOOR_X = -9, DOOR_Z_MIN = 3.5, DOOR_Z_MAX = 6.5;
     const leftA = mkWall(wallT, wallH, (DOOR_Z_MIN - (-7))); leftA.position.set(-9, wallH/2, (-7 + DOOR_Z_MIN)/2); room.add(leftA);
     const leftB = mkWall(wallT, wallH, (7 - DOOR_Z_MAX));   leftB.position.set(-9, wallH/2, (7 + DOOR_Z_MAX)/2);   room.add(leftB);
 
-    // right wall + window
+    // 右側の窓
     const rightGroup = new THREE.Group(); room.add(rightGroup); const rightX = 9;
     const beamMat = new THREE.MeshStandardMaterial({ color: 0xE9A86B });
-    const beamT = wallT;
-    const frameTop = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.4, 13), beamMat); frameTop.position.set(rightX, 4.2, 0); rightGroup.add(frameTop);
-    const frameBottom = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.4, 13), beamMat); frameBottom.position.set(rightX, 1.6, 0); rightGroup.add(frameBottom);
-    const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(beamT, 2.2, 0.3), beamMat); frameLeft.position.set(rightX, 2.9, -6.5); rightGroup.add(frameLeft);
-    const frameRight = new THREE.Mesh(new THREE.BoxGeometry(beamT, 2.2, 0.3), beamMat); frameRight.position.set(rightX, 2.9, 6.5); rightGroup.add(frameRight);
-    const rightTopWall = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.5, 14), wallMat); rightTopWall.position.set(rightX, 4.75, 0); room.add(rightTopWall);
-    const rightBottomWall = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.5, 14), wallMat); rightBottomWall.position.set(rightX, 1.0, 0); room.add(rightBottomWall);
+    const frameTop = new THREE.Mesh(new THREE.BoxGeometry(wallT, 0.4, 13), beamMat); frameTop.position.set(rightX, 4.2, 0); rightGroup.add(frameTop);
+    const frameBottom = new THREE.Mesh(new THREE.BoxGeometry(wallT, 0.4, 13), beamMat); frameBottom.position.set(rightX, 1.6, 0); rightGroup.add(frameBottom);
+    const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(wallT, 2.2, 0.3), beamMat); frameLeft.position.set(rightX, 2.9, -6.5); rightGroup.add(frameLeft);
+    const frameRight = new THREE.Mesh(new THREE.BoxGeometry(wallT, 2.2, 0.3), beamMat); frameRight.position.set(rightX, 2.9, 6.5); rightGroup.add(frameRight);
+    const rightTopWall = new THREE.Mesh(new THREE.BoxGeometry(wallT, 0.5, 14), wallMat); rightTopWall.position.set(rightX, 4.75, 0); room.add(rightTopWall);
+    const rightBottomWall = new THREE.Mesh(new THREE.BoxGeometry(wallT, 0.5, 14), wallMat); rightBottomWall.position.set(rightX, 1.0, 0); room.add(rightBottomWall);
+    const glass = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.2, 13), new THREE.MeshPhysicalMaterial({ color: 0xA7D0FF, transmission: 0.9, thickness: 0.02, roughness: 0.1, transparent: true, opacity: 0.6 }));
+    glass.position.set(rightX - 0.02, 2.9, 0); rightGroup.add(glass);
 
     updateCameraMode();
-    const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xA7D0FF, transmission: 0.9, thickness: 0.02, roughness: 0.1, transparent: true, opacity: 0.6 });
-    const glass = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.2, 13), glassMat); glass.position.set(rightX - 0.02, 2.9, 0); rightGroup.add(glass);
 
-    // Garden (lawn + tree + pond)
+    // ---- Garden（拡張済み） ----
     const garden = new THREE.Group(); scene.add(garden);
     const lawnMat = new THREE.MeshStandardMaterial({ color: 0xCDE7B0, roughness: 0.95 });
     const frontLawn = new THREE.Mesh(new THREE.PlaneGeometry(18, 8), lawnMat); frontLawn.rotation.x = -Math.PI/2; frontLawn.position.set(0, 0, 11); garden.add(frontLawn);
     const leftLawn  = new THREE.Mesh(new THREE.PlaneGeometry(14, 16), lawnMat); leftLawn.rotation.x = -Math.PI/2; leftLawn.position.set(-16, 0, 0); garden.add(leftLawn);
+    // tree
     const tree = new THREE.Group(); garden.add(tree); tree.position.set(-12, 0, 3.5);
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 2.2, 12), new THREE.MeshStandardMaterial({ color: 0x8D6E63 })); trunk.position.y = 1.1; tree.add(trunk);
     const crown1 = new THREE.Mesh(new THREE.SphereGeometry(1.2, 16, 12), new THREE.MeshStandardMaterial({ color: 0x7CB342 })); crown1.position.y = 2.2; tree.add(crown1);
     const crown2 = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 12), new THREE.MeshStandardMaterial({ color: 0x8BC34A })); crown2.position.set(0.9, 2.9, 0.2); tree.add(crown2);
+    // pond
     const pond = new THREE.Group(); garden.add(pond);
     const rim = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.12, 48, 1, true), new THREE.MeshStandardMaterial({ color: 0xA1887F })); rim.position.set(-2.0, 0.06, 10.0); pond.add(rim);
     const water = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 0.05, 48), new THREE.MeshStandardMaterial({ color: 0xB3E5FF, roughness: 0.25, metalness: 0 })); water.position.set(-2.0, 0.081, 10.0); water.renderOrder = 2; pond.add(water);
 
     // pond helpers
     const POND_POS = water.position.clone();
-    const droplets = [];
-    const dropletGeo = new THREE.SphereGeometry(0.06, 10, 8);
+    const droplets = []; const dropletGeo = new THREE.SphereGeometry(0.06, 10, 8);
     const dropletBaseMat = new THREE.MeshStandardMaterial({ color: 0xB3E5FF, metalness:0, roughness:0.2, transparent:true, opacity:0.9 });
     function spawnSplash(pos, count=6){
       for(let i=0;i<count;i++){
         const m = new THREE.Mesh(dropletGeo, dropletBaseMat.clone());
         m.position.copy(pos).add(new THREE.Vector3((Math.random()-0.5)*0.4, 0.1, (Math.random()-0.5)*0.4));
         m.userData = { vel: new THREE.Vector3((Math.random()-0.5)*1.2, 1.5+Math.random()*0.8, (Math.random()-0.5)*1.2), life: 0.7 };
-        scene.add(m);
-        droplets.push(m);
+        scene.add(m); droplets.push(m);
       }
     }
 
-    // ---- Boy loader & spawn ----
-const targetHeightBoy = 1.55; // 少年の身長ターゲット（必要なら微調整）
-function fitAndFloorToHeight(obj, targetH){
-  const tmp = new THREE.Group(); tmp.add(obj); scene.add(tmp);
-  tmp.updateWorldMatrix(true,true);
-  const box = new THREE.Box3().setFromObject(tmp);
-  const size = new THREE.Vector3(); box.getSize(size);
-  const s = (size.y > 0 ? targetH / size.y : 1);
-  obj.scale.setScalar(s);
-  tmp.updateWorldMatrix(true,true);
-  const box2 = new THREE.Box3().setFromObject(tmp);
-  obj.position.y += -box2.min.y;
-  scene.remove(tmp);
-  return obj;
-}
-
-function spawnBoy(url, pos, lookAt){
-  gltfLoader.load(url, (gltf)=>{
-    const boy = new THREE.Group();
-    const model = gltf.scene;
-    fitAndFloorToHeight(model, targetHeightBoy);
-    boy.add(model);
-    boy.position.copy(pos);
-    if (lookAt) boy.lookAt(lookAt);
-    scene.add(boy);
-  }, undefined, (err)=>console.warn('Boy.glb load error', err));
-}
-
-// 池の右下に配置（POND_POS は既存の water.position.clone() を使っています）
-const boyPos = POND_POS.clone().add(new THREE.Vector3(2.4, 0, -2.2)); // 右下寄り
-spawnBoy('Boy.glb', boyPos, POND_POS);
-
-    
-    // cat
+    // ---- Cat ----
     const cat = new THREE.Group(); garden.add(cat); cat.position.set(-11.2, 0, 2.5);
     const catMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
     const catBody = new THREE.Mesh(new THREE.SphereGeometry(0.45, 18, 14), catMat); catBody.scale.set(1.4, 0.9, 1.8); catBody.position.y = 0.45; cat.add(catBody);
@@ -206,7 +169,7 @@ spawnBoy('Boy.glb', boyPos, POND_POS);
     const catTail = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 10), catMat); catTail.position.set(0, 0.6, -0.45); catTail.rotation.x = Math.PI/3; cat.add(catTail);
     garden.userData.catHead = catHead; garden.userData.catTail = catTail;
 
-    // Toys & props
+    // ---- Toys & props ----
     const toys = new THREE.Group(); scene.add(toys);
     const RING_X = 4.0, RING_Z = -3.0;
     const addBlock = (x,z,color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.9,0.9,0.9), new THREE.MeshStandardMaterial({ color })); m.position.set(x,0.45,z); toys.add(m); return m; };
@@ -216,11 +179,9 @@ spawnBoy('Boy.glb', boyPos, POND_POS);
     blocks.push(addBlock(-5,-1,0x4fc3f7));
     blocks.push(addBlock(-3,-1,0x81c784));
     const BLOCKS_POS = new THREE.Vector3(
-      (blocks[0].position.x + blocks[1].position.x + blocks[2].position.x)/3,
-      0,
+      (blocks[0].position.x + blocks[1].position.x + blocks[2].position.x)/3, 0,
       (blocks[0].position.z + blocks[1].position.z + blocks[2].position.z)/3
     );
-
     const ring = (radius, y, color) => { const g=new THREE.TorusGeometry(radius,0.15,12,32); const m=new THREE.MeshStandardMaterial({ color }); const t=new THREE.Mesh(g,m); t.rotation.x=Math.PI/2; t.position.set(RING_X, y, RING_Z); toys.add(t); return t; };
     ring(0.8, 0.35, 0xff8a65); ring(0.65, 0.55, 0x4db6ac); ring(0.5, 0.75, 0x9575cd);
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,1.2,16), new THREE.MeshStandardMaterial({ color: 0xd7ccc8 })); pole.position.set(RING_X,0.6,RING_Z); toys.add(pole);
@@ -228,20 +189,20 @@ spawnBoy('Boy.glb', boyPos, POND_POS);
 
     const dish = new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.1,24), new THREE.MeshStandardMaterial({ color: 0x90caf9 })); dish.position.set(2, 0.05, 2); scene.add(dish);
 
-    // Bed
+    // ---- Bed ----
     const bed = new THREE.Group(); scene.add(bed);
     const bedX = -4.8, bedZ = 5.2;
     const woodMat = new THREE.MeshStandardMaterial({ color: 0xC18E66 });
     const fabricMat = new THREE.MeshStandardMaterial({ color: 0xEDE7F6 });
     const blanketMat = new THREE.MeshStandardMaterial({ color: 0x9bd0ff });
-    const bedBase = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.25, 1.8), woodMat); bedBase.position.set(bedX, 0.125, bedZ); bed.add(bedBase);
+    bed.add(new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.25, 1.8), woodMat)).position.set(bedX, 0.125, bedZ);
     const headBoard = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.6, 0.12), woodMat); headBoard.position.set(bedX, 0.55, bedZ - 0.95); bed.add(headBoard);
     const mattress = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.22, 1.6), fabricMat); mattress.position.set(bedX, 0.36, bedZ); bed.add(mattress);
     const blanket = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.12, 1.2), blanketMat); blanket.position.set(bedX + 0.2, 0.48, bedZ + 0.05); bed.add(blanket);
     const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.15, 0.45), new THREE.MeshStandardMaterial({ color: 0xffffff })); pillow.position.set(bedX - 1.3, 0.5, bedZ + 0.0); pillow.rotation.y = Math.PI / 2; bed.add(pillow);
     const BED_SLEEP = { x: bedX - 0.9, z: bedZ - 0.45, y: 0.55 };
 
-    // Queues (play / playBlocks / eat / sleep / pond)
+    // ---- Queues ----
     const RES = {
       play:  { holder: null, queue: [], pos: new THREE.Vector3(RING_X, 0, RING_Z), waitDir: new THREE.Vector3(-1,0,0) },
       playBlocks: { holder: null, queue: [], pos: BLOCKS_POS.clone(), waitDir: new THREE.Vector3(-1,0,0) },
@@ -254,7 +215,7 @@ spawnBoy('Boy.glb', boyPos, POND_POS);
     function queueWaitPos(name, p){ const r = RES[name]; const idx = r.queue.indexOf(p); const spacing = 0.9; const off = r.waitDir.clone().multiplyScalar((idx+1)*spacing); return r.pos.clone().add(off); }
     function dequeueAll(p){ ['play','playBlocks','eat','sleep','pond'].forEach(n=>{ const r=RES[n]; const i=r.queue.indexOf(p); if(i>=0) r.queue.splice(i,1); if(r.holder===p) r.holder=null; }); }
 
-    // mobile toy
+    // ---- Mobile toy ----
     const mobile = new THREE.Group(); scene.add(mobile); mobile.position.set(-5, 3.8, -4.5);
     const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.2,12), new THREE.MeshStandardMaterial({ color: 0xd7ccc8 })); rod.rotation.z = Math.PI/2; mobile.add(rod);
     const stringMat = new THREE.MeshStandardMaterial({ color: 0xd7ccc8 });
@@ -262,7 +223,7 @@ spawnBoy('Boy.glb', boyPos, POND_POS);
     const hangFish = (oz) => { const s = new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,1.0,8), stringMat); s.position.set(0,-0.5,oz); mobile.add(s); const f = makeFish(); f.position.set(0,-1.1,oz); mobile.add(f); return f; };
     const mf1 = hangFish(-0.35), mf2 = hangFish(0), mf3 = hangFish(0.35);
 
-    // GLB loader
+    // ---- GLB loader (penguins) ----
     let penguin = null; const penguins = [];
     const gltfLoader = new GLTFLoader();
     const draco = new DRACOLoader();
@@ -270,8 +231,7 @@ spawnBoy('Boy.glb', boyPos, POND_POS);
     gltfLoader.setDRACOLoader(draco);
 
     const bounds = { xMin: -16, xMax: 7.5, zMin: -5.5, zMax: 13 };
-    const targetHeight = 2.2;
-    const HEADING_OFFSET = Math.PI;
+    const targetHeight = 2.2; const HEADING_OFFSET = Math.PI;
 
     const commentMap = {
       wander: 'おさんぽしよっと',
@@ -285,10 +245,7 @@ spawnBoy('Boy.glb', boyPos, POND_POS);
       sit:    'ちょときゅうけい',
       pond:   'ちょとあつい'
     };
-    function ensureBubble(p){
-      if (!p.userData.bubbleEl) { const el = document.createElement('div'); el.className = 'bubble'; document.body.appendChild(el); p.userData.bubbleEl = el; }
-      return p.userData.bubbleEl;
-    }
+    function ensureBubble(p){ if (!p.userData.bubbleEl) { const el = document.createElement('div'); el.className = 'bubble'; document.body.appendChild(el); p.userData.bubbleEl = el; } return p.userData.bubbleEl; }
     function setBubble(p, state){ const el = ensureBubble(p); el.textContent = commentMap[state] || ''; el.style.opacity = el.textContent ? 1 : 0; }
     function updateBubblePositionFor(p){ const el = p.userData.bubbleEl; if (!el) return; const world = p.position.clone().add(new THREE.Vector3(0,2.6,0)); const q = world.project(camera); el.style.left = (q.x*0.5+0.5)*window.innerWidth+'px'; el.style.top = (-q.y*0.5+0.5)*window.innerHeight+'px'; }
 
@@ -300,16 +257,9 @@ spawnBoy('Boy.glb', boyPos, POND_POS);
         gltfLoader.load(url, (gltf) => {
           const __st = $('status'); if (__st) { __st.textContent = ''; __st.style.display = 'none'; }
           const root = new THREE.Group();
-          const model = gltf.scene;
-          model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-          fitAndFloor(model);
-          root.add(model);
-          let mixer = null;
-          if (gltf.animations && gltf.animations.length) {
-            mixer = new THREE.AnimationMixer(model);
-            const action = mixer.clipAction(gltf.animations[0]);
-            action.play();
-          }
+          const model = gltf.scene; model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+          fitAndFloor(model); root.add(model);
+          let mixer = null; if (gltf.animations && gltf.animations.length) { mixer = new THREE.AnimationMixer(model); const action = mixer.clipAction(gltf.animations[0]); action.play(); }
           root.userData = { speed: 0, state: 'idle', target: new THREE.Vector3(), timer: 0, mixer, model, goingToBed: false };
           resolve(root);
         }, (e) => { if (e.total) setStatus(`loading ${url}: ${Math.round(100 * e.loaded / e.total)}%`); }, (err) => { console.error('GLB load error:', err); setStatus('GLB load error: ' + (err?.message || err)); reject(err); });
@@ -318,13 +268,21 @@ spawnBoy('Boy.glb', boyPos, POND_POS);
 
     function fallbackPenguin() { const g = new THREE.Group(); const body = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 18), new THREE.MeshStandardMaterial({ color: 0x4b4f57 })); body.scale.set(1, 1.4, 1); body.position.y = 1.2; g.add(body); const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 24, 18), new THREE.MeshStandardMaterial({ color: 0x1f2124 })); head.position.set(0, 2.05, 0.05); g.add(head); g.userData = { speed: 0, state: 'idle', target: new THREE.Vector3(), timer: 0 }; return g; }
 
-    function randomPointNear(x0, z0, r = 5) { const x = THREE.MathUtils.clamp(x0 + (Math.random() * 2 - 1) * r, bounds.xMin, bounds.xMax); const z = THREE.MathUtils.clamp(z0 + (Math.random() * 2 - 1) * r, bounds.zMin, bounds.zMax); return new THREE.Vector3(x, 0, z); }
+    // ---- Boy loader（gltfLoader 初期化後！）----
+    const targetHeightBoy = 1.55;
+    function fitAndFloorToHeight(obj, targetH){ const tmp = new THREE.Group(); tmp.add(obj); scene.add(tmp); tmp.updateWorldMatrix(true,true); const box = new THREE.Box3().setFromObject(tmp); const size = new THREE.Vector3(); box.getSize(size); const s = (size.y > 0 ? targetH / size.y : 1); obj.scale.setScalar(s); tmp.updateWorldMatrix(true,true); const box2 = new THREE.Box3().setFromObject(tmp); obj.position.y += -box2.min.y; scene.remove(tmp); return obj; }
+    function spawnBoy(url, pos, lookAt){
+      gltfLoader.load(url, (gltf)=>{ const boy = new THREE.Group(); const model = gltf.scene; fitAndFloorToHeight(model, targetHeightBoy); boy.add(model); boy.position.copy(pos); if (lookAt) boy.lookAt(lookAt); scene.add(boy); }, undefined, (err)=>console.warn('Boy.glb load error', err));
+    }
+    const boyPos = POND_POS.clone().add(new THREE.Vector3(2.4, 0, -2.2));
+    spawnBoy('Boy.glb', boyPos, POND_POS);
 
+    // ---- Behavior ----
+    function randomPointNear(x0, z0, r = 5) { const x = THREE.MathUtils.clamp(x0 + (Math.random() * 2 - 1) * r, bounds.xMin, bounds.xMax); const z = THREE.MathUtils.clamp(z0 + (Math.random() * 2 - 1) * r, bounds.zMin, bounds.zMax); return new THREE.Vector3(x, 0, z); }
     function doorWaypoint(from, to){ if ((from.x > DOOR_X && to.x < DOOR_X) || (from.x < DOOR_X && to.x > DOOR_X)) { return new THREE.Vector3(DOOR_X, 0, (DOOR_Z_MIN + DOOR_Z_MAX) / 2); } return null; }
     function setRoute(p, dest){ const d = doorWaypoint(p.position, dest); p.userData.way = []; if (d) { p.userData.way = [dest.clone()]; p.userData.target.copy(d); } else { p.userData.target.copy(dest); } }
 
-    function chooseNextAction(p){
-      if (!p) return; const r = Math.random();
+    function chooseNextAction(p){ if (!p) return; const r = Math.random();
       if (r < 0.27) setState(p,'wander');
       else if (r < 0.42) setState(p,'lounge');
       else if (r < 0.49) setState(p,'play');        // rings
@@ -408,6 +366,7 @@ spawnBoy('Boy.glb', boyPos, POND_POS);
       p.position.z = THREE.MathUtils.clamp(p.position.z, bounds.zMin, bounds.zMax);
     }
 
+    // ---- Loop ----
     function animate(){
       requestAnimationFrame(animate);
       const dt = clock.getDelta();
@@ -417,21 +376,25 @@ spawnBoy('Boy.glb', boyPos, POND_POS);
       penguin = penguins[0] || null;
       for (const p of penguins) updateBubblePositionFor(p);
       if (garden.userData && garden.userData.catHead) { garden.userData.catHead.rotation.y = Math.sin(t*0.7)*0.3; garden.userData.catTail.rotation.z = Math.sin(t*2.4)*0.35; }
+      // droplets
       for (let i=droplets.length-1; i>=0; i--) { const d = droplets[i]; d.userData.vel.y -= 3.5 * dt; d.position.addScaledVector(d.userData.vel, dt); d.userData.life -= dt; d.material.opacity = Math.max(0, d.userData.life / 0.7); if (d.userData.life <= 0 || d.position.y <= 0.02) { scene.remove(d); droplets.splice(i,1); } }
       renderer.render(scene, camera);
     }
     animate();
 
+    // ---- Interactions ----
     function handleAdvance(e){ const el = e.target; if (el && el.closest && (el.closest('.picker') || el.closest('.drop'))) return; for (const p of penguins) chooseNextAction(p); }
     window.addEventListener('click', handleAdvance);
     window.addEventListener('touchend', handleAdvance, { passive: true });
     window.addEventListener('pointerup', handleAdvance);
 
+    // Drag & Drop
     const drop = $('drop');
     addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('on'); });
     addEventListener('dragleave', (e) => { e.preventDefault(); drop.classList.remove('on'); });
     addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('on'); const f = e.dataTransfer.files?.[0]; if (!f) return; setStatus('reading ' + f.name + ' ...'); f.arrayBuffer().then((ab) => { gltfLoader.parse(ab, '', (gltf) => { setStatus('parsed.'); const g = new THREE.Group(); const model = fitAndFloor(gltf.scene); g.add(model); g.userData = { speed:0, state:'idle', target:new THREE.Vector3(), timer:0, model }; scene.add(g); if (!penguin) penguin = g; penguins.push(g); setState(g,'wander'); }, (err) => setStatus('parse error: ' + (err?.message || err)) ); }); });
 
+    // ---- Auto-load penguins ----
     const params = new URLSearchParams(location.search);
     const modelUrl = params.get('model') || 'Pen.glb';
     function spawn(url, start){
@@ -441,12 +404,9 @@ spawnBoy('Boy.glb', boyPos, POND_POS);
     spawn(modelUrl, new THREE.Vector3(-1,0,0));
     ['Pen_b.glb','Pen_r.glb','Pen_y.glb','Pen_g.glb'].forEach((u,i)=>{ const starts=[ new THREE.Vector3(1.0,0,-1.2), new THREE.Vector3(-2.5,0,1.2), new THREE.Vector3(0,0,2.0), new THREE.Vector3(2.5,0,2.0) ]; spawn(u, starts[i]); });
 
+    // expose
     window.__penguin = { scene, camera, setState, chooseNextAction, get penguin(){ return penguin; }, get penguins(){ return penguins; } };
     setStatus('initialized OK');
   </script>
-
-  <!-- Eruda: mobile devtools -->
-  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-  <script>try{ eruda.init({ defaults: { displaySize: 50 }, tool: [ 'console','network','resources' ] }); console.log('Eruda ready'); }catch(e){ console.warn('Eruda init failed', e); }</script>
 </body>
 </html>
