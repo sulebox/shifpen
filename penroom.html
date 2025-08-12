@@ -155,6 +155,22 @@
     const rim = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.12, 48, 1, true), new THREE.MeshStandardMaterial({ color: 0xA1887F })); rim.position.set(-2.0, 0.06, 10.0); pond.add(rim);
     const water = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 0.05, 48), new THREE.MeshStandardMaterial({ color: 0xB3E5FF, roughness: 0.25, metalness: 0 })); water.position.set(-2.0, 0.081, 10.0); water.renderOrder = 2; pond.add(water);
 
+    // --- pond helpers ---
+    const POND_POS = water.position.clone();
+    // splash particles
+    const droplets = [];
+    const dropletGeo = new THREE.SphereGeometry(0.06, 10, 8);
+    const dropletBaseMat = new THREE.MeshStandardMaterial({ color: 0xB3E5FF, metalness:0, roughness:0.2, transparent:true, opacity:0.9 });
+    function spawnSplash(pos, count=6){
+      for(let i=0;i<count;i++){
+        const m = new THREE.Mesh(dropletGeo, dropletBaseMat.clone());
+        m.position.copy(pos).add(new THREE.Vector3((Math.random()-0.5)*0.4, 0.1, (Math.random()-0.5)*0.4));
+        m.userData = { vel: new THREE.Vector3((Math.random()-0.5)*1.2, 1.5+Math.random()*0.8, (Math.random()-0.5)*1.2), life: 0.7 };
+        scene.add(m);
+        droplets.push(m);
+      }
+    }
+
     // white cat in the garden
     const cat = new THREE.Group(); garden.add(cat); cat.position.set(-11.2, 0, 2.5);
     const catMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
@@ -202,7 +218,8 @@
     const RES = {
       play:  { holder: null, queue: [], pos: new THREE.Vector3(RING_X, 0, RING_Z), waitDir: new THREE.Vector3(-1,0,0) },
       eat:   { holder: null, queue: [], pos: dish.position.clone(), waitDir: new THREE.Vector3(-1,0,0) },
-      sleep: { holder: null, queue: [], pos: new THREE.Vector3(BED_SLEEP.x, 0, BED_SLEEP.z), waitDir: new THREE.Vector3(1,0,0) }
+      sleep: { holder: null, queue: [], pos: new THREE.Vector3(BED_SLEEP.x, 0, BED_SLEEP.z), waitDir: new THREE.Vector3(1,0,0) },
+      pond:  { holder: null, queue: [], pos: POND_POS.clone(), waitDir: new THREE.Vector3(1,0,0) }
     };
     function requestResource(p, name){ const r = RES[name]; if(!r.holder){ r.holder = p; return true; } if(!r.queue.includes(p)) r.queue.push(p); return false; }
     function releaseResource(name){ const r = RES[name]; if(r.holder) r.holder = null; const next = r.queue.shift(); if(next) setState(next, name); }
@@ -238,7 +255,8 @@
       window: 'そとなにあるかな',
       sleep:  'もうねよっと',
       wake:   '',
-      sit:    'ちょときゅうけい'
+      sit:    'ちょときゅうけい',
+      pond:  'ちょとあつい'
     };
     function ensureBubble(p){
       if (!p.userData.bubbleEl) {
@@ -340,12 +358,13 @@
     function chooseNextAction(p){
       if (!p) return;
       const r = Math.random();
-      if (r < 0.32) setState(p,'wander');
-      else if (r < 0.47) setState(p,'lounge');
-      else if (r < 0.62) setState(p,'play');
-      else if (r < 0.77) setState(p,'eat');
-      else if (r < 0.89) setState(p,'window');
-      else if (r < 0.95) setState(p,'sleep');
+      if (r < 0.27) setState(p,'wander');
+      else if (r < 0.42) setState(p,'lounge');
+      else if (r < 0.57) setState(p,'play');
+      else if (r < 0.72) setState(p,'eat');
+      else if (r < 0.82) setState(p,'pond');
+      else if (r < 0.92) setState(p,'window');
+      else if (r < 0.97) setState(p,'sleep');
       else setState(p,'sit');
     }
 
@@ -357,6 +376,33 @@
       ud.timer = 0; ud.arrived = false;
       let final = state; let bubbleKey = state;
       if(state === 'wander'){ const dest = randomPointNear(p.position.x, p.position.z, 6); setRoute(p, dest); ud.speed = 0.9 + Math.random()*0.4; }
+      else if(state === 'lounge'){ ud.speed = 0; }
+      else if(state === 'play'){
+        ud.speed = 0.8;
+        if (requestResource(p,'play')) { setRoute(p, new THREE.Vector3(RING_X,0,RING_Z)); }
+        else { final = 'playWait'; setRoute(p, queueWaitPos('play',p)); bubbleKey = 'play'; }
+      }
+      else if(state === 'eat'){
+        ud.speed = 1.0;
+        if (requestResource(p,'eat')) { setRoute(p, dish.position.clone().add(new THREE.Vector3(-0.9,0,0))); }
+        else { final = 'eatWait'; setRoute(p, queueWaitPos('eat',p)); bubbleKey = 'eat'; }
+      }
+      else if(state === 'pond'){
+        ud.speed = 1.0;
+        if (requestResource(p,'pond')) { setRoute(p, POND_POS.clone()); }
+        else { final = 'pondWait'; setRoute(p, queueWaitPos('pond',p)); bubbleKey = 'pond'; }
+      }
+      else if(state === 'window'){ ud.speed = 1.0; setRoute(p, new THREE.Vector3(7.4,0,0)); }
+      else if(state === 'sit'){ ud.speed = 0; }
+      else if(state === 'sleep'){
+        ud.speed = 1.0;
+        if (requestResource(p,'sleep')) { setRoute(p, new THREE.Vector3(BED_SLEEP.x, 0, BED_SLEEP.z)); ud.goingToBed = true; }
+        else { final = 'sleepWait'; setRoute(p, queueWaitPos('sleep',p)); bubbleKey = 'sleep'; }
+      }
+      else if(state === 'wake'){ ud.speed = 0; }
+      ud.state = final;
+      setBubble(p, bubbleKey);
+    }
       else if(state === 'lounge'){ ud.speed = 0; }
       else if(state === 'play'){
         ud.speed = 0.8;
@@ -397,7 +443,7 @@
       ud.timer += dt;
       if (ud.state !== 'sit' && ud.state !== 'sleep') { p.position.y = Math.max(0, Math.sin(performance.now() / 1000 * 6) * 0.03); }
 
-      if (['wander', 'play', 'eat', 'window','playWait','eatWait','sleepWait'].includes(ud.state) || (ud.state === 'sleep' && ud.goingToBed)) {
+      if (['wander', 'play', 'eat', 'window','pond','playWait','eatWait','pondWait','sleepWait'].includes(ud.state) || (ud.state === 'sleep' && ud.goingToBed)) {
         const target = ud.target;
         const v = new THREE.Vector3(target.x - p.position.x, 0, target.z - p.position.z);
         // separation (avoid overlap with friends)
@@ -480,6 +526,15 @@
         garden.userData.catHead.rotation.y = Math.sin(t*0.7)*0.3;
         garden.userData.catTail.rotation.z = Math.sin(t*2.4)*0.35;
       }
+      // update water droplets
+      for (let i=droplets.length-1; i>=0; i--) {
+        const d = droplets[i];
+        d.userData.vel.y -= 3.5 * dt;
+        d.position.addScaledVector(d.userData.vel, dt);
+        d.userData.life -= dt;
+        d.material.opacity = Math.max(0, d.userData.life / 0.7);
+        if (d.userData.life <= 0 || d.position.y <= 0.02) { scene.remove(d); droplets.splice(i,1); }
+      }
       renderer.render(scene, camera);
     }
     animate();
@@ -526,5 +581,9 @@
     window.__penguin = { scene, camera, setState, chooseNextAction, get penguin(){ return penguin; }, get penguins(){ return penguins; } };
     setStatus('initialized OK');
   </script>
+  
+  <!-- Eruda: mobile devtools for v=39 debug -->
+  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+  <script>try{ eruda.init({ defaults: { displaySize: 50 }, tool: [ 'console','network','resources' ] }); console.log('Eruda ready'); }catch(e){ console.warn('Eruda init failed', e); }</script>
 </body>
 </html>
