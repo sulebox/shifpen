@@ -109,7 +109,6 @@
     const wallH = 5, wallT = 0.3;
     const wallMat = new THREE.MeshStandardMaterial({ color: 0xF7CD8F });
     const mkWall = (w,h,t) => new THREE.Mesh(new THREE.BoxGeometry(w,h,t), wallMat);
-    const back = mkWall(18, wallH, wallT); back.position.set(0, wallH/2, -7); room.add(back);
     const DOOR_X = -9, DOOR_Z_MIN = 3.5, DOOR_Z_MAX = 6.5;
     const leftA = mkWall(wallT, wallH, (DOOR_Z_MIN - (-7))); leftA.position.set(-9, wallH/2, (-7 + DOOR_Z_MIN)/2); room.add(leftA);
     const leftB = mkWall(wallT, wallH, (7 - DOOR_Z_MAX));   leftB.position.set(-9, wallH/2, (7 + DOOR_Z_MAX)/2);   room.add(leftB);
@@ -133,7 +132,7 @@
     const garden = new THREE.Group(); scene.add(garden);
     const lawnMat = new THREE.MeshStandardMaterial({ color: 0xCDE7B0, roughness: 0.95 });
     const frontLawn = new THREE.Mesh(new THREE.PlaneGeometry(18, 8), lawnMat); frontLawn.rotation.x = -Math.PI/2; frontLawn.position.set(0, 0, 11); garden.add(frontLawn);
-    const leftLawn  = new THREE.Mesh(new THREE.PlaneGeometry(8, 14), lawnMat); leftLawn.rotation.x = -Math.PI/2; leftLawn.position.set(-13, 0, 0); garden.add(leftLawn);
+    const leftLawn  = new THREE.Mesh(new THREE.PlaneGeometry(14, 16), lawnMat); leftLawn.rotation.x = -Math.PI/2; leftLawn.position.set(-16, 0, 0); garden.add(leftLawn);
     const tree = new THREE.Group(); garden.add(tree); tree.position.set(-12, 0, 3.5);
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 2.2, 12), new THREE.MeshStandardMaterial({ color: 0x8D6E63 })); trunk.position.y = 1.1; tree.add(trunk);
     const crown1 = new THREE.Mesh(new THREE.SphereGeometry(1.2, 16, 12), new THREE.MeshStandardMaterial({ color: 0x7CB342 })); crown1.position.y = 2.2; tree.add(crown1);
@@ -157,6 +156,39 @@
       }
     }
 
+    // ---- Boy loader & spawn ----
+const targetHeightBoy = 1.55; // 少年の身長ターゲット（必要なら微調整）
+function fitAndFloorToHeight(obj, targetH){
+  const tmp = new THREE.Group(); tmp.add(obj); scene.add(tmp);
+  tmp.updateWorldMatrix(true,true);
+  const box = new THREE.Box3().setFromObject(tmp);
+  const size = new THREE.Vector3(); box.getSize(size);
+  const s = (size.y > 0 ? targetH / size.y : 1);
+  obj.scale.setScalar(s);
+  tmp.updateWorldMatrix(true,true);
+  const box2 = new THREE.Box3().setFromObject(tmp);
+  obj.position.y += -box2.min.y;
+  scene.remove(tmp);
+  return obj;
+}
+
+function spawnBoy(url, pos, lookAt){
+  gltfLoader.load(url, (gltf)=>{
+    const boy = new THREE.Group();
+    const model = gltf.scene;
+    fitAndFloorToHeight(model, targetHeightBoy);
+    boy.add(model);
+    boy.position.copy(pos);
+    if (lookAt) boy.lookAt(lookAt);
+    scene.add(boy);
+  }, undefined, (err)=>console.warn('Boy.glb load error', err));
+}
+
+// 池の右下に配置（POND_POS は既存の water.position.clone() を使っています）
+const boyPos = POND_POS.clone().add(new THREE.Vector3(2.4, 0, -2.2)); // 右下寄り
+spawnBoy('Boy.glb', boyPos, POND_POS);
+
+    
     // cat
     const cat = new THREE.Group(); garden.add(cat); cat.position.set(-11.2, 0, 2.5);
     const catMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
