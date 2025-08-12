@@ -14,7 +14,7 @@
     .drop { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; border: 2px dashed rgba(0,0,0,.15); border-radius: 16px; pointer-events: none; opacity: 0; transition: .2s; }
     .drop.on { opacity: 1; }
     a { color: inherit; }
-    .bubble {$1 white-space: nowrap; max-width: none; overflow: visible; }
+    .bubble {$1 white-space: nowrap; max-width: none; overflow: visible; z-index: 999; }
   </style>
 </head>
 <body>
@@ -71,7 +71,7 @@
       const pad = 0.6; // base margin
       let width = (maxX-minX) + pad*2;
       let height = (maxY-minY) + pad*2;
-      const extra = (typeof isSmallScreen==='function' && isSmallScreen()) ? 1.15 : 1.0; // mobile only: zoom out ~15%
+      const extra = (typeof isSmallScreen==='function' && isSmallScreen()) ? 1.08 : 1.0; // mobile only: zoom out ~15%
       width *= extra; height *= extra;
       aspect = window.innerWidth / window.innerHeight;
       const frustumSize = Math.max(height, width / aspect);
@@ -255,7 +255,9 @@
     function setBubble(p, state){
       const el = ensureBubble(p);
       el.textContent = commentMap[state] || '';
-      el.style.opacity = el.textContent ? 1 : 0;
+      const has = !!el.textContent;
+      el.style.display = has ? 'block' : 'none';
+      el.style.opacity = has ? 1 : 0;
     }
     function updateBubblePositionFor(p){
       const el = p.userData.bubbleEl; if (!el) return;
