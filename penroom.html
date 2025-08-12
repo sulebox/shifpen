@@ -152,8 +152,8 @@
     const crown2 = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 12), new THREE.MeshStandardMaterial({ color: 0x8BC34A })); crown2.position.set(0.9, 2.9, 0.2); tree.add(crown2);
     // pond
     const pond = new THREE.Group(); garden.add(pond);
-    const rim = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.12, 48), new THREE.MeshStandardMaterial({ color: 0xA1887F })); rim.position.set(-2.0, 0.06, 10.0); pond.add(rim);
-    const water = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 0.05, 48), new THREE.MeshPhysicalMaterial({ color: 0xB3E5FF, roughness: 0.15, transmission: 0.8, transparent: true, opacity: 0.85 })); water.position.set(-2.0, 0.08, 10.0); pond.add(water);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.12, 48, 1, true), new THREE.MeshStandardMaterial({ color: 0xA1887F })); rim.position.set(-2.0, 0.06, 10.0); pond.add(rim);
+    const water = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 0.05, 48), new THREE.MeshStandardMaterial({ color: 0xB3E5FF, roughness: 0.25, metalness: 0 })); water.position.set(-2.0, 0.081, 10.0); water.renderOrder = 2; pond.add(water);
 
     // white cat in the garden
     const cat = new THREE.Group(); garden.add(cat); cat.position.set(-11.2, 0, 2.5);
