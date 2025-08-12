@@ -397,7 +397,7 @@
       ud.timer += dt;
       if (ud.state !== 'sit' && ud.state !== 'sleep') { p.position.y = Math.max(0, Math.sin(performance.now() / 1000 * 6) * 0.03); }
 
-      if (['wander', 'play', 'eat', 'window','playWait','eatWait','sleepWait'].includes(ud.state) || (ud.state === 'sleep' && ud.goingToBed)) {
+      if (['wander', 'play', 'eat', 'window','pond','playWait','eatWait','pondWait','sleepWait'].includes(ud.state) || (ud.state === 'sleep' && ud.goingToBed)) {
         const target = ud.target;
         const v = new THREE.Vector3(target.x - p.position.x, 0, target.z - p.position.z);
         // separation (avoid overlap with friends)
@@ -446,6 +446,12 @@
           } else if (ud.state === 'window') {
             p.rotation.y = Math.PI / 2 + HEADING_OFFSET;
             if (!ud.arrived) { ud.arrived = true; ud.timer = 0; } if (ud.timer > (1.0 + Math.random() * 1.0)) chooseNextAction(p);
+          } else if (ud.state === 'pond') {
+            if (!ud.arrived) { ud.arrived = true; ud.timer = 0; ud.splashT = 0; }
+            ud.splashT -= dt;
+            if (ud.splashT <= 0) { spawnSplash(new THREE.Vector3(p.position.x, 0.08, p.position.z)); ud.splashT = 0.18 + Math.random()*0.1; }
+            if (ud.timer > (1.4 + Math.random() * 0.8)) { releaseResource('pond'); chooseNextAction(p); }
+          } if (ud.timer > (1.0 + Math.random() * 1.0)) chooseNextAction(p);
           }
         }
       } else if (ud.state === 'lounge') {
@@ -479,6 +485,15 @@
       if (garden.userData && garden.userData.catHead) {
         garden.userData.catHead.rotation.y = Math.sin(t*0.7)*0.3;
         garden.userData.catTail.rotation.z = Math.sin(t*2.4)*0.35;
+      }
+      // update water droplets
+      for (let i=droplets.length-1; i>=0; i--) {
+        const d = droplets[i];
+        d.userData.vel.y -= 3.5 * dt;
+        d.position.addScaledVector(d.userData.vel, dt);
+        d.userData.life -= dt;
+        d.material.opacity = Math.max(0, d.userData.life / 0.7);
+        if (d.userData.life <= 0 || d.position.y <= 0.02) { scene.remove(d); droplets.splice(i,1); }
       }
       renderer.render(scene, camera);
     }
