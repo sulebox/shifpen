@@ -113,7 +113,7 @@
     const back = mkWall(18, wallH, wallT); back.position.set(0, wallH/2, -7); room.add(back);
 
     // 左側の壁（ドアのある下側は残し、上側パート＝leftB を削除）
-    // const DOOR_X = -9, DOOR_Z_MIN = 3.5, DOOR_Z_MAX = 6.5; // ← 削除
+    const DOOR_X = -9, DOOR_Z_MIN = 3.5, DOOR_Z_MAX = 6.5;
     // const leftA = mkWall(wallT, wallH, (DOOR_Z_MIN - (-7))); leftA.position.set(-9, wallH/2, (-7 + DOOR_Z_MIN)/2); room.add(leftA); // ← 削除
     // const leftB = mkWall(wallT, wallH, (7 - DOOR_Z_MAX)); leftB.position.set(-9, wallH/2, (7 + DOOR_Z_MAX)/2); room.add(leftB); // ← 削除
 
