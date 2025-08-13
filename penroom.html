@@ -264,6 +264,8 @@
     function ensureBubble(p){ if (!p.userData.bubbleEl) { const el = document.createElement('div'); el.className='bubble'; document.body.appendChild(el); p.userData.bubbleEl = el; } return p.userData.bubbleEl; }
     function setBubble(p, state){ const el = ensureBubble(p); el.textContent = commentMap[state] || ''; el.style.opacity = el.textContent ? 1 : 0; }
     function updateBubblePositionFor(p){ const el = p.userData.bubbleEl; if (!el) return; const world = p.position.clone().add(new THREE.Vector3(0,2.6,0)); const q = world.project(camera); el.style.left = (q.x*0.5+0.5)*window.innerWidth+'px'; el.style.top = (-q.y*0.5+0.5)*window.innerHeight+'px'; }
+    // 任意テキストの吹き出しを表示/非表示
+    function setBubbleText(obj, text){ const el = ensureBubble(obj); el.textContent = text || ''; el.style.opacity = text ? 1 : 0; }
 
     // ---- Penguin load helpers ----
     function fitAndFloor(model) {
@@ -484,6 +486,10 @@
 
     // ---- Boy.glb ----
     const mixers = []; // Boyのアニメーション更新用
+let boyRef = null;           // Boy の参照
+let greetTimer = 0;          // あいさつ表示の残り秒数
+let lastGreetedPenguin = null; // 直近で挨拶したペンギン
+const GREET_RADIUS = 1.3;    // 近づいたとみなす距離（m相当）
     function fitAndFloorToHeight(obj, targetH){
       const tmp = new THREE.Group(); tmp.add(obj); scene.add(tmp);
       tmp.updateWorldMatrix(true,true);
@@ -509,6 +515,7 @@
       const yaw = Math.atan2(POND_POS.x - boy.position.x, POND_POS.z - boy.position.z) + (135 * Math.PI / 180);
       boy.rotation.y = yaw;
       scene.add(boy);
+        boyRef = boy; // Boy参照を保持
 
         // アニメーションを無限ループで自動再生
         if (gltf.animations && gltf.animations.length){
@@ -522,7 +529,7 @@
     }
 
     // 池の右下あたりに Boy を配置
-    const boyPos = new THREE.Vector3(5, 0, 10);
+    const boyPos = new THREE.Vector3(7, 0, 0);
     spawnBoy('Boy.glb', boyPos);
 
     // ---- Loop ----
@@ -540,6 +547,30 @@
       mf1.rotation.y = Math.sin(t*1.6)*0.4; mf2.rotation.y = Math.cos(t*1.4)*0.4; mf3.rotation.y = Math.sin(t*1.8+0.7)*0.4;
       penguin = penguins[0] || null;
       for (const p of penguins) updateBubblePositionFor(p);
+      // --- greeting when penguin approaches boy ---
+      if (boyRef && penguins.length){
+        let nearest = null, minD = Infinity;
+        for (const p of penguins){
+          const d = p.position.distanceTo(boyRef.position);
+          if (d < minD){ minD = d; nearest = p; }
+        }
+        if (nearest && minD <= GREET_RADIUS && greetTimer <= 0){
+          greetTimer = 1.8; // 秒
+          lastGreetedPenguin = nearest;
+          setBubbleText(nearest, 'こんこん');
+          setBubbleText(boyRef, 'こんにちは');
+        }
+        if (greetTimer > 0){
+          greetTimer -= dt;
+          updateBubblePositionFor(boyRef);
+          if (lastGreetedPenguin) updateBubblePositionFor(lastGreetedPenguin);
+          if (greetTimer <= 0){
+            if (lastGreetedPenguin) setBubbleText(lastGreetedPenguin, '');
+            setBubbleText(boyRef, '');
+            lastGreetedPenguin = null;
+          }
+        }
+      }
       if (garden.userData && garden.userData.catHead) {
         garden.userData.catHead.rotation.y = Math.sin(t*0.7)*0.3;
         garden.userData.catTail.rotation.z = Math.sin(t*2.4)*0.35;
