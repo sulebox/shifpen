@@ -37,6 +37,7 @@
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
     import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
     import { DRACOLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/DRACOLoader.js';
+    import { CSS2DRenderer, CSS2DObject } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/renderers/CSS2DRenderer.js';
 
     // ---- Helpers ----
     const $ = (id) => document.getElementById(id);
@@ -51,6 +52,14 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     app.appendChild(renderer.domElement);
+
+    // ---- CSS2D overlay for GIF ----
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    labelRenderer.domElement.style.position = 'fixed';
+    labelRenderer.domElement.style.inset = '0';
+    labelRenderer.domElement.style.pointerEvents = 'none';
+    app.appendChild(labelRenderer.domElement);
 
     // ---- Camera ----
     let aspect = window.innerWidth / window.innerHeight;
@@ -88,6 +97,7 @@
     function isSmallScreen(){ return Math.min(window.innerWidth, window.innerHeight) < 800; }
     function updateCameraMode(){
       renderer.setSize(window.innerWidth, window.innerHeight);
+      labelRenderer.setSize(window.innerWidth, window.innerHeight);
       if (isSmallScreen()) fitCameraToRoom(); else setDesktopOrtho();
     }
     window.addEventListener('resize', updateCameraMode);
@@ -182,6 +192,19 @@
     for (let i=0;i<4;i++){ const leg = new THREE.Mesh(legGeo, catMat); leg.position.set(i<2?-0.15:0.15, 0.11, i%2?0.1:-0.25); cat.add(leg); }
     const catTail = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 10), catMat); catTail.position.set(0, 0.6, -0.45); catTail.rotation.x = Math.PI/3; cat.add(catTail);
     garden.userData.catHead = catHead; garden.userData.catTail = catTail;
+
+    // ---- Add looping GIF near the cat (right-upper side) ----
+    const gifHolder = new THREE.Object3D();
+    gifHolder.position.set(0.9, 1.1, 0.6); // オフセット（猫から見て右上あたり）
+    cat.add(gifHolder);
+    const gifImg = document.createElement('img');
+    gifImg.src = 'https://sulebox.github.io/todoapp/puyon.gif';
+    gifImg.alt = 'puyon';
+    gifImg.style.width = '120px';
+    gifImg.style.height = 'auto';
+    gifImg.style.borderRadius = '8px';
+    const gifLabel = new CSS2DObject(gifImg);
+    gifHolder.add(gifLabel);
 
     // ---- Toys & props ----
     const toys = new THREE.Group(); scene.add(toys);
@@ -501,8 +524,8 @@ const GREET_RADIUS = 3.0;    // 近づいたとみなす距離（m相当）
 const BOY_LINES = [
   'ここどこだろ','異世界かも','ペンギンたくさん','頭いたいかも','のどかわいた','あったかい','いいお天気','お庭きもちいい','いいにおいする','デジャヴかも','探し物あるかも','りんごたべたい','くつひもほどけてる','トイレどこかな','蚊にさされた','足のゆびかゆい','たまごごはん（TKG','ポトフたべたい','雲あんまりない','傘もってきたっけ','PASMOわすれた','コロッケたべたい','ドングリひろった','マインドフルネス','レベル25だって'
 ];
-let boySpeakTimer = 4;          // 表示中の残り秒数
-let boyNextSpeakIn = 2 + Math.random()*6; // 次の発話まで（最大6秒） // 次の発話までの待ち秒数
+let boySpeakTimer = 0;          // 表示中の残り秒数
+let boyNextSpeakIn = Math.random()*3; // 次の発話まで（最大3秒） // 次の発話までの待ち秒数
     function fitAndFloorToHeight(obj, targetH){
       const tmp = new THREE.Group(); tmp.add(obj); scene.add(tmp);
       tmp.updateWorldMatrix(true,true);
@@ -623,6 +646,7 @@ let boyNextSpeakIn = 2 + Math.random()*6; // 次の発話まで（最大6秒） 
         if (d.userData.life <= 0 || d.position.y <= 0.02) { scene.remove(d); droplets.splice(i,1); }
       }
       renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
     }
     animate();
 
