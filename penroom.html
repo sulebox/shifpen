@@ -515,7 +515,7 @@ const GREET_RADIUS = 3.0;    // 近づいたとみなす距離（m相当）    /
       gltfLoader.load(url, (gltf)=>{
         const boy = new THREE.Group();
         const model = gltf.scene;
-        // サイズを 0.007 倍に変更（元サイズに対する倍率）
+        // サイズを 0.1 倍に変更（元サイズに対する倍率）
         {
           const tmp = new THREE.Group(); tmp.add(model); scene.add(tmp);
           tmp.updateWorldMatrix(true,true);
