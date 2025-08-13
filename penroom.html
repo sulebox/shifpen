@@ -508,7 +508,7 @@ const GREET_RADIUS = 3.0;    // 近づいたとみなす距離（m相当）    /
       gltfLoader.load(url, (gltf)=>{
         const boy = new THREE.Group();
         const model = gltf.scene;
-        fitAndFloorToHeight(model, 1.55 * 0.006); // 1/100 サイズ // 身長調整
+        fitAndFloorToHeight(model, 1.55 * 0.007); // 1/100 サイズ // 身長調整
         boy.add(model);
         boy.position.copy(pos);
       // 池の方向 +135° を向かせる
