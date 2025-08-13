@@ -235,51 +235,53 @@
     draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/');
     gltfLoader.setDRACOLoader(draco);
 
-    // === Boy: orientation -90° and loop animation ===
-    const mixers = []; // Boy の AnimationMixer をここで管理
+    // ▼ ここから Boy2.glb 版（横向き=+90°、アニメ常時ループ）
+const targetHeightBoy = 1.55;           // 少年の身長ターゲット
+const boyMixers = [];                   // Boy 用ミキサーをまとめて更新
 
-    // 立たせる高さにフィットして床に接地させる小ヘルパー（必要に応じて）
-    function fitAndFloorToHeight(obj, targetH=1.55){
-      const tmp = new THREE.Group(); tmp.add(obj); scene.add(tmp);
-      tmp.updateWorldMatrix(true,true);
-      const b1 = new THREE.Box3().setFromObject(tmp), size = new THREE.Vector3(); b1.getSize(size);
-      const s = size.y > 0 ? targetH/size.y : 1; obj.scale.setScalar(s);
-      tmp.updateWorldMatrix(true,true);
-      const b2 = new THREE.Box3().setFromObject(tmp);
-      obj.position.y += -b2.min.y; // 地面に合わせる
-      scene.remove(tmp);
-      return obj;
+function fitAndFloorToHeight(obj, targetH){
+  const tmp = new THREE.Group(); tmp.add(obj); scene.add(tmp);
+  tmp.updateWorldMatrix(true,true);
+  const box = new THREE.Box3().setFromObject(tmp);
+  const size = new THREE.Vector3(); box.getSize(size);
+  const s = (size.y > 0 ? targetH / size.y : 1);
+  obj.scale.setScalar(s);
+  tmp.updateWorldMatrix(true,true);
+  const box2 = new THREE.Box3().setFromObject(tmp);
+  obj.position.y += -box2.min.y;
+  scene.remove(tmp);
+  return obj;
+}
+
+function spawnBoy2(url, pos){
+  gltfLoader.load(url, (gltf)=>{
+    const boy = new THREE.Group();
+    const model = gltf.scene;
+    fitAndFloorToHeight(model, targetHeightBoy);
+    boy.add(model);
+    boy.position.copy(pos);
+
+    // 何も見させずに真横（+90°）を向かせる
+    boy.rotation.y = THREE.MathUtils.degToRad(90);
+
+    // アニメーションを常時ループ
+    if (gltf.animations && gltf.animations.length){
+      const mixer = new THREE.AnimationMixer(model);
+      gltf.animations.forEach((clip)=>{
+        const action = mixer.clipAction(clip);
+        action.setLoop(THREE.LoopRepeat, Infinity);
+        action.play();
+      });
+      boyMixers.push(mixer);
     }
 
-    function spawnBoy(url, pos){
-      gltfLoader.load(url, (gltf)=>{
-        const boy = new THREE.Group();
-        const model = gltf.scene;
-        fitAndFloorToHeight(model, 1.55); // 必要なら身長を調整
-        boy.add(model);
+    scene.add(boy);
+  }, undefined, (err)=>console.warn('Boy2.glb load error', err));
+}
 
-        // 何も見させず、真横（Y軸 -90°）を向かせる
-        boy.rotation.y = -Math.PI / 2;
-
-        // 位置
-        boy.position.copy(pos);
-
-        // アニメーションを常時ループ再生
-        if (gltf.animations && gltf.animations.length){
-          const mixer = new THREE.AnimationMixer(model);
-          gltf.animations.forEach((clip)=>{
-            const action = mixer.clipAction(clip);
-            action.reset().setLoop(THREE.LoopRepeat, Infinity).play();
-          });
-          mixers.push(mixer);
-        }
-
-        scene.add(boy);
-      }, undefined, (err)=>console.warn('Boy.glb load error', err));
-    }
-
-    // 池の右下に Boy を配置（向きは上で固定、lookAt等はしない）
-    spawnBoy('Boy.glb', POND_POS.clone().add(new THREE.Vector3(2.4, 0, -2.2)));
+// 池の右下に配置（water.position を基準にオフセット）
+const boy2Pos = water.position.clone().add(new THREE.Vector3(2.4, 0, -2.2));
+spawnBoy2('Boy2.glb', boy2Pos);
 
     const bounds = { xMin: -16, xMax: 7.5, zMin: -5.5, zMax: 13 };
     const targetHeight = 2.2;
@@ -423,6 +425,7 @@
     function animate(){
       requestAnimationFrame(animate);
       const dt = clock.getDelta();
+      boyMixers.forEach(m => m.update(dt));
 
       // Boy のアニメーション更新
       for (const m of mixers) m.update(dt);
