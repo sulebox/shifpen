@@ -522,7 +522,7 @@ const GREET_RADIUS = 3.0;    // 近づいたとみなす距離（m相当）    /
           const box0 = new THREE.Box3().setFromObject(tmp);
           const size0 = new THREE.Vector3(); box0.getSize(size0);
           scene.remove(tmp);
-          fitAndFloorToHeight(model, size0.y * 0.007);
+          fitAndFloorToHeight(model, size0.y * 0.1);
         }
         boy.add(model);
         boy.position.copy(pos);
