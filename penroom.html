@@ -502,7 +502,7 @@
       gltfLoader.load(url, (gltf)=>{
         const boy = new THREE.Group();
         const model = gltf.scene;
-        fitAndFloorToHeight(model, 1.55); // 身長調整
+        fitAndFloorToHeight(model, 0.0155); // 身長調整
         boy.add(model);
         boy.position.copy(pos);
         // ちょい池の中心を向かせる
