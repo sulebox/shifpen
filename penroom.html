@@ -177,7 +177,7 @@
     }
 
     // ---- Cat ----
-    const cat = new THREE.Group(); garden.add(cat); cat.position.set(-11.2, 0, 2.5);
+    const cat = new THREE.Group(); garden.add(cat); cat.position.set(-11.2, 0, 2.5); cat.visible = false; // 非表示
     const catMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
     const catBody = new THREE.Mesh(new THREE.SphereGeometry(0.45, 18, 14), catMat); catBody.scale.set(1.4, 0.9, 1.8); catBody.position.y = 0.45; cat.add(catBody);
     const catHead = new THREE.Mesh(new THREE.SphereGeometry(0.28, 18, 14), catMat); catHead.position.set(0, 0.9, 0.2); cat.add(catHead);
@@ -195,12 +195,12 @@
 
     // ---- Add looping GIF near the cat (right-upper side) ----
     const gifHolder = new THREE.Object3D();
-    gifHolder.position.set(0.9, 1.1, 0.6); // オフセット（猫から見て右上あたり）
-    cat.add(gifHolder);
+    gifHolder.position.set(3, 0, -5); // ワールド座標へ配置（+3, 0, -5） // オフセット（猫から見て右上あたり）
+    scene.add(gifHolder);
     const gifImg = document.createElement('img');
     gifImg.src = 'https://sulebox.github.io/todoapp/puyon.gif';
     gifImg.alt = 'puyon';
-    gifImg.style.width = '120px';
+    gifImg.style.width = '90px';
     gifImg.style.height = 'auto';
     gifImg.style.borderRadius = '8px';
     const gifLabel = new CSS2DObject(gifImg);
@@ -632,7 +632,7 @@ let boyNextSpeakIn = Math.random()*3; // 次の発話まで（最大3秒） // �
           if (boySpeakTimer > 0) boySpeakTimer = 0;
         }
       }
-      if (garden.userData && garden.userData.catHead) {
+      if (garden.userData && garden.userData.catHead && cat.visible) {
         garden.userData.catHead.rotation.y = Math.sin(t*0.7)*0.3;
         garden.userData.catTail.rotation.z = Math.sin(t*2.4)*0.35;
       }
