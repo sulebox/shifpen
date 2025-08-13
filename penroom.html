@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>Penguin Room — penroom.html (v44)</title>
+  <title>Penguin Room — penroom.html (v45)</title>
   <style>
     html, body { height: 100%; margin: 0; background: #f6e6c9; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     #app { position: fixed; inset: 0; }
@@ -201,7 +201,7 @@
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,1.2,16), new THREE.MeshStandardMaterial({ color: 0xd7ccc8 })); pole.position.set(RING_X,0.6,RING_Z); toys.add(pole);
     const base = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,0.2,20), new THREE.MeshStandardMaterial({ color: 0xef9a9a })); base.position.set(RING_X,0.1,RING_Z); toys.add(base);
 
-    const dish = new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.1,24), new THREE.MeshStandardMaterial({ color: 0x90caf9 })); dish.position.set(2, 0.05, 2); scene.add(dish);
+    const dish = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.1, 24), new THREE.MeshStandardMaterial({ color: 0x90caf9 })); dish.position.set(2, 0.05, 2); scene.add(dish);
 
     // ---- Bed（元の位置・向きのまま） ----
     const bed = new THREE.Group(); scene.add(bed);
@@ -482,8 +482,8 @@
       p.position.z = THREE.MathUtils.clamp(p.position.z, bounds.zMin, bounds.zMax);
     }
 
-    // ---- Boy2.glb ----
-    const mixers = []; // ← Boyのアニメーションを更新するため
+    // ---- Boy.glb ----
+    const mixers = []; // Boyのアニメーション更新用
     function fitAndFloorToHeight(obj, targetH){
       const tmp = new THREE.Group(); tmp.add(obj); scene.add(tmp);
       tmp.updateWorldMatrix(true,true);
@@ -498,31 +498,32 @@
       return obj;
     }
 
-    function spawnBoy2(url, pos){
+    function spawnBoy(url, pos){
       gltfLoader.load(url, (gltf)=>{
         const boy = new THREE.Group();
         const model = gltf.scene;
         fitAndFloorToHeight(model, 1.55); // 身長調整
         boy.add(model);
         boy.position.copy(pos);
-        boy.rotation.y = Math.PI / 2;     // 真横（+90°）を向かせる
+        // ちょい池の中心を向かせる
+        const look = POND_POS.clone();
+        boy.lookAt(look.x, look.y, look.z);
         scene.add(boy);
 
-        // すべてのアニメーションクリップを無限ループで再生
+        // アニメーションを無限ループで自動再生
         if (gltf.animations && gltf.animations.length){
           const mixer = new THREE.AnimationMixer(model);
-          gltf.animations.forEach(clip=>{
-            const action = mixer.clipAction(clip);
-            action.setLoop(THREE.LoopRepeat, Infinity).play();
-          });
+          const idle = gltf.animations.find(a => /idle/i.test(a.name)) || gltf.animations[0];
+          const action = mixer.clipAction(idle);
+          action.setLoop(THREE.LoopRepeat, Infinity).play();
           mixers.push(mixer);
         }
-      }, undefined, (err)=>console.warn('Boy2.glb load error', err));
+      }, undefined, (err)=>console.warn('Boy.glb load error', err));
     }
 
-    // 池の右下に Boy2 を配置
-    const boy2Pos = POND_POS.clone().add(new THREE.Vector3(2.4, 0, -2.2));
-    spawnBoy2('Boy2.glb', boy2Pos);
+    // 池の右下あたりに Boy を配置
+    const boyPos = POND_POS.clone().add(new THREE.Vector3(2.4, 0, -2.2));
+    spawnBoy('Boy.glb', boyPos);
 
     // ---- Loop ----
     function animate(){
