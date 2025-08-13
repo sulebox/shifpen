@@ -527,7 +527,7 @@ const GREET_RADIUS = 3.0;    // 近づいたとみなす距離（m相当）    /
         {
           const bb = new THREE.Box3().setFromObject(model);
           const h = Math.max(0.001, bb.max.y - bb.min.y);
-          boy.userData.bubbleOffsetY = Math.max(h * 1.6, h + 0.1);
+          boy.userData.bubbleOffsetY = Math.max(h * 1.6, h + 0.02);
         }
         boyRef = boy; // Boy参照を保持
 
