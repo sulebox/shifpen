@@ -515,15 +515,7 @@ const GREET_RADIUS = 3.0;    // 近づいたとみなす距離（m相当）    /
       gltfLoader.load(url, (gltf)=>{
         const boy = new THREE.Group();
         const model = gltf.scene;
-        // サイズを 0.1 倍に変更（元サイズに対する倍率）
-        {
-          const tmp = new THREE.Group(); tmp.add(model); scene.add(tmp);
-          tmp.updateWorldMatrix(true,true);
-          const box0 = new THREE.Box3().setFromObject(tmp);
-          const size0 = new THREE.Vector3(); box0.getSize(size0);
-          scene.remove(tmp);
-          fitAndFloorToHeight(model, size0.y * 0.1);
-        }
+        fitAndFloorToHeight(model, 1.55 * 0.007); // 身長調整（元のやり方に戻す）
         boy.add(model);
         boy.position.copy(pos);
       // 池の方向 +135° を向かせる
@@ -531,7 +523,12 @@ const GREET_RADIUS = 3.0;    // 近づいたとみなす距離（m相当）    /
       boy.rotation.y = yaw;
       scene.add(boy);
         boy.userData = boy.userData || {};
-        boy.userData.bubbleOffsetY = 3.4; // Boy の吹き出しを少し高く
+        // Boy の身長に追従して、頭より少し上に吹き出しを出す
+        {
+          const bb = new THREE.Box3().setFromObject(model);
+          const h = Math.max(0.001, bb.max.y - bb.min.y);
+          boy.userData.bubbleOffsetY = Math.max(h * 1.6, h + 0.02);
+        }
         boyRef = boy; // Boy参照を保持
 
         // アニメーションを無限ループで自動再生
