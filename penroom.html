@@ -517,6 +517,24 @@ let boyNextSpeakIn = Math.random()*3; // 次の発話まで（最大3秒） // �
       return obj;
     }
 
+    // ---- Neco (neco.glb) loader ----
+    function spawnNeco(url, pos, targetH = 1.1){
+      gltfLoader.load(url, (gltf)=>{
+        const neco = new THREE.Group();
+        const model = gltf.scene;
+        model.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+        fitAndFloorToHeight(model, targetH);
+        neco.add(model);
+        neco.position.copy(pos);
+        scene.add(neco);
+        if (gltf.animations && gltf.animations.length){
+          const mixer = new THREE.AnimationMixer(model);
+          gltf.animations.forEach(clip=> mixer.clipAction(clip).setLoop(THREE.LoopRepeat, Infinity).play());
+          mixers.push(mixer);
+        }
+      }, undefined, (err)=>console.warn('neco.glb load error', err));
+    }
+
     function spawnBoy(url, pos){
       gltfLoader.load(url, (gltf)=>{
         const boy = new THREE.Group();
@@ -547,6 +565,10 @@ let boyNextSpeakIn = Math.random()*3; // 次の発話まで（最大3秒） // �
     // 池の右下あたりに Boy を配置
     const boyPos = new THREE.Vector3(5, 0, 10);
     spawnBoy('Boy.glb', boyPos);
+
+    // 左庭の元の猫位置に neco.glb を表示
+    spawnNeco('neco.glb', new THREE.Vector3(-11.2, 0, 2.5), 1.1);
+
 
     // ---- Loop ----
     function animate(){
@@ -600,8 +622,8 @@ let boyNextSpeakIn = Math.random()*3; // 次の発話まで（最大3秒） // �
               const line = BOY_LINES[Math.floor(Math.random()*BOY_LINES.length)];
               setBubbleText(boyRef, line);
               updateBubblePositionFor(boyRef);
-              boySpeakTimer = 3;                 // 表示秒数
-              boyNextSpeakIn = 2 +Math.random()*4; // 最大3秒 // 次の発話まで
+              boySpeakTimer = 3.0;                 // 表示秒数
+              boyNextSpeakIn = 2 + Math.random()*4; // 最大3秒 // 次の発話まで
             }
           }
         } else {
