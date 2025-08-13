@@ -523,12 +523,8 @@ const GREET_RADIUS = 3.0;    // 近づいたとみなす距離（m相当）    /
       boy.rotation.y = yaw;
       scene.add(boy);
         boy.userData = boy.userData || {};
-        // Boy の身長に追従して、頭より少し上に吹き出しを出す
-        {
-          const bb = new THREE.Box3().setFromObject(model);
-          const h = Math.max(0.001, bb.max.y - bb.min.y);
-          boy.userData.bubbleOffsetY = Math.max(h * 1.6, h + 0.02);
-        }
+        // 吹き出しをさらに上へ（Boy は極小スケールのため固定オフセットを採用）
+        boy.userData.bubbleOffsetY = 4.2; // ←お好みで 3.8〜5.0 などに
         boyRef = boy; // Boy参照を保持
 
         // アニメーションを無限ループで自動再生
