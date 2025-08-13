@@ -489,7 +489,7 @@
 let boyRef = null;           // Boy の参照
 let greetTimer = 0;          // あいさつ表示の残り秒数
 let lastGreetedPenguin = null; // 直近で挨拶したペンギン
-const GREET_RADIUS = 1.3;    // 近づいたとみなす距離（m相当）
+const GREET_RADIUS = 2.0;    // 近づいたとみなす距離（m相当）    // 近づいたとみなす距離（m相当）
     function fitAndFloorToHeight(obj, targetH){
       const tmp = new THREE.Group(); tmp.add(obj); scene.add(tmp);
       tmp.updateWorldMatrix(true,true);
