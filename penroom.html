@@ -502,13 +502,13 @@
       gltfLoader.load(url, (gltf)=>{
         const boy = new THREE.Group();
         const model = gltf.scene;
-        fitAndFloorToHeight(model, 0.0155); // 身長調整
+        fitAndFloorToHeight(model, 1.55); // 身長調整
         boy.add(model);
         boy.position.copy(pos);
-        // ちょい池の中心を向かせる
-        const look = POND_POS.clone();
-        boy.lookAt(look.x, look.y, look.z);
-        scene.add(boy);
+      // 池の方向 +135° を向かせる
+      const yaw = Math.atan2(POND_POS.x - boy.position.x, POND_POS.z - boy.position.z) + (135 * Math.PI / 180);
+      boy.rotation.y = yaw;
+      scene.add(boy);
 
         // アニメーションを無限ループで自動再生
         if (gltf.animations && gltf.animations.length){
@@ -522,7 +522,7 @@
     }
 
     // 池の右下あたりに Boy を配置
-    const boyPos = POND_POS.clone().add(new THREE.Vector3(7, 0, 0));
+    const boyPos = new THREE.Vector3(7, 0, 0);
     spawnBoy('Boy.glb', boyPos);
 
     // ---- Loop ----
