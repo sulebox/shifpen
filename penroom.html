@@ -600,8 +600,8 @@ let boyNextSpeakIn = Math.random()*3; // 次の発話まで（最大3秒） // �
               const line = BOY_LINES[Math.floor(Math.random()*BOY_LINES.length)];
               setBubbleText(boyRef, line);
               updateBubblePositionFor(boyRef);
-              boySpeakTimer = 2.8;                 // 表示秒数
-              boyNextSpeakIn = Math.random()*3; // 最大3秒 // 次の発話まで
+              boySpeakTimer = 3;                 // 表示秒数
+              boyNextSpeakIn = 2 +Math.random()*4; // 最大3秒 // 次の発話まで
             }
           }
         } else {
