@@ -37,8 +37,6 @@
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
     import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
     import { DRACOLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/DRACOLoader.js';
-    import { CSS2DRenderer, CSS2DObject } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/renderers/CSS2DRenderer.js';
-
     // ---- Helpers ----
     const $ = (id) => document.getElementById(id);
     const setStatus = (m) => { const st=$('status'); if(st){ st.textContent = m; } console.log(m); };
@@ -53,14 +51,7 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     app.appendChild(renderer.domElement);
 
-    // ---- CSS2D overlay for GIF ----
-    const labelRenderer = new CSS2DRenderer();
-    labelRenderer.setSize(window.innerWidth, window.innerHeight);
-    labelRenderer.domElement.style.position = 'fixed';
-    labelRenderer.domElement.style.inset = '0';
-    labelRenderer.domElement.style.pointerEvents = 'none';
-    app.appendChild(labelRenderer.domElement);
-
+    
     // ---- Camera ----
     let aspect = window.innerWidth / window.innerHeight;
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
@@ -96,9 +87,7 @@
     }
     function isSmallScreen(){ return Math.min(window.innerWidth, window.innerHeight) < 800; }
     function updateCameraMode(){
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      labelRenderer.setSize(window.innerWidth, window.innerHeight);
-      if (isSmallScreen()) fitCameraToRoom(); else setDesktopOrtho();
+      renderer.setSize(window.innerWidth, window.innerHeight);if (isSmallScreen()) fitCameraToRoom(); else setDesktopOrtho();
     }
     window.addEventListener('resize', updateCameraMode);
 
@@ -193,19 +182,7 @@
     const catTail = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 10), catMat); catTail.position.set(0, 0.6, -0.45); catTail.rotation.x = Math.PI/3; cat.add(catTail);
     garden.userData.catHead = catHead; garden.userData.catTail = catTail;
 
-    // ---- Add looping GIF near the cat (right-upper side) ----
-    const gifHolder = new THREE.Object3D();
-    gifHolder.position.set(3, 0, -5); // ワールド座標へ配置（+3, 0, -5） // オフセット（猫から見て右上あたり）
-    scene.add(gifHolder);
-    const gifImg = document.createElement('img');
-    gifImg.src = 'https://sulebox.github.io/todoapp/puyon.gif';
-    gifImg.alt = 'puyon';
-    gifImg.style.width = '90px';
-    gifImg.style.height = 'auto';
-    gifImg.style.borderRadius = '8px';
-    const gifLabel = new CSS2DObject(gifImg);
-    gifHolder.add(gifLabel);
-
+    
     // ---- Toys & props ----
     const toys = new THREE.Group(); scene.add(toys);
     const RING_X = 4.0, RING_Z = -3.0;
@@ -623,8 +600,8 @@ let boyNextSpeakIn = Math.random()*3; // 次の発話まで（最大3秒） // �
               const line = BOY_LINES[Math.floor(Math.random()*BOY_LINES.length)];
               setBubbleText(boyRef, line);
               updateBubblePositionFor(boyRef);
-              boySpeakTimer = 4.0;                 // 表示秒数
-              boyNextSpeakIn = 2 + Math.random()*4; // 最大3秒 // 次の発話まで
+              boySpeakTimer = 2.8;                 // 表示秒数
+              boyNextSpeakIn = Math.random()*3; // 最大3秒 // 次の発話まで
             }
           }
         } else {
@@ -645,9 +622,7 @@ let boyNextSpeakIn = Math.random()*3; // 次の発話まで（最大3秒） // �
         d.material.opacity = Math.max(0, d.userData.life / 0.7);
         if (d.userData.life <= 0 || d.position.y <= 0.02) { scene.remove(d); droplets.splice(i,1); }
       }
-      renderer.render(scene, camera);
-      labelRenderer.render(scene, camera);
-    }
+      renderer.render(scene, camera);}
     animate();
 
     // ---- Interactions ----
