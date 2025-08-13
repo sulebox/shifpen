@@ -239,8 +239,8 @@
 
     // ---- GLTF loader (shared) ----
     let penguin = null; const penguins = [];
-    const gltfLoader = new GLTFLoader();
-    const draco = new DRACOLoader();
+    let gltfLoader = new GLTFLoader();
+    let draco = new DRACOLoader();
     draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/');
     gltfLoader.setDRACOLoader(draco);
 
@@ -586,7 +586,6 @@ let boyNextSpeakIn = 6 + Math.random()*8; // 次の発話までの待ち秒数
             lastGreetedPenguin = null;
           }
         }
-      }
       }
       // --- boy random talk ---
       if (boyRef){
