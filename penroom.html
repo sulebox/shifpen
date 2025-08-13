@@ -116,7 +116,7 @@
 
     // 左壁：上側（ドアより前のパート）を削除、下側だけ残す
     const DOOR_X = -9, DOOR_Z_MIN = 3.5, DOOR_Z_MAX = 6.5;
-    const leftA = mkWall(wallT, wallH, (DOOR_Z_MIN - (-7))); leftA.position.set(-9, wallH/2, (-7 + DOOR_Z_MIN)/2); room.add(leftA);
+    // const leftA = mkWall(wallT, wallH, (DOOR_Z_MIN - (-7))); leftA.position.set(-9, wallH/2, (-7 + DOOR_Z_MIN)/2); room.add(leftA); // ← 削除指示
     // const leftB = mkWall(wallT, wallH, (7 - DOOR_Z_MAX));   leftB.position.set(-9, wallH/2, (7 + DOOR_Z_MAX)/2);   room.add(leftB); // ← 削除指示
 
     // 右壁＋窓はそのまま
