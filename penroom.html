@@ -524,8 +524,8 @@ const GREET_RADIUS = 3.0;    // 近づいたとみなす距離（m相当）
 const BOY_LINES = [
   'ここどこだろ','異世界かも','ペンギンたくさん','頭いたいかも','のどかわいた','あったかい','いいお天気','お庭きもちいい','いいにおいする','デジャヴかも','探し物あるかも','りんごたべたい','くつひもほどけてる','トイレどこかな','蚊にさされた','足のゆびかゆい','たまごごはん（TKG','ポトフたべたい','雲あんまりない','傘もってきたっけ','PASMOわすれた','コロッケたべたい','ドングリひろった','マインドフルネス','レベル25だって'
 ];
-let boySpeakTimer = 0;          // 表示中の残り秒数
-let boyNextSpeakIn = Math.random()*3; // 次の発話まで（最大3秒） // 次の発話までの待ち秒数
+let boySpeakTimer = 3;          // 表示中の残り秒数
+let boyNextSpeakIn = 4 + Math.random()*4; // 次の発話まで（最大3秒） // 次の発話までの待ち秒数
     function fitAndFloorToHeight(obj, targetH){
       const tmp = new THREE.Group(); tmp.add(obj); scene.add(tmp);
       tmp.updateWorldMatrix(true,true);
