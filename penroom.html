@@ -496,7 +496,13 @@
 let boyRef = null;           // Boy の参照
 let greetTimer = 0;          // あいさつ表示の残り秒数
 let lastGreetedPenguin = null; // 直近で挨拶したペンギン
-const GREET_RADIUS = 3.0;    // 近づいたとみなす距離（m相当）    // 近づいたとみなす距離（m相当）    // 近づいたとみなす距離（m相当）
+const GREET_RADIUS = 3.0;    // 近づいたとみなす距離（m相当）
+// 男の子のランダム台詞
+const BOY_LINES = [
+  'ここどこだろ','異世界かも','ペンギンたくさん','頭いたいかも','のどかわいた','あったかい','いいお天気','お庭きもちいい','いいにおいする','デジャヴかも','探し物あるかも','りんごたべたい','くつひもほどけてる','トイレどこかな','蚊にさされた','足のゆびかゆい','たまごごはん（TKG','ポトフたべたい','雲あんまりない','傘もってきたっけ','PASMOわすれた','コロッケたべたい','ドングリひろった','マインドフルネス','レベル25だって'
+];
+let boySpeakTimer = 0;          // 表示中の残り秒数
+let boyNextSpeakIn = 6 + Math.random()*8; // 次の発話までの待ち秒数
     function fitAndFloorToHeight(obj, targetH){
       const tmp = new THREE.Group(); tmp.add(obj); scene.add(tmp);
       tmp.updateWorldMatrix(true,true);
@@ -579,6 +585,29 @@ const GREET_RADIUS = 3.0;    // 近づいたとみなす距離（m相当）    /
             setBubbleText(boyRef, '');
             lastGreetedPenguin = null;
           }
+        }
+      }
+      }
+      // --- boy random talk ---
+      if (boyRef){
+        if (greetTimer <= 0){
+          if (boySpeakTimer > 0){
+            boySpeakTimer -= dt;
+            updateBubblePositionFor(boyRef);
+            if (boySpeakTimer <= 0) setBubbleText(boyRef, '');
+          } else {
+            boyNextSpeakIn -= dt;
+            if (boyNextSpeakIn <= 0){
+              const line = BOY_LINES[Math.floor(Math.random()*BOY_LINES.length)];
+              setBubbleText(boyRef, line);
+              updateBubblePositionFor(boyRef);
+              boySpeakTimer = 2.8;                 // 表示秒数
+              boyNextSpeakIn = 8 + Math.random()*10; // 次の発話まで
+            }
+          }
+        } else {
+          // 挨拶（こんにちは）表示中はランダム発話を一時停止
+          if (boySpeakTimer > 0) boySpeakTimer = 0;
         }
       }
       if (garden.userData && garden.userData.catHead) {
