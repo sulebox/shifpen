@@ -643,10 +643,16 @@ const NECO_GREET_RADIUS = 3.0;     // ペンギンとネコが近づいた距離
       }
       // --- neco greeting ---
       if (necoRef){
+        // 各ペンギンのクールダウンを減衰
+        for (const p of penguins){
+          p.userData.necoCooldown = Math.max(0, (p.userData.necoCooldown || 0) - dt);
+        }
         // 近づいたらどの行動中でも発動（同時に1組のみ）
         if (necoGreetTimer <= 0){
           let nearest = null, minD = Infinity;
           for (const p of penguins){
+            const cd = p.userData.necoCooldown || 0;
+            if (cd > 0) continue; // クールダウン中はスキップ
             const d = p.position.distanceTo(necoRef.position);
             if (d < minD){ minD = d; nearest = p; }
           }
@@ -655,6 +661,8 @@ const NECO_GREET_RADIUS = 3.0;     // ペンギンとネコが近づいた距離
             necoGreetPenguin = nearest;
             setBubbleText(nearest, 'ネコかわいい');
             setBubbleText(necoRef, 'にゃあ');
+            // 同じペンギンがすぐ再発火しないよう 3 秒のクールダウン
+            nearest.userData.necoCooldown = 3.0;
           }
         } else {
           necoGreetTimer -= dt;
