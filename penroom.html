@@ -559,7 +559,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     }
 
     // ---- Neco (neco.glb) loader ----
-    function spawnNeco(url, pos, targetH = 2.0){
+    function spawnNeco(url, pos, targetH = 1.1){
       gltfLoader.load(url, (gltf)=>{
         const neco = new THREE.Group();
         const model = gltf.scene;
@@ -617,7 +617,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     spawnBoy('Boy.glb', boyPos);
 
     // 左庭の元の猫位置に neco.glb を表示
-    spawnNeco('neco.glb', new THREE.Vector3(-11.2, 0, 2.5), 1.1);
+    spawnNeco('neco.glb', new THREE.Vector3(-11.2, 0, 2.5), 1.3);
 
 
     // ---- Loop ----
