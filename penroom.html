@@ -228,20 +228,21 @@
     RES.neco = { holder: null, queue: [], pos: new THREE.Vector3(-11.2,0,2.5), waitDir: new THREE.Vector3(1,0,0) };
     function requestResource(p, name){ const r = RES[name]; if(!r.holder){ r.holder = p; return true; } if(!r.queue.includes(p)) r.queue.push(p); return false; }
     function releaseResource(name){ const r = RES[name]; if(r.holder) r.holder = null; const next = r.queue.shift(); if(next) setState(next, name); }
--    function dequeueAll(p){ ['play','playBlocks','eat','sleep','pond','neco'].forEach(n=>{ const r=RES[n]; const i=r.queue.indexOf(p); if(i>=0) r.queue.splice(i,1); if(r.holder===p) r.holder=null; }); }
-+    // 修正: 自分がホルダーの場合は解放して次の待機者を進める
-+    function dequeueAll(p){
-+      ['play','playBlocks','eat','sleep','pond','neco'].forEach(name=>{
-+        const r = RES[name];
-+        const i = r.queue.indexOf(p);
-+        if (i >= 0) r.queue.splice(i, 1);
-+        if (r.holder === p) {
-+          r.holder = null;
-+          const next = r.queue.shift();
-+          if (next) setState(next, name);
-+        }
-+      });
-+    }
+    function dequeueAll(p){
+  ['play','playBlocks','eat','sleep','pond','neco'].forEach((name)=>{
+    const r = RES[name];
+    // 待機列から自分を外す
+    const i = r.queue.indexOf(p);
+    if (i >= 0) r.queue.splice(i, 1);
+    // 自分がホルダーなら解放して次の待機者を進める
+    if (r.holder === p) {
+      r.holder = null;
+      const next = r.queue.shift();
+      if (next) setState(next, name);
+    }
+  });
+}
+
 
     // ---- Mobile toy ----
     const mobile = new THREE.Group(); scene.add(mobile); mobile.position.set(-5, 3.8, -4.5);
@@ -492,12 +493,12 @@
           } else if (ud.state === 'neco') {
             if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
             // ネコの近くで少し観察してから別行動へ
--            if (ud.timer > (1.0 + Math.random()*1.2)) chooseNextAction(p);
-+            if (ud.timer > (1.0 + Math.random()*1.2)) {
-+              releaseResource('neco'); // ← 追加: neco リソースを解放
-+              chooseNextAction(p);
-+            }
+            if (ud.timer > (1.0 + Math.random()*1.2)) {
+            releaseResource('neco');  // ★追加：neco のリソースを解放
+            chooseNextAction(p);
           }
+        }
+
           else if (ud.state === 'window') {
             p.rotation.y = Math.PI/2 + HEADING_OFFSET;
             if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
