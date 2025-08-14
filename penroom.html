@@ -743,18 +743,3 @@ const NECO_GREET_RADIUS = 3.0;     // ペンギンとネコが近づいた距離
     const modelUrl = params.get('model') || 'Pen.glb';
     function spawn(url, start){
       loadPenguin(url).then((g)=>{ if (start) g.position.copy(start); scene.add(g); penguins.push(g); if (!penguin) penguin = g; setState(g,'wander'); })
-      .catch(()=>{ const fb=fallbackPenguin(); if (start) fb.position.copy(start); scene.add(fb); penguins.push(fb); if (!penguin) penguin = fb; setState(fb,'wander'); });
-    }
-    spawn(modelUrl, new THREE.Vector3(-1,0,0));
-    ['Pen_b.glb','Pen_r.glb','Pen_y.glb','Pen_g.glb'].forEach((u,i)=>{ const starts=[ new THREE.Vector3(1.0,0,-1.2), new THREE.Vector3(-2.5,0,1.2), new THREE.Vector3(0,0,2.0), new THREE.Vector3(2.5,0,2.0) ]; spawn(u, starts[i]); });
-
-    // ---- Console helpers ----
-    window.__penguin = { scene, camera, setState, chooseNextAction, get penguin(){ return penguin; }, get penguins(){ return penguins; } };
-    setStatus('initialized OK');
-  </script>
-
-  <!-- Eruda: mobile devtools -->
-  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-  <script>try{ eruda.init({ defaults: { displaySize: 50 }, tool: [ 'console','network','resources' ] }); console.log('Eruda ready'); }catch(e){ console.warn('Eruda init failed', e); }</script>
-</body>
-</html>
