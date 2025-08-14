@@ -329,9 +329,10 @@
       return new THREE.Vector3(x,0,z);
     }
     function doorWaypoint(from, to){
-      if ((from.x > DOOR_X && to.x < DOOR_X) || (from.x < DOOR_X && to.x > DOOR_X)) {
-        return new THREE.Vector3(DOOR_X, 0, (DOOR_Z_MIN + DOOR_Z_MAX) / 2);
-      }
+      // 左壁は表示していないため、どこからでも庭に出入り可。
+      // ドア経由の経路制御は無効化。
+      return null;
+    }
       return null;
     }
     function setRoute(p, dest){
@@ -484,15 +485,8 @@
             ud.goingToBed = false; ud.timer = 0;
           } else if (ud.state === 'neco') {
             if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
-            if (necoRef){
-              const d = p.position.distanceTo(necoRef.position);
-              if (necoGreetTimer <= 0 && d <= NECO_GREET_RADIUS){
-                necoGreetTimer = 1.8; // 秒
-                necoGreetPenguin = p;
-                setBubbleText(p, 'ネコかわいい');
-                setBubbleText(necoRef, 'にゃあ');
-              }
-            }
+            // ネコの近くで少し観察してから別行動へ
+            if (ud.timer > (1.0 + Math.random()*1.2)) chooseNextAction(p);
           }
           else if (ud.state === 'window') {
             p.rotation.y = Math.PI/2 + HEADING_OFFSET;
@@ -655,12 +649,25 @@ const NECO_GREET_RADIUS = 3.0;     // ペンギンとネコが近づいた距離
       }
       // --- neco greeting ---
       if (necoRef){
-        if (necoGreetTimer > 0){
+        // 近づいたらどの行動中でも発動（同時に1組のみ）
+        if (necoGreetTimer <= 0){
+          let nearest = null, minD = Infinity;
+          for (const p of penguins){
+            const d = p.position.distanceTo(necoRef.position);
+            if (d < minD){ minD = d; nearest = p; }
+          }
+          if (nearest && minD <= NECO_GREET_RADIUS){
+            necoGreetTimer = 1.8;
+            necoGreetPenguin = nearest;
+            setBubbleText(nearest, 'ネコかわいい');
+            setBubbleText(necoRef, 'にゃあ');
+          }
+        } else {
           necoGreetTimer -= dt;
           updateBubblePositionFor(necoRef);
           if (necoGreetPenguin) updateBubblePositionFor(necoGreetPenguin);
           if (necoGreetTimer <= 0){
-            if (necoGreetPenguin){ setBubbleText(necoGreetPenguin, ''); releaseResource('neco'); chooseNextAction(necoGreetPenguin); necoGreetPenguin = null; }
+            if (necoGreetPenguin){ setBubbleText(necoGreetPenguin, ''); necoGreetPenguin = null; }
             setBubbleText(necoRef, '');
           }
         }
