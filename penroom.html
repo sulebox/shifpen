@@ -559,7 +559,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     }
 
     // ---- Neco (neco.glb) loader ----
-    function spawnNeco(url, pos, targetH = 1.5){
+    function spawnNeco(url, pos, targetH = 2.0){
       gltfLoader.load(url, (gltf)=>{
         const neco = new THREE.Group();
         const model = gltf.scene;
