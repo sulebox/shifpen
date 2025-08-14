@@ -87,7 +87,9 @@
     }
     function isSmallScreen(){ return Math.min(window.innerWidth, window.innerHeight) < 800; }
     function updateCameraMode(){
-      renderer.setSize(window.innerWidth, window.innerHeight);if (isSmallScreen()) fitCameraToRoom(); else setDesktopOrtho();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      labelRenderer.setSize(window.innerWidth, window.innerHeight);
+      if (isSmallScreen()) fitCameraToRoom(); else setDesktopOrtho();
     }
     window.addEventListener('resize', updateCameraMode);
 
@@ -224,8 +226,6 @@
       sleep: { holder: null, queue: [], pos: new THREE.Vector3(BED_SLEEP.x, 0, BED_SLEEP.z), waitDir: new THREE.Vector3(1,0,0) },
       pond:  { holder: null, queue: [], pos: POND_POS.clone(), waitDir: new THREE.Vector3(1,0,0) }
     };
-    // 追加: ネコ用のリソースキュー（最初は予備位置にしておく）
-    RES.neco = { holder: null, queue: [], pos: new THREE.Vector3(-11.2,0,2.5), waitDir: new THREE.Vector3(1,0,0) };
     function requestResource(p, name){ const r = RES[name]; if(!r.holder){ r.holder = p; return true; } if(!r.queue.includes(p)) r.queue.push(p); return false; }
     function releaseResource(name){ const r = RES[name]; if(r.holder) r.holder = null; const next = r.queue.shift(); if(next) setState(next, name); }
     function queueWaitPos(name, p){ const r = RES[name]; const idx = r.queue.indexOf(p); const spacing = 0.9; const off = r.waitDir.clone().multiplyScalar((idx+1)*spacing); return r.pos.clone().add(off); }
@@ -261,8 +261,7 @@
       sleep:  'もうねよっと',
       wake:   '',
       sit:    'ちょときゅうけい',
-      pond:   'ちょとあつい',
-      neco:   'ネコみよっと'
+      pond:   'ちょとあつい'
     };
     function ensureBubble(p){ if (!p.userData.bubbleEl) { const el = document.createElement('div'); el.className='bubble'; document.body.appendChild(el); p.userData.bubbleEl = el; } return p.userData.bubbleEl; }
     function setBubble(p, state){ const el = ensureBubble(p); el.textContent = commentMap[state] || ''; el.style.opacity = el.textContent ? 1 : 0; }
@@ -329,10 +328,9 @@
       return new THREE.Vector3(x,0,z);
     }
     function doorWaypoint(from, to){
-      // 左壁は表示していないため、どこからでも庭に出入り可。
-      // ドア経由の経路制御は無効化。
-      return null;
-    }
+      if ((from.x > DOOR_X && to.x < DOOR_X) || (from.x < DOOR_X && to.x > DOOR_X)) {
+        return new THREE.Vector3(DOOR_X, 0, (DOOR_Z_MIN + DOOR_Z_MAX) / 2);
+      }
       return null;
     }
     function setRoute(p, dest){
@@ -485,8 +483,15 @@
             ud.goingToBed = false; ud.timer = 0;
           } else if (ud.state === 'neco') {
             if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
-            // ネコの近くで少し観察してから別行動へ
-            if (ud.timer > (1.0 + Math.random()*1.2)) chooseNextAction(p);
+            if (necoRef){
+              const d = p.position.distanceTo(necoRef.position);
+              if (necoGreetTimer <= 0 && d <= NECO_GREET_RADIUS){
+                necoGreetTimer = 1.8; // 秒
+                necoGreetPenguin = p;
+                setBubbleText(p, 'ネコかわいい');
+                setBubbleText(necoRef, 'にゃあ');
+              }
+            }
           }
           else if (ud.state === 'window') {
             p.rotation.y = Math.PI/2 + HEADING_OFFSET;
@@ -544,33 +549,6 @@ const NECO_GREET_RADIUS = 3.0;     // ペンギンとネコが近づいた距離
       obj.position.y += -box2.min.y;
       scene.remove(tmp);
       return obj;
-    }
-
-    // ---- Neco (neco.glb) loader ----
-    function spawnNeco(url, pos, targetH = 1.1){
-      gltfLoader.load(url, (gltf)=>{
-        const neco = new THREE.Group();
-        const model = gltf.scene;
-        model.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
-        fitAndFloorToHeight(model, targetH);
-        neco.add(model);
-        neco.position.copy(pos);
-        neco.rotation.y = Math.PI / 2; // +90°
-        scene.add(neco);
-        // 吹き出し位置（頭上）
-        neco.userData = neco.userData || {};
-        const bb = new THREE.Box3().setFromObject(model);
-        const h = Math.max(0.001, bb.max.y - bb.min.y);
-        neco.userData.bubbleOffsetY = Math.max(h * 1.2, h + 0.15);
-        // 参照とキュー位置を更新
-        necoRef = neco;
-        if (RES.neco) RES.neco.pos = neco.position.clone();
-        if (gltf.animations && gltf.animations.length){
-          const mixer = new THREE.AnimationMixer(model);
-          gltf.animations.forEach(clip=> mixer.clipAction(clip).setLoop(THREE.LoopRepeat, Infinity).play());
-          mixers.push(mixer);
-        }
-      }, undefined, (err)=>console.warn('neco.glb load error', err));
     }
 
     function spawnBoy(url, pos){
@@ -647,31 +625,6 @@ const NECO_GREET_RADIUS = 3.0;     // ペンギンとネコが近づいた距離
           }
         }
       }
-      // --- neco greeting ---
-      if (necoRef){
-        // 近づいたらどの行動中でも発動（同時に1組のみ）
-        if (necoGreetTimer <= 0){
-          let nearest = null, minD = Infinity;
-          for (const p of penguins){
-            const d = p.position.distanceTo(necoRef.position);
-            if (d < minD){ minD = d; nearest = p; }
-          }
-          if (nearest && minD <= NECO_GREET_RADIUS){
-            necoGreetTimer = 1.8;
-            necoGreetPenguin = nearest;
-            setBubbleText(nearest, 'ネコかわいい');
-            setBubbleText(necoRef, 'にゃあ');
-          }
-        } else {
-          necoGreetTimer -= dt;
-          updateBubblePositionFor(necoRef);
-          if (necoGreetPenguin) updateBubblePositionFor(necoGreetPenguin);
-          if (necoGreetTimer <= 0){
-            if (necoGreetPenguin){ setBubbleText(necoGreetPenguin, ''); necoGreetPenguin = null; }
-            setBubbleText(necoRef, '');
-          }
-        }
-      }
       // --- boy random talk ---
       if (boyRef){
         if (greetTimer <= 0){
@@ -686,7 +639,7 @@ const NECO_GREET_RADIUS = 3.0;     // ペンギンとネコが近づいた距離
               setBubbleText(boyRef, line);
               updateBubblePositionFor(boyRef);
               boySpeakTimer = 3.0;                 // 表示秒数
-              boyNextSpeakIn = 2 + Math.random()*4; // 次の発話まで（2〜6秒）
+              boyNextSpeakIn = Math.random()*3; // 最大3秒 // 次の発話まで
             }
           }
         } else {
@@ -743,3 +696,18 @@ const NECO_GREET_RADIUS = 3.0;     // ペンギンとネコが近づいた距離
     const modelUrl = params.get('model') || 'Pen.glb';
     function spawn(url, start){
       loadPenguin(url).then((g)=>{ if (start) g.position.copy(start); scene.add(g); penguins.push(g); if (!penguin) penguin = g; setState(g,'wander'); })
+      .catch(()=>{ const fb=fallbackPenguin(); if (start) fb.position.copy(start); scene.add(fb); penguins.push(fb); if (!penguin) penguin = fb; setState(fb,'wander'); });
+    }
+    spawn(modelUrl, new THREE.Vector3(-1,0,0));
+    ['Pen_b.glb','Pen_r.glb','Pen_y.glb','Pen_g.glb'].forEach((u,i)=>{ const starts=[ new THREE.Vector3(1.0,0,-1.2), new THREE.Vector3(-2.5,0,1.2), new THREE.Vector3(0,0,2.0), new THREE.Vector3(2.5,0,2.0) ]; spawn(u, starts[i]); });
+
+    // ---- Console helpers ----
+    window.__penguin = { scene, camera, setState, chooseNextAction, get penguin(){ return penguin; }, get penguins(){ return penguins; } };
+    setStatus('initialized OK');
+  </script>
+
+  <!-- Eruda: mobile devtools -->
+  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+  <script>try{ eruda.init({ defaults: { displaySize: 50 }, tool: [ 'console','network','resources' ] }); console.log('Eruda ready'); }catch(e){ console.warn('Eruda init failed', e); }</script>
+</body>
+</html>
