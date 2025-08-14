@@ -347,10 +347,9 @@
       else if (r < 0.49) setState(p,'play');
       else if (r < 0.57) setState(p,'playBlocks');
       else if (r < 0.72) setState(p,'eat');
-      else if (r < 0.80) setState(p,'pond');
-      else if (r < 0.88) setState(p,'neco');
-      else if (r < 0.94) setState(p,'window');
-      else if (r < 0.98) setState(p,'sleep');
+      else if (r < 0.82) setState(p,'pond');
+      else if (r < 0.92) setState(p,'window');
+      else if (r < 0.97) setState(p,'sleep');
       else setState(p,'sit');
     }
 
@@ -382,20 +381,6 @@
         if (requestResource(p,'pond')) { setRoute(p, POND_POS.clone()); }
         else { final = 'pondWait'; setRoute(p, queueWaitPos('pond',p)); bubbleKey = 'pond'; }
       }
-      else if(state === 'neco'){
-        ud.speed = 1.0;
-        if (necoRef){
-          if (requestResource(p,'neco')){
-            const base = (RES.neco && RES.neco.pos) ? RES.neco.pos : new THREE.Vector3(-11.2,0,2.5);
-            const dest = base.clone().add(new THREE.Vector3(1.0,0,0)); // 右側に少し寄る
-            setRoute(p, dest);
-          } else {
-            final = 'necoWait'; setRoute(p, queueWaitPos('neco',p)); bubbleKey = 'neco';
-          }
-        } else {
-          final = 'wander'; setRoute(p, randomPointNear(p.position.x, p.position.z, 5));
-        }
-      }
       else if(state === 'window'){ ud.speed = 1.0; setRoute(p, new THREE.Vector3(7.4,0,0)); }
       else if(state === 'sit'){ ud.speed = 0; }
       else if(state === 'sleep'){
@@ -424,7 +409,7 @@
 
       if (ud.state !== 'sit' && ud.state !== 'sleep') { p.position.y = Math.max(0, Math.sin(performance.now()/1000*6)*0.03); }
 
-      if (['wander','play','playBlocks','eat','window','pond','neco','playWait','playBlocksWait','eatWait','pondWait','necoWait','sleepWait'].includes(ud.state) || (ud.state==='sleep' && ud.goingToBed)) {
+      if (['wander','play','playBlocks','eat','window','pond','playWait','playBlocksWait','eatWait','pondWait','sleepWait'].includes(ud.state) || (ud.state==='sleep' && ud.goingToBed)) {
         const target = ud.target;
         const v = new THREE.Vector3(target.x - p.position.x, 0, target.z - p.position.z);
 
@@ -481,19 +466,7 @@
             p.position.y = BED_SLEEP.y;
             p.rotation.y = Math.PI/2 + HEADING_OFFSET;
             ud.goingToBed = false; ud.timer = 0;
-          } else if (ud.state === 'neco') {
-            if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
-            if (necoRef){
-              const d = p.position.distanceTo(necoRef.position);
-              if (necoGreetTimer <= 0 && d <= NECO_GREET_RADIUS){
-                necoGreetTimer = 1.8; // 秒
-                necoGreetPenguin = p;
-                setBubbleText(p, 'ネコかわいい');
-                setBubbleText(necoRef, 'にゃあ');
-              }
-            }
-          }
-          else if (ud.state === 'window') {
+          } else if (ud.state === 'window') {
             p.rotation.y = Math.PI/2 + HEADING_OFFSET;
             if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
             if (ud.timer > (1.0 + Math.random()*1.0)) chooseNextAction(p);
@@ -531,12 +504,7 @@ const BOY_LINES = [
   'ここどこだろ','異世界かも','ペンギンたくさん','頭いたいかも','のどかわいた','あったかい','いいお天気','お庭きもちいい','いいにおいする','デジャヴかも','探し物あるかも','りんごたべたい','くつひもほどけてる','トイレどこかな','蚊にさされた','足のゆびかゆい','たまごごはん（TKG','ポトフたべたい','雲あんまりない','傘もってきたっけ','PASMOわすれた','コロッケたべたい','ドングリひろった','マインドフルネス','レベル25だって'
 ];
 let boySpeakTimer = 0;          // 表示中の残り秒数
-let boyNextSpeakIn = 2 + Math.random()*4; // 次の発話まで（2〜6秒）
-// --- Neco greeting/globals ---
-let necoRef = null;                // neco.glb の参照
-let necoGreetTimer = 0;            // 挨拶表示の残り秒数
-let necoGreetPenguin = null;       // 現在挨拶中のペンギン
-const NECO_GREET_RADIUS = 3.0;     // ペンギンとネコが近づいた距離
+let boyNextSpeakIn = 2 + Math.random()*4; // 次の発話まで（2〜6秒） // 次の発話まで（最大3秒） // 次の発話までの待ち秒数
     function fitAndFloorToHeight(obj, targetH){
       const tmp = new THREE.Group(); tmp.add(obj); scene.add(tmp);
       tmp.updateWorldMatrix(true,true);
