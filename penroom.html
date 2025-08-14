@@ -141,6 +141,7 @@
 
     // tree
     const tree = new THREE.Group(); garden.add(tree); tree.position.set(-12, 0, 3.5);
+    tree.scale.setScalar(1.5); 
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 2.2, 12), new THREE.MeshStandardMaterial({ color: 0x8D6E63 })); trunk.position.y = 1.1; tree.add(trunk);
     const crown1 = new THREE.Mesh(new THREE.SphereGeometry(1.2, 16, 12), new THREE.MeshStandardMaterial({ color: 0x7CB342 })); crown1.position.y = 2.2; tree.add(crown1);
     const crown2 = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 12), new THREE.MeshStandardMaterial({ color: 0x8BC34A })); crown2.position.set(0.9, 2.9, 0.2); tree.add(crown2);
@@ -558,7 +559,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     }
 
     // ---- Neco (neco.glb) loader ----
-    function spawnNeco(url, pos, targetH = 1.1){
+    function spawnNeco(url, pos, targetH = 1.3){
       gltfLoader.load(url, (gltf)=>{
         const neco = new THREE.Group();
         const model = gltf.scene;
