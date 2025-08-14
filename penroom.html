@@ -662,7 +662,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
             setBubbleText(nearest, 'ネコかわいい');
             setBubbleText(necoRef, 'にゃあ');
             // 同じペンギンがすぐ再発火しないよう 3 秒のクールダウン
-            nearest.userData.necoCooldown = 3.0;
+            nearest.userData.necoCooldown = 5.0;
           }
         } else {
           necoGreetTimer -= dt;
