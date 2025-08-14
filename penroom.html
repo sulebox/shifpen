@@ -525,7 +525,7 @@ let boyNextSpeakIn = 2 + Math.random()*4; // 次の発話まで（2〜6秒）
 let necoRef = null;                // neco.glb の参照
 let necoGreetTimer = 0;            // 挨拶表示の残り秒数
 let necoGreetPenguin = null;       // 現在挨拶中のペンギン
-const NECO_GREET_RADIUS = 3.0;     // ペンギンとネコが近づいた距離
+const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m）     // ペンギンとネコが近づいた距離
     function fitAndFloorToHeight(obj, targetH){
       const tmp = new THREE.Group(); tmp.add(obj); scene.add(tmp);
       tmp.updateWorldMatrix(true,true);
