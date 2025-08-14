@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>Penguin Room — penroom.html (v45)</title>
+  <title>Penguin Room — penroom.html (v46)</title>
   <style>
     html, body { height: 100%; margin: 0; background: #f6e6c9; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     #app { position: fixed; inset: 0; }
@@ -228,8 +228,20 @@
     RES.neco = { holder: null, queue: [], pos: new THREE.Vector3(-11.2,0,2.5), waitDir: new THREE.Vector3(1,0,0) };
     function requestResource(p, name){ const r = RES[name]; if(!r.holder){ r.holder = p; return true; } if(!r.queue.includes(p)) r.queue.push(p); return false; }
     function releaseResource(name){ const r = RES[name]; if(r.holder) r.holder = null; const next = r.queue.shift(); if(next) setState(next, name); }
-    function queueWaitPos(name, p){ const r = RES[name]; const idx = r.queue.indexOf(p); const spacing = 0.9; const off = r.waitDir.clone().multiplyScalar((idx+1)*spacing); return r.pos.clone().add(off); }
-    function dequeueAll(p){ ['play','playBlocks','eat','sleep','pond','neco'].forEach(n=>{ const r=RES[n]; const i=r.queue.indexOf(p); if(i>=0) r.queue.splice(i,1); if(r.holder===p) r.holder=null; }); }
+-    function dequeueAll(p){ ['play','playBlocks','eat','sleep','pond','neco'].forEach(n=>{ const r=RES[n]; const i=r.queue.indexOf(p); if(i>=0) r.queue.splice(i,1); if(r.holder===p) r.holder=null; }); }
++    // 修正: 自分がホルダーの場合は解放して次の待機者を進める
++    function dequeueAll(p){
++      ['play','playBlocks','eat','sleep','pond','neco'].forEach(name=>{
++        const r = RES[name];
++        const i = r.queue.indexOf(p);
++        if (i >= 0) r.queue.splice(i, 1);
++        if (r.holder === p) {
++          r.holder = null;
++          const next = r.queue.shift();
++          if (next) setState(next, name);
++        }
++      });
++    }
 
     // ---- Mobile toy ----
     const mobile = new THREE.Group(); scene.add(mobile); mobile.position.set(-5, 3.8, -4.5);
@@ -480,7 +492,11 @@
           } else if (ud.state === 'neco') {
             if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
             // ネコの近くで少し観察してから別行動へ
-            if (ud.timer > (1.0 + Math.random()*1.2)) chooseNextAction(p);
+-            if (ud.timer > (1.0 + Math.random()*1.2)) chooseNextAction(p);
++            if (ud.timer > (1.0 + Math.random()*1.2)) {
++              releaseResource('neco'); // ← 追加: neco リソースを解放
++              chooseNextAction(p);
++            }
           }
           else if (ud.state === 'window') {
             p.rotation.y = Math.PI/2 + HEADING_OFFSET;
@@ -580,7 +596,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
       scene.add(boy);
         boy.userData = boy.userData || {};
         // 吹き出しをさらに上へ（Boy は極小スケールのため固定オフセットを採用）
-        boy.userData.bubbleOffsetY = 4.5; // 少年の吹き出しの高さ // ←お好みで 3.8〜5.0 などに
+        boy.userData.bubbleOffsetY = 4.5; // 少年の吹き出しの高さ
         boyRef = boy; // Boy参照を保持
 
         // アニメーションを無限ループで自動再生
@@ -661,7 +677,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
             necoGreetPenguin = nearest;
             setBubbleText(nearest, 'ネコかわいい');
             setBubbleText(necoRef, 'にゃあ');
-            // 同じペンギンがすぐ再発火しないよう 3 秒のクールダウン
+            // 同じペンギンがすぐ再発火しないよう 5 秒のクールダウン
             nearest.userData.necoCooldown = 5.0;
           }
         } else {
