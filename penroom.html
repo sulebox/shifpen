@@ -629,7 +629,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     // ---- Sharon & Bee (right-front garden) ----
     let sharonRef = null, beeRef = null;
     const SHARON_POS = new THREE.Vector3(12.5, 0, 12.0); // right-front lawn
-    const BEE_BASE   = new THREE.Vector3(15.0, 0.6, -2.0); // hover center
+    const BEE_BASE   = new THREE.Vector3(13.0, 0.6, -2.0); // hover center
 
     function spawnSharon(url, pos, targetH = 1.5){
       gltfLoader.load(url, (gltf)=>{
@@ -649,7 +649,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
       }, undefined, (err)=>console.warn('sharon.glb load error', err));
     }
 
-    function spawnBee(url, pos, targetH = 1.2){
+    function spawnBee(url, pos, targetH = 1.5){
       gltfLoader.load(url, (gltf)=>{
         const g = new THREE.Group();
         const model = gltf.scene;
