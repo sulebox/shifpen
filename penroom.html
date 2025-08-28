@@ -627,9 +627,10 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     spawnNeco('neco.glb', new THREE.Vector3(-11.2, 0, 2.0), 1.3);
 
     // ---- Sharon & Bee (right-front garden) ----
-    let sharonRef = null, beeRef = null;
-    const SHARON_POS = new THREE.Vector3(12.5, 0, 3); // right-front lawn
-    const BEE_BASE   = new THREE.Vector3(12.5, 0.6, -2.0); // hover center
+    let sharonRef = null, beeRef = null, oguruRef = null;
+    const SHARON_POS = new THREE.Vector3(12.5, 0, 1.0); // updated position
+    const BEE_BASE   = new THREE.Vector3(12.5, 0.6, -2.0); // updated hover center
+    const OGURU_POS  = new THREE.Vector3(12.5, 0, 4.0);
 
     function spawnSharon(url, pos, targetH = 1.5){
       gltfLoader.load(url, (gltf)=>{
@@ -649,7 +650,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
       }, undefined, (err)=>console.warn('sharon.glb load error', err));
     }
 
-    function spawnBee(url, pos, targetH = 1.5){
+    function spawnBee(url, pos, targetH = 0.35){
       gltfLoader.load(url, (gltf)=>{
         const g = new THREE.Group();
         const model = gltf.scene;
@@ -666,9 +667,28 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
       }, undefined, (err)=>console.warn('bee.glb load error', err));
     }
 
+    function spawnOguru(url, pos, targetH = 1.5){
+      gltfLoader.load(url, (gltf)=>{
+        const g = new THREE.Group();
+        const model = gltf.scene;
+        fitAndFloorToHeight(model, targetH);
+        g.add(model);
+        g.position.copy(pos);
+        g.rotation.y = -Math.PI/6; // slight turn toward room
+        scene.add(g);
+        oguruRef = g;
+        if (gltf.animations && gltf.animations.length){
+          const mx = new THREE.AnimationMixer(model);
+          gltf.animations.forEach(clip=> mx.clipAction(clip).setLoop(THREE.LoopRepeat, Infinity).play());
+          mixers.push(mx);
+        }
+      }, undefined, (err)=>console.warn('oguru.glb load error', err));
+    }
+
     // place them
     spawnSharon('sharon.glb', SHARON_POS, 1.5);
-    spawnBee('bee.glb', BEE_BASE, 0.35);
+    spawnBee('bee.glb', BEE_BASE, 1.5);
+    spawnOguru('oguru.glb', OGURU_POS, 1.5);
 
 
     // ---- Loop ----
