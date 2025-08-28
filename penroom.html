@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>Penguin Room — penroom.html (v46)</title>
+  <title>Penguin Room — penroom.html (v47)</title>
   <style>
     html, body { height: 100%; margin: 0; background: #f6e6c9; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     #app { position: fixed; inset: 0; }
@@ -133,11 +133,18 @@
     const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xA7D0FF, transmission: 0.9, thickness: 0.02, roughness: 0.1, transparent: true, opacity: 0.6 });
     const glass = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.2, 13), glassMat); glass.position.set(rightX - 0.02, 2.9, 0); rightGroup.add(glass);
 
-    // ---- Garden (元の広さに戻す) ----
+    // ---- Garden (拡張) ----
     const garden = new THREE.Group(); scene.add(garden);
     const lawnMat = new THREE.MeshStandardMaterial({ color: 0xCDE7B0, roughness: 0.95 });
+
+    // 既存の庭（前・左）
     const frontLawn = new THREE.Mesh(new THREE.PlaneGeometry(18, 8), lawnMat); frontLawn.rotation.x = -Math.PI/2; frontLawn.position.set(0, 0, 11); garden.add(frontLawn);
     const leftLawn  = new THREE.Mesh(new THREE.PlaneGeometry(8, 14), lawnMat); leftLawn.rotation.x = -Math.PI/2; leftLawn.position.set(-13, 0, 0); garden.add(leftLawn);
+
+    // 追加: 右側・右前・左前にも芝を延長（見た目の庭の拡張）
+    const rightLawn = new THREE.Mesh(new THREE.PlaneGeometry(8, 14), lawnMat); rightLawn.rotation.x = -Math.PI/2; rightLawn.position.set(13, 0, 0); garden.add(rightLawn);
+    const rightFrontLawn = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), lawnMat); rightFrontLawn.rotation.x = -Math.PI/2; rightFrontLawn.position.set(13, 0, 11); garden.add(rightFrontLawn);
+    const leftFrontLawn = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), lawnMat); leftFrontLawn.rotation.x = -Math.PI/2; leftFrontLawn.position.set(-13, 0, 11); garden.add(leftFrontLawn);
 
     // tree
     const tree = new THREE.Group(); garden.add(tree); tree.position.set(-12, 0, 3.5);
