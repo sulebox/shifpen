@@ -39,6 +39,7 @@
     import { DRACOLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/DRACOLoader.js';
     import { KTX2Loader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/KTX2Loader.js';
     import { MeshoptDecoder } from 'https://cdn.jsdelivr.net/npm/meshoptimizer@0.20.0/meshopt_decoder.module.js';
+    import { RoomEnvironment } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js';
     // ---- Helpers ----
     const $ = (id) => document.getElementById(id);
     const setStatus = (m) => { const st=$('status'); if(st){ st.textContent = m; } console.log(m); };
@@ -52,6 +53,11 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     app.appendChild(renderer.domElement);
+
+    // --- Simple environment lighting for PBR (helps dark/metal models) ---
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const envMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = envMap;
 
     
     // ---- Camera ----
@@ -645,7 +651,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
         fitAndFloorToHeight(model, targetH);
         g.add(model);
         // fix: some models export black due to vertex colors; disable them
-        model.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; const mats = Array.isArray(o.material)? o.material : [o.material]; mats.forEach(m=>{ if(m && m.vertexColors){ m.vertexColors = false; m.needsUpdate = true; } }); } });
+        model.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; const mats = Array.isArray(o.material)? o.material : [o.material]; mats.forEach(m=>{ if(!m) return; if(m.vertexColors){ m.vertexColors = false; } if('metalness' in m){ m.metalness = Math.min(0.2, m.metalness ?? 0); } if('roughness' in m && (m.roughness ?? 1) > 0.95){ m.roughness = 0.7; } m.envMapIntensity = 1.0; if(m.color && (m.color.r + m.color.g + m.color.b) < 0.3){ m.color.multiplyScalar(2.0); } m.needsUpdate = true; }); } });
         g.position.copy(pos);
         g.rotation.y = -Math.PI/4 + Math.PI; // 180° turn
         scene.add(g);
