@@ -636,7 +636,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     let sharonRef = null, beeRef = null, oguruRef = null;
     const SHARON_POS = new THREE.Vector3(12.5, 0, 1.0); // updated position
     const BEE_BASE   = new THREE.Vector3(12.5, 0.6, -2.0); // updated hover center
-    const OGURU_POS  = new THREE.Vector3(12.5, 0, 4.0);
+    const OGURU_POS  = new THREE.Vector3(12.5, 0, 7.0);
 
     function spawnSharon(url, pos, targetH = 1.5){
       gltfLoader.load(url, (gltf)=>{
@@ -647,7 +647,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
         // fix: some models export black due to vertex colors; disable them
         model.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; const mats = Array.isArray(o.material)? o.material : [o.material]; mats.forEach(m=>{ if(!m) return; if(m.vertexColors){ m.vertexColors = false; } if('metalness' in m){ m.metalness = Math.min(0.2, m.metalness ?? 0); } if('roughness' in m && (m.roughness ?? 1) > 0.95){ m.roughness = 0.7; } m.envMapIntensity = 1.0; if(m.color && (m.color.r + m.color.g + m.color.b) < 0.3){ m.color.multiplyScalar(2.0); } m.needsUpdate = true; }); } });
         g.position.copy(pos);
-        g.rotation.y = -Math.PI/4 + Math.PI/2; // 90° turn
+        g.rotation.y = -Math.PI/4 + Math.PI; // +90° from previous
         scene.add(g);
         sharonRef = g;
         if (gltf.animations && gltf.animations.length){
@@ -696,7 +696,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     // place them
     spawnSharon('sharon.glb', SHARON_POS, 1.5);
     spawnBee('bee.glb', BEE_BASE, 1.5);
-    spawnOguru('oguru.glb', OGURU_POS, 3.0);
+    spawnOguru('oguru.glb', OGURU_POS, 4.0);
 
 
     // ---- Loop ----
@@ -723,16 +723,16 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
       for (const p of penguins) updateBubblePositionFor(p);
       // extra: gentle idle motions for oguru & sharon
       if (oguruRef){
-        const tt = t*0.7;
+        const tt = t*1.4;
         oguruRef.rotation.z = Math.sin(tt)*0.06;  // heavy left-right sway
         oguruRef.rotation.x = Math.cos(tt*0.9)*0.03; // slight forward/back lean
         oguruRef.position.y = Math.max(0, 0.02 + Math.sin(tt*0.5)*0.02); // subtle bob
       }
       if (sharonRef){
-        const ts = t*0.9;
+        const ts = t*1.8;
         sharonRef.rotation.x = Math.sin(ts)*0.05; // gentle nod
-        sharonRef.rotation.z = Math.cos(ts*0.8)*0.08; // petal sway feel
-        sharonRef.position.y = Math.max(0, 0.02 + Math.sin(ts*1.1)*0.015);
+        sharonRef.rotation.z = Math.cos(ts*1.6)*0.08; // petal sway feel
+        sharonRef.position.y = Math.max(0, 0.02 + Math.sin(ts*2.2)*0.015);
       }
 
       // --- greeting when penguin approaches boy ---
