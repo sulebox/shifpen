@@ -253,6 +253,17 @@
   });
 }
 
+// 待機列の見やすい位置（リソース周りに整列）
+function queueWaitPos(name, p){
+  const r = RES[name];
+  const base = (r && r.pos) ? r.pos.clone() : new THREE.Vector3();
+  const dir = (r && r.waitDir) ? r.waitDir.clone() : new THREE.Vector3(1,0,0);
+  const idx = r && r.queue ? r.queue.indexOf(p) : -1;
+  const k = (idx >= 0 ? idx + 1 : ((r && r.queue ? r.queue.length : 0) + 1));
+  const off = dir.multiplyScalar(0.7 * k);
+  return base.add(off);
+}
+
 
     // ---- Mobile toy ----
     const mobile = new THREE.Group(); scene.add(mobile); mobile.position.set(-5, 3.8, -4.5);
@@ -696,8 +707,16 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     // place them
     spawnSharon('sharon.glb', SHARON_POS, 1.5);
     spawnBee('bee.glb', BEE_BASE, 1.5);
-    spawnOguru('oguru.glb', OGURU_POS, 4.0);
+    spawnOguru('oguru2.glb', OGURU_POS, 4.0);
 
+    // ---- Helpers for resource queue wait positions ----
+    function queueWaitPos(name, p){
+      const r = RES[name];
+      const i = r.queue.indexOf(p);
+      const idx = i >= 0 ? i : r.queue.length;
+      const step = 0.7;
+      return r.pos.clone().add(r.waitDir.clone().multiplyScalar(step * (idx + 1)));
+    }
 
     // ---- Loop ----
     function animate(){
@@ -707,33 +726,40 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
       // penguins
       for (const p of penguins) updatePenguin(p, dt);
 
-      // boy mixers
+      // update mixers (boy/neco/others)
       for (const m of mixers) m.update(dt);
 
       const t = performance.now()/1000;
-      // bee hover orbit in right-front garden
+
+      // mobile fish wobble
+      mf1.rotation.y = Math.sin(t*1.6)*0.4;
+      mf2.rotation.y = Math.cos(t*1.4)*0.4;
+      mf3.rotation.y = Math.sin(t*1.8+0.7)*0.4;
+
+      // bee hover orbit
       if (beeRef){
         beeRef.position.x = BEE_BASE.x + Math.cos(t*2.0)*0.6;
         beeRef.position.z = BEE_BASE.z + Math.sin(t*2.0)*0.6;
         beeRef.position.y = 0.6 + Math.sin(t*5.0)*0.12;
         beeRef.rotation.y += 2.5*dt;
       }
-      mf1.rotation.y = Math.sin(t*1.6)*0.4; mf2.rotation.y = Math.cos(t*1.4)*0.4; mf3.rotation.y = Math.sin(t*1.8+0.7)*0.4;
-      penguin = penguins[0] || null;
-      for (const p of penguins) updateBubblePositionFor(p);
-      // extra: gentle idle motions for oguru & sharon
+
+      // gentle idle motions for oguru & sharon (fast version)
       if (oguruRef){
         const tt = t*1.4;
-        oguruRef.rotation.z = Math.sin(tt)*0.06;  // heavy left-right sway
-        oguruRef.rotation.x = Math.cos(tt*0.9)*0.03; // slight forward/back lean
-        oguruRef.position.y = Math.max(0, 0.02 + Math.sin(tt*0.5)*0.02); // subtle bob
+        oguruRef.rotation.z = Math.sin(tt)*0.06;
+        oguruRef.rotation.x = Math.cos(tt*0.9)*0.03;
+        oguruRef.position.y = Math.max(0, 0.02 + Math.sin(tt*0.5)*0.02);
       }
       if (sharonRef){
         const ts = t*1.8;
-        sharonRef.rotation.x = Math.sin(ts)*0.05; // gentle nod
-        sharonRef.rotation.z = Math.cos(ts*1.6)*0.08; // petal sway feel
+        sharonRef.rotation.x = Math.sin(ts)*0.05;
+        sharonRef.rotation.z = Math.cos(ts*1.6)*0.08;
         sharonRef.position.y = Math.max(0, 0.02 + Math.sin(ts*2.2)*0.015);
       }
+
+      penguin = penguins[0] || null;
+      for (const p of penguins) updateBubblePositionFor(p);
 
       // --- greeting when penguin approaches boy ---
       if (boyRef && penguins.length){
@@ -743,7 +769,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
           if (d < minD){ minD = d; nearest = p; }
         }
         if (nearest && minD <= GREET_RADIUS && greetTimer <= 0){
-          greetTimer = 1.8; // 秒
+          greetTimer = 1.8;
           lastGreetedPenguin = nearest;
           setBubbleText(nearest, 'こんこん');
           setBubbleText(boyRef, 'こんこん＾＾');
@@ -759,18 +785,16 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
           }
         }
       }
+
       // --- neco greeting ---
       if (necoRef){
-        // 各ペンギンのクールダウンを減衰
         for (const p of penguins){
           p.userData.necoCooldown = Math.max(0, (p.userData.necoCooldown || 0) - dt);
         }
-        // 近づいたらどの行動中でも発動（同時に1組のみ）
         if (necoGreetTimer <= 0){
           let nearest = null, minD = Infinity;
           for (const p of penguins){
-            const cd = p.userData.necoCooldown || 0;
-            if (cd > 0) continue; // クールダウン中はスキップ
+            if ((p.userData.necoCooldown || 0) > 0) continue;
             const d = p.position.distanceTo(necoRef.position);
             if (d < minD){ minD = d; nearest = p; }
           }
@@ -779,7 +803,6 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
             necoGreetPenguin = nearest;
             setBubbleText(nearest, 'ネコかわいい');
             setBubbleText(necoRef, 'にゃあ');
-            // 同じペンギンがすぐ再発火しないよう 5 秒のクールダウン
             nearest.userData.necoCooldown = 5.0;
           }
         } else {
@@ -792,6 +815,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
           }
         }
       }
+
       // --- boy random talk ---
       if (boyRef){
         if (greetTimer <= 0){
@@ -805,19 +829,21 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
               const line = BOY_LINES[Math.floor(Math.random()*BOY_LINES.length)];
               setBubbleText(boyRef, line);
               updateBubblePositionFor(boyRef);
-              boySpeakTimer = 3.0;                 // 表示秒数
-              boyNextSpeakIn = 2 + Math.random()*4; // 次の発話まで（2〜6秒）
+              boySpeakTimer = 3.0;
+              boyNextSpeakIn = 2 + Math.random()*4;
             }
           }
         } else {
-          // 挨拶（こんにちは）表示中はランダム発話を一時停止
           if (boySpeakTimer > 0) boySpeakTimer = 0;
         }
       }
+
+      // cat idle (hidden by default)
       if (garden.userData && garden.userData.catHead && cat.visible) {
         garden.userData.catHead.rotation.y = Math.sin(t*0.7)*0.3;
         garden.userData.catTail.rotation.z = Math.sin(t*2.4)*0.35;
       }
+
       // droplets
       for (let i=droplets.length-1; i>=0; i--) {
         const d = droplets[i];
@@ -827,7 +853,9 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
         d.material.opacity = Math.max(0, d.userData.life / 0.7);
         if (d.userData.life <= 0 || d.position.y <= 0.02) { scene.remove(d); droplets.splice(i,1); }
       }
-      renderer.render(scene, camera);}
+
+      renderer.render(scene, camera);
+    }
     animate();
 
     // ---- Interactions ----
@@ -877,7 +905,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     setStatus('initialized OK');
   </script>
 
-  <!-- Eruda: mobile devtools -->
+    <!-- Eruda: mobile devtools -->
   <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
   <script>try{ eruda.init({ defaults: { displaySize: 50 }, tool: [ 'console','network','resources' ] }); console.log('Eruda ready'); }catch(e){ console.warn('Eruda init failed', e); }</script>
 </body>
