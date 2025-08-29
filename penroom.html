@@ -696,7 +696,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     // place them
     spawnSharon('sharon.glb', SHARON_POS, 1.5);
     spawnBee('bee.glb', BEE_BASE, 1.5);
-    spawnOguru('oguru.glb', OGURU_POS, 2.5);
+    spawnOguru('oguru.glb', OGURU_POS, 3.0);
 
 
     // ---- Loop ----
@@ -721,6 +721,20 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
       mf1.rotation.y = Math.sin(t*1.6)*0.4; mf2.rotation.y = Math.cos(t*1.4)*0.4; mf3.rotation.y = Math.sin(t*1.8+0.7)*0.4;
       penguin = penguins[0] || null;
       for (const p of penguins) updateBubblePositionFor(p);
+      // extra: gentle idle motions for oguru & sharon
+      if (oguruRef){
+        const tt = t*0.7;
+        oguruRef.rotation.z = Math.sin(tt)*0.06;  // heavy left-right sway
+        oguruRef.rotation.x = Math.cos(tt*0.9)*0.03; // slight forward/back lean
+        oguruRef.position.y = Math.max(0, 0.02 + Math.sin(tt*0.5)*0.02); // subtle bob
+      }
+      if (sharonRef){
+        const ts = t*0.9;
+        sharonRef.rotation.x = Math.sin(ts)*0.05; // gentle nod
+        sharonRef.rotation.z = Math.cos(ts*0.8)*0.08; // petal sway feel
+        sharonRef.position.y = Math.max(0, 0.02 + Math.sin(ts*1.1)*0.015);
+      }
+
       // --- greeting when penguin approaches boy ---
       if (boyRef && penguins.length){
         let nearest = null, minD = Infinity;
