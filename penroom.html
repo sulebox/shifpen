@@ -658,7 +658,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
         // fix: some models export black due to vertex colors; disable them
         model.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; const mats = Array.isArray(o.material)? o.material : [o.material]; mats.forEach(m=>{ if(!m) return; if(m.vertexColors){ m.vertexColors = false; } if('metalness' in m){ m.metalness = Math.min(0.2, m.metalness ?? 0); } if('roughness' in m && (m.roughness ?? 1) > 0.95){ m.roughness = 0.7; } m.envMapIntensity = 1.0; if(m.color && (m.color.r + m.color.g + m.color.b) < 0.3){ m.color.multiplyScalar(2.0); } m.needsUpdate = true; }); } });
         g.position.copy(pos);
-        g.rotation.y = -Math.PI/4 + Math.PI; // +90° from previous
+        g.rotation.y = -Math.PI/4 + Math.PI*2; // flipped additional 180° from current
         scene.add(g);
         sharonRef = g;
         if (gltf.animations && gltf.animations.length){
@@ -705,7 +705,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     }
 
     // place them
-    spawnSharon('sharon.glb', SHARON_POS, 2.5);
+    spawnSharon('sharon.glb', SHARON_POS, 2.0);
     spawnBee('bee.glb', BEE_BASE, 1.5);
     spawnOguru('oguru2.glb', OGURU_POS, 4.0);
 
