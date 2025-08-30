@@ -909,11 +909,21 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
         .then((g)=>{ if (start) g.position.copy(start); scene.add(g); penguins.push(g); if (!penguin) penguin = g; setState(g,'wander'); })
         .catch(()=>{ const fb=fallbackPenguin(); if (start) fb.position.copy(start); scene.add(fb); penguins.push(fb); if (!penguin) penguin = fb; setState(fb,'wander'); });
     }
-    spawn(modelUrl, new THREE.Vector3(-1,0,0));
-    ['Pen_b.glb','Pen_r.glb','Pen_y.glb','Pen_g.glb'].forEach((u,i)=>{
-      const starts=[ new THREE.Vector3(1.0,0,-1.2), new THREE.Vector3(-2.5,0,1.2), new THREE.Vector3(0,0,2.0), new THREE.Vector3(2.5,0,2.0) ];
-      spawn(u, starts[i]);
-    });
+    // If a custom ?model= is given (not one of the standard penguins), spawn it once
+    const STANDARD = ['Pen.glb','Pen_b.glb','Pen_r.glb','Pen_y.glb','Pen_g.glb'];
+    if (modelUrl && !STANDARD.includes(modelUrl)) {
+      spawn(modelUrl, new THREE.Vector3(-1,0,0));
+    }
+
+    // Spawn two of each color (total 10 penguins)
+    const startsMap = {
+      'Pen.glb': [ new THREE.Vector3(-1.2,0, 0.0), new THREE.Vector3(-0.2,0,-1.6) ],
+      'Pen_b.glb': [ new THREE.Vector3( 1.0,0,-1.2), new THREE.Vector3( 1.6,0,-2.2) ],
+      'Pen_r.glb': [ new THREE.Vector3(-2.5,0, 1.2), new THREE.Vector3(-3.2,0, 0.3) ],
+      'Pen_y.glb': [ new THREE.Vector3( 0.0,0, 2.0), new THREE.Vector3( 1.0,0, 2.4) ],
+      'Pen_g.glb': [ new THREE.Vector3( 2.5,0, 2.0), new THREE.Vector3( 3.3,0, 1.0) ]
+    };
+    STANDARD.forEach((u)=> startsMap[u].forEach(pos => spawn(u, pos)));
 
     // ---- Console helpers ----
     window.__penguin = { scene, camera, setState, chooseNextAction, get penguin(){ return penguin; }, get penguins(){ return penguins; } };
