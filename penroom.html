@@ -609,18 +609,20 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
           // Log available clip names to help mapping
           try { console.log('boy2 animations:', gltf.animations.map(a=>a.name)); } catch(e){}
           const mixer = new THREE.AnimationMixer(model);
-          const names = gltf.animations.map(a=>a.name||'');
+          const clips = gltf.animations;
+          const names = clips.map(a=>a.name||'');
           const pick = (patterns, avoid)=>{
             for (const p of patterns){
               const idx = names.findIndex(n=>p.test(n));
-              if (idx>=0) return gltf.animations[idx];
+              if (idx>=0) return clips[idx];
             }
-            // fallback: first clip not equal to avoid
-            for (const clip of gltf.animations){ if (clip!==avoid) return clip; }
-            return gltf.animations[0];
+            for (const clip of clips){ if (clip!==avoid) return clip; }
+            return clips[0];
           };
-          const idleClip = pick([/idle/i, /stand/i, /breath/i], null);
-          const walkClip = pick([/walk/i, /move/i, /locomotion/i], idleClip);
+          const exact = (n)=> clips.find(c => (c.name||'').toLowerCase()===n);
+          let idleClip = exact('idle') || pick([/idle/i, /stand/i, /breath/i], null);
+          let walkClip = exact('walk') || pick([/walk/i, /move/i, /locomotion/i], idleClip);
+          try { console.log('using clips:', idleClip?.name, walkClip?.name); } catch(e){}
           const idleAct = mixer.clipAction(idleClip);
           const walkAct = mixer.clipAction(walkClip);
           idleAct.setLoop(THREE.LoopRepeat, Infinity).play();
