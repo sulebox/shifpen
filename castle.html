@@ -10,16 +10,24 @@
     .hud {
       position: fixed; left: 12px; bottom: 12px; padding: 8px 10px;
       background: rgba(255,255,255,0.9); border-radius: 10px;
-      font: 12px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      font: 12px/1.5 -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, \"Hiragino Kaku Gothic ProN\", Meiryo, sans-serif;
       color: #222; box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    }
+    .hud b { font-weight: 700 }
+    .log {
+      position: fixed; right: 12px; bottom: 12px; max-width: 44ch;
+      padding: 8px 10px; border-radius: 10px;
+      background: rgba(0,0,0,0.55); color: #fff; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: pre-wrap; box-shadow: 0 6px 18px rgba(0,0,0,0.2);
     }
     .hud b { font-weight: 700 }
     canvas { display:block; }
   </style>
 </head>
 <body>
-  <div id="app"></div>
-  <div class="hud">🧱 <b>Castle</b> — boy2 は城内、5匹のペンギンが城壁の外をウロウロします。</div>
+  <div id=\"app\"></div>
+  <div class=\"hud\">$1</div>
+  <div class=\"log\" id=\"log\"></div>
 
   <script type="importmap">
     {
@@ -84,6 +92,15 @@
 
     const loader = new GLTFLoader();
 
+    // ===== 簡易ログ（スマホ/右クリック不可でも状況が分かるように） =====
+    const logEl = document.getElementById('log');
+    function log(msg){ logEl.textContent += `
+${msg}`; logEl.scrollTop = logEl.scrollHeight; }
+    function ok(msg){ log(`✅ ${msg}`); }
+    function ng(msg){ log(`❌ ${msg}`); }
+    log('Loading... (L で表示切替)');
+    addEventListener('keydown', (e)=>{ if(e.key.toLowerCase()==='l'){ logEl.style.display = (logEl.style.display==='none'?'':'none'); }});
+
     // 便利関数: 影の設定
     function applyShadowFlags(root) {
       root.traverse((obj) => {
@@ -107,6 +124,7 @@
 
     // ===== グローバル =====
     let castle, castleBBox, ground, groundY = 0;
+    let castleH = 1, castleSpan = 10; // 動的スケール用
     const mixers = [];
     const agents = []; // ペンギン制御
 
@@ -119,6 +137,8 @@
       castleBBox = new THREE.Box3().setFromObject(castle);
       const castleCenter = castleBBox.getCenter(new THREE.Vector3());
       groundY = castleBBox.min.y; // 城モデルの最下点を地面高さにする
+      castleH = Math.max(0.001, castleBBox.max.y - castleBBox.min.y);
+      castleSpan = Math.min(castleBBox.max.x - castleBBox.min.x, castleBBox.max.z - castleBBox.min.z);
 
       // カメラ注視と地面
       controls.target.copy(castleCenter);
@@ -128,6 +148,58 @@
 
       const g = new THREE.PlaneGeometry(sizeX, sizeZ);
       const m = new THREE.MeshStandardMaterial({ color: CONFIG.GROUND_COLOR });
+      ground = new THREE.Mesh(g, m);
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.set(castleCenter.x, groundY - 0.001, castleCenter.z);
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      ok('castle.glb loaded');
+
+      // boy を城の中心に小さめで配置（城の高さに合わせて自動スケール）
+      loader.load('boy2.glb', (gltfBoy) => {
+        const boy = gltfBoy.scene;
+        applyShadowFlags(boy);
+        // ボーイのバウンディングボックスから高さを取り、城の高さの18%に合わせる
+        const bb = new THREE.Box3().setFromObject(boy);
+        const h = Math.max(0.001, bb.max.y - bb.min.y);
+        const targetH = castleH * 0.18;
+        const s = targetH / h;
+        boy.scale.setScalar(s);
+        const c = castleBBox.getCenter(new THREE.Vector3());
+        boy.position.set(c.x, groundY, c.z);
+        scene.add(boy);
+        const mix = makeMixerIfAny(gltfBoy); if (mix) mixers.push(mix);
+        ok('boy2.glb loaded');
+      }, undefined, (err)=>{ ng('boy2.glb failed to load. 置き場所/綴り(大文字小文字)を確認してください'); });
+
+      // ペンギン 5匹
+      const penguinFiles = ['pen.glb', 'pen_b.glb', 'pen_g.glb', 'pen_r.glb', 'pen_y.glb'];
+      penguinFiles.forEach((file, i) => {
+        loader.load(file, (pgltf) => {
+          const penguin = pgltf.scene;
+          applyShadowFlags(penguin);
+          // 自動スケール（boyよりすこし大きめ: 城高の22%）
+          const bbp = new THREE.Box3().setFromObject(penguin);
+          const hp = Math.max(0.001, bbp.max.y - bbp.min.y);
+          const targetH = castleH * 0.22;
+          const s = targetH / hp;
+          penguin.scale.setScalar(s);
+
+          // 最初の位置は外周のランダム地点
+          const p0 = randomPointOnPerimeter(castleBBox, CONFIG.WALK_OFFSET);
+          penguin.position.set(p0.x, groundY, p0.z);
+          scene.add(penguin);
+
+          const mix = makeMixerIfAny(pgltf); if (mix) mixers.push(mix);
+
+          const agent = createAgent(penguin);
+          agents.push(agent);
+          ok(file + ' loaded');
+        }, undefined, ()=>{ ng(file + ' failed to load'); });
+      });
+
+    }, undefined, (err)=>{ ng('castle.glb の読み込みに失敗しました'); });
       ground = new THREE.Mesh(g, m);
       ground.rotation.x = -Math.PI / 2;
       ground.position.set(castleCenter.x, groundY - 0.001, castleCenter.z);
