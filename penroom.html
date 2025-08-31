@@ -563,6 +563,10 @@ const BOY_LINES = [
 ];
 let boySpeakTimer = 0;          // 表示中の残り秒数
 let boyNextSpeakIn = 2 + Math.random()*4; // 次の発話まで（2〜6秒）
+// --- WASD control globals ---
+const BOY_SPEED = 2.2;           // 移動スピード
+const boyKeys = { w:false, a:false, s:false, d:false };
+let boyIsMoving = false;
 // --- Neco greeting/globals ---
 let necoRef = null;                // neco.glb の参照
 let necoGreetTimer = 0;            // 挨拶表示の残り秒数
@@ -603,7 +607,16 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
         if (RES.neco) RES.neco.pos = neco.position.clone();
         if (gltf.animations && gltf.animations.length){
           const mixer = new THREE.AnimationMixer(model);
-          gltf.animations.forEach(clip=> mixer.clipAction(clip).setLoop(THREE.LoopRepeat, Infinity).play());
+          const idleClip = gltf.animations.find(a => /idle/i.test(a.name)) || gltf.animations[0];
+          const walkClip = gltf.animations.find(a => /walk/i.test(a.name)) || idleClip;
+          const idleAct = mixer.clipAction(idleClip);
+          const walkAct = mixer.clipAction(walkClip);
+          idleAct.setLoop(THREE.LoopRepeat, Infinity).play();
+          walkAct.setLoop(THREE.LoopRepeat, Infinity);
+          walkAct.enabled = true; walkAct.weight = 0;
+          boy.userData.mixer = mixer;
+          boy.userData.actions = { idle: idleAct, walk: walkAct };
+          boy.userData.playing = 'idle';
           mixers.push(mixer);
         }
       }, undefined, (err)=>console.warn('neco.glb load error', err));
@@ -619,6 +632,8 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
       // 池の方向 +135° を向かせる
       const yaw = Math.atan2(POND_POS.x - boy.position.x, POND_POS.z - boy.position.z) + (135 * Math.PI / 180);
       boy.rotation.y = yaw;
+      boy.userData = boy.userData || {};
+      boy.userData.baseYaw = boy.rotation.y; // base: facing screen bottom
       scene.add(boy);
         boy.userData = boy.userData || {};
         // 吹き出しをさらに上へ（Boy は極小スケールのため固定オフセットを採用）
@@ -638,7 +653,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
 
     // 池の右下あたりに Boy を配置
     const boyPos = new THREE.Vector3(5, 0, 10);
-    spawnBoy('Boy.glb', boyPos);
+    spawnBoy('boy2.glb', boyPos);
 
     // 左庭の元の猫位置に neco.glb を表示
     spawnNeco('neco.glb', new THREE.Vector3(-11.2, 0, 2.0), 1.3);
@@ -729,6 +744,33 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
 
       // update mixers (boy/neco/others)
       for (const m of mixers) m.update(dt);
+
+      // --- Boy keyboard movement ---
+      if (boyRef){
+        const dx = (boyKeys.d?1:0) + (boyKeys.a?-1:0);
+        const dz = (boyKeys.s?1:0) + (boyKeys.w?-1:0);
+        boyIsMoving = (dx!==0 || dz!==0);
+        const data = boyRef.userData || {};
+        const acts = data.actions || {};
+        if (boyIsMoving){
+          const len = Math.hypot(dx,dz) || 1;
+          const vx = dx/len, vz = dz/len;
+          const sp = BOY_SPEED * dt;
+          boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x + vx*sp, bounds.xMin, bounds.xMax);
+          boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z + vz*sp, bounds.zMin, bounds.zMax);
+          const base = data.baseYaw ?? boyRef.rotation.y;
+          const yaw = base + Math.atan2(vx, vz);
+          boyRef.rotation.y = yaw;
+          if (acts.walk && acts.idle && data.playing !== 'walk'){
+            acts.walk.reset(); acts.idle.crossFadeTo(acts.walk, 0.15, false); acts.walk.play(); data.playing = 'walk';
+          }
+        } else {
+          if (acts.walk && acts.idle && data.playing !== 'idle'){
+            acts.walk.crossFadeTo(acts.idle, 0.2, false); data.playing='idle';
+          }
+        }
+        boyRef.userData = data;
+      }
 
       const t = performance.now()/1000;
 
@@ -835,7 +877,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
 
       // --- boy random talk ---
       if (boyRef){
-        if (greetTimer <= 0){
+        if (greetTimer <= 0 && !boyIsMoving){
           if (boySpeakTimer > 0){
             boySpeakTimer -= dt;
             updateBubblePositionFor(boyRef);
@@ -878,6 +920,10 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     window.addEventListener('click', handleAdvance);
     window.addEventListener('touchend', handleAdvance, { passive: true });
     window.addEventListener('pointerup', handleAdvance);
+
+    // --- Keyboard (WASD) for Boy ---
+    addEventListener('keydown', (e)=>{ const k=(e.key||'').toLowerCase(); if(k==='w'||k==='a'||k==='s'||k==='d'){ boyKeys[k]=true; e.preventDefault(); }});
+    addEventListener('keyup', (e)=>{ const k=(e.key||'').toLowerCase(); if(k==='w'||k==='a'||k==='s'||k==='d'){ boyKeys[k]=false; }});
 
     // ---- Drag & drop ----
     const drop = $('drop');
