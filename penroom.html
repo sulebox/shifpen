@@ -610,29 +610,6 @@ function queueWaitPos(name, p){
       }, undefined, (err)=>console.warn('neco.glb load error', err));
     }
 
-    // --- remove root motion from walk clip (in-place) ---
-    function makeInPlace(clip){
-      if (!clip) return clip;
-      const blocked = ['armature','mixamorig','hips','root','armature.001'];
-      const tracks = clip.tracks.filter(tr => {
-        if (!tr.name.endsWith('.position')) return true;
-        const low = tr.name.toLowerCase();
-        return !blocked.some(k => low.includes(k));
-      });
-      return new THREE.AnimationClip(clip.name, clip.duration, tracks);
-    }
-    
-    // --- remove root motion (in-place walk) ---
-    function makeInPlace(clip){
-      if (!clip) return clip;
-      const blocked = ['armature','mixamorig','hips','root','armature.001'];
-      const tracks = clip.tracks.filter(tr => {
-        if (!tr.name.endsWith('.position')) return true;
-        const low = tr.name.toLowerCase();
-        return !blocked.some(k => low.includes(k));
-      });
-      return new THREE.AnimationClip(clip.name, clip.duration, tracks);
-    }
     
 // --- boy loader with idle/walk actions ---
 function spawnBoy(url, pos){
@@ -689,15 +666,6 @@ function spawnBoy(url, pos){
         if (time > t) { t = time; key = k; }
       }
       return key; // most recently pressed key held down
-    }
-
-    function setBoyAnim(name){
-      if (!boyMixer || !boyActions[name]) return;
-      const next = boyActions[name];
-      if (boyCurrent === next) return;
-      if (boyCurrent) boyCurrent.crossFadeTo(next, 0.18, false);
-      next.reset().play();
-      boyCurrent = next;
     }
 
 const BOY_SPEED = 2.2; // m/s
