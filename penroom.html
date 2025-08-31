@@ -52,6 +52,10 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     app.appendChild(renderer.domElement);
+    // make canvas focusable for keyboard input
+    renderer.domElement.setAttribute('tabindex','0');
+    renderer.domElement.style.outline = 'none';
+    renderer.domElement.addEventListener('pointerdown', ()=> renderer.domElement.focus());
 
     
     // ---- Camera ----
@@ -937,8 +941,11 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     window.addEventListener('pointerup', handleAdvance);
 
     // --- Keyboard (WASD) for Boy ---
-    addEventListener('keydown', (e)=>{ const k=(e.key||'').toLowerCase(); if(k==='w'||k==='a'||k==='s'||k==='d'){ boyKeys[k]=true; e.preventDefault(); }});
-    addEventListener('keyup', (e)=>{ const k=(e.key||'').toLowerCase(); if(k==='w'||k==='a'||k==='s'||k==='d'){ boyKeys[k]=false; }});
+    function __bindKey(el){
+      el.addEventListener('keydown', (e)=>{ const k=(e.key||'').toLowerCase(); if(k==='w'||k==='a'||k==='s'||k==='d'){ boyKeys[k]=true; e.preventDefault(); }});
+      el.addEventListener('keyup', (e)=>{ const k=(e.key||'').toLowerCase(); if(k==='w'||k==='a'||k==='s'||k==='d'){ boyKeys[k]=false; }});
+    }
+    __bindKey(window); __bindKey(document); __bindKey(renderer.domElement); if(k==='w'||k==='a'||k==='s'||k==='d'){ boyKeys[k]=false; }});
 
     // ---- Drag & drop ----
     const drop = $('drop');
