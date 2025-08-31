@@ -42,21 +42,28 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-    // ===== Config (サイズが合わない場合はここを調整) =====
+    // ===================== CONFIG =====================
     const CONFIG = {
       CAMERA_POS: new THREE.Vector3(0, 14, 22),
-      BOY_SCALE: 0.9,              // boy2.glb のスケール
-      PENGUIN_SCALE: 1.2,          // ペンギン（boy よりちょい大きめ）
-      WALK_OFFSET: 3.0,            // 城壁の外側の通路オフセット距離
-      WALK_SPEED_MIN: 1.2,         // m/s っぽいイメージ
+      WALK_OFFSET: 3.0,
+      WALK_SPEED_MIN: 1.2,
       WALK_SPEED_MAX: 2.2,
       PAUSE_TIME_MIN: 1.5,
       PAUSE_TIME_MAX: 3.0,
       GROUND_COLOR: 0xbfe3bf,
-      ENABLE_SHADOWS: true
+      ENABLE_SHADOWS: true,
     };
 
-    // ===== Three.js 基本セットアップ =====
+    // ===================== LOG PANEL =====================
+    const logEl = document.getElementById('log');
+    function log(m){ if(logEl){ logEl.textContent += (logEl.textContent?'
+':'') + m; logEl.scrollTop = logEl.scrollHeight; } }
+    function ok(m){ log(`✅ ${m}`); }
+    function ng(m){ log(`❌ ${m}`); }
+    log('Loading... (L でログ表示切替)');
+    addEventListener('keydown', (e)=>{ if(e.key.toLowerCase()==='l' && logEl){ logEl.style.display = (logEl.style.display==='none'?'':'none'); }});
+
+    // ===================== THREE BASICS =====================
     const app = document.getElementById('app');
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -92,249 +99,108 @@
 
     const loader = new GLTFLoader();
 
-    // ===== 簡易ログ（スマホ/右クリック不可でも状況が分かるように） =====
-    const logEl = document.getElementById('log');
-    function log(msg){ logEl.textContent += `
-${msg}`; logEl.scrollTop = logEl.scrollHeight; }
-    function ok(msg){ log(`✅ ${msg}`); }
-    function ng(msg){ log(`❌ ${msg}`); }
-    log('Loading... (L で表示切替)');
-    addEventListener('keydown', (e)=>{ if(e.key.toLowerCase()==='l'){ logEl.style.display = (logEl.style.display==='none'?'':'none'); }});
-
-    // 便利関数: 影の設定
-    function applyShadowFlags(root) {
-      root.traverse((obj) => {
-        if (obj.isMesh) {
-          obj.castShadow = true;
-          obj.receiveShadow = true;
-        }
-      });
+    // Helpers
+    function applyShadowFlags(root){
+      root.traverse((o)=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
     }
-
-    // 便利関数: アニメーションがあれば全部再生
-    function makeMixerIfAny(gltf) {
-      if (!gltf.animations || gltf.animations.length === 0) return null;
+    function makeMixerIfAny(gltf){
+      if(!gltf.animations || gltf.animations.length===0) return null;
       const mixer = new THREE.AnimationMixer(gltf.scene);
-      gltf.animations.forEach(clip => {
-        const action = mixer.clipAction(clip);
-        action.play();
-      });
+      gltf.animations.forEach((clip)=>{ mixer.clipAction(clip).play(); });
       return mixer;
     }
 
-    // ===== グローバル =====
-    let castle, castleBBox, ground, groundY = 0;
-    let castleH = 1, castleSpan = 10; // 動的スケール用
+    // Globals
+    let castleBBox = null, groundY = 0;
     const mixers = [];
-    const agents = []; // ペンギン制御
+    const agents = [];
 
-    // ===== モデル読み込み =====
-    loader.load('castle.glb', (gltf) => {
-      castle = gltf.scene;
-      applyShadowFlags(castle);
-      scene.add(castle);
+    // ===================== LOAD CASTLE =====================
+    loader.load('castle.glb', (gltf)=>{
+      const castle = gltf.scene; applyShadowFlags(castle); scene.add(castle);
+      const bbox = new THREE.Box3().setFromObject(castle); castleBBox = bbox; groundY = bbox.min.y;
+      const castleH = Math.max(0.001, bbox.max.y - bbox.min.y);
+      const center = bbox.getCenter(new THREE.Vector3());
 
-      castleBBox = new THREE.Box3().setFromObject(castle);
-      const castleCenter = castleBBox.getCenter(new THREE.Vector3());
-      groundY = castleBBox.min.y; // 城モデルの最下点を地面高さにする
-      castleH = Math.max(0.001, castleBBox.max.y - castleBBox.min.y);
-      castleSpan = Math.min(castleBBox.max.x - castleBBox.min.x, castleBBox.max.z - castleBBox.min.z);
+      controls.target.copy(center);
 
-      // カメラ注視と地面
-      controls.target.copy(castleCenter);
-
-      const sizeX = (castleBBox.max.x - castleBBox.min.x) + CONFIG.WALK_OFFSET * 14;
-      const sizeZ = (castleBBox.max.z - castleBBox.min.z) + CONFIG.WALK_OFFSET * 14;
-
+      // Ground
+      const sizeX = (bbox.max.x - bbox.min.x) + CONFIG.WALK_OFFSET * 14;
+      const sizeZ = (bbox.max.z - bbox.min.z) + CONFIG.WALK_OFFSET * 14;
       const g = new THREE.PlaneGeometry(sizeX, sizeZ);
       const m = new THREE.MeshStandardMaterial({ color: CONFIG.GROUND_COLOR });
-      ground = new THREE.Mesh(g, m);
-      ground.rotation.x = -Math.PI / 2;
-      ground.position.set(castleCenter.x, groundY - 0.001, castleCenter.z);
-      ground.receiveShadow = true;
-      scene.add(ground);
+      const ground = new THREE.Mesh(g, m);
+      ground.rotation.x = -Math.PI/2; ground.position.set(center.x, groundY - 0.001, center.z); ground.receiveShadow = true; scene.add(ground);
 
       ok('castle.glb loaded');
 
-      // boy を城の中心に小さめで配置（城の高さに合わせて自動スケール）
-      loader.load('boy2.glb', (gltfBoy) => {
-        const boy = gltfBoy.scene;
-        applyShadowFlags(boy);
-        // ボーイのバウンディングボックスから高さを取り、城の高さの18%に合わせる
-        const bb = new THREE.Box3().setFromObject(boy);
-        const h = Math.max(0.001, bb.max.y - bb.min.y);
-        const targetH = castleH * 0.18;
-        const s = targetH / h;
-        boy.scale.setScalar(s);
-        const c = castleBBox.getCenter(new THREE.Vector3());
-        boy.position.set(c.x, groundY, c.z);
-        scene.add(boy);
-        const mix = makeMixerIfAny(gltfBoy); if (mix) mixers.push(mix);
+      // Boy (城高さの18%)
+      loader.load('boy2.glb', (bgltf)=>{
+        const boy = bgltf.scene; applyShadowFlags(boy);
+        const bb = new THREE.Box3().setFromObject(boy); const h = Math.max(0.001, bb.max.y - bb.min.y);
+        const s = (castleH * 0.18) / h; boy.scale.setScalar(s);
+        boy.position.set(center.x, groundY, center.z); scene.add(boy);
+        const mix = makeMixerIfAny(bgltf); if(mix) mixers.push(mix);
         ok('boy2.glb loaded');
-      }, undefined, (err)=>{ ng('boy2.glb failed to load. 置き場所/綴り(大文字小文字)を確認してください'); });
+      }, undefined, ()=>{ ng('boy2.glb failed to load'); });
 
-      // ペンギン 5匹
-      const penguinFiles = ['pen.glb', 'pen_b.glb', 'pen_g.glb', 'pen_r.glb', 'pen_y.glb'];
-      penguinFiles.forEach((file, i) => {
-        loader.load(file, (pgltf) => {
-          const penguin = pgltf.scene;
-          applyShadowFlags(penguin);
-          // 自動スケール（boyよりすこし大きめ: 城高の22%）
-          const bbp = new THREE.Box3().setFromObject(penguin);
-          const hp = Math.max(0.001, bbp.max.y - bbp.min.y);
-          const targetH = castleH * 0.22;
-          const s = targetH / hp;
-          penguin.scale.setScalar(s);
-
-          // 最初の位置は外周のランダム地点
-          const p0 = randomPointOnPerimeter(castleBBox, CONFIG.WALK_OFFSET);
-          penguin.position.set(p0.x, groundY, p0.z);
-          scene.add(penguin);
-
-          const mix = makeMixerIfAny(pgltf); if (mix) mixers.push(mix);
-
-          const agent = createAgent(penguin);
-          agents.push(agent);
-          ok(file + ' loaded');
-        }, undefined, ()=>{ ng(file + ' failed to load'); });
+      // Penguins (城高さの22%)
+      const files = ['pen.glb','pen_b.glb','pen_g.glb','pen_r.glb','pen_y.glb'];
+      files.forEach((f)=>{
+        loader.load(f, (pgltf)=>{
+          const p = pgltf.scene; applyShadowFlags(p);
+          const bbp = new THREE.Box3().setFromObject(p); const hp = Math.max(0.001, bbp.max.y - bbp.min.y);
+          p.scale.setScalar((castleH*0.22)/hp);
+          const start = randomPointOnPerimeter(castleBBox, CONFIG.WALK_OFFSET);
+          p.position.set(start.x, groundY, start.z); scene.add(p);
+          const mix = makeMixerIfAny(pgltf); if(mix) mixers.push(mix);
+          agents.push(createAgent(p));
+          ok(f + ' loaded');
+        }, undefined, ()=>{ ng(f + ' failed to load'); });
       });
+    }, undefined, ()=>{ ng('castle.glb failed to load'); });
 
-    }, undefined, (err)=>{ ng('castle.glb の読み込みに失敗しました'); });
-      ground = new THREE.Mesh(g, m);
-      ground.rotation.x = -Math.PI / 2;
-      ground.position.set(castleCenter.x, groundY - 0.001, castleCenter.z);
-      ground.receiveShadow = true;
-      scene.add(ground);
-
-      // boy を城の中心に小さめで配置
-      loader.load('boy2.glb', (gltfBoy) => {
-        const boy = gltfBoy.scene;
-        boy.scale.setScalar(CONFIG.BOY_SCALE);
-        applyShadowFlags(boy);
-        const c = castleBBox.getCenter(new THREE.Vector3());
-        boy.position.set(c.x, groundY, c.z);
-        scene.add(boy);
-        const mix = makeMixerIfAny(gltfBoy); if (mix) mixers.push(mix);
-      });
-
-      // ペンギン 5匹
-      const penguinFiles = ['pen.glb', 'pen_b.glb', 'pen_g.glb', 'pen_r.glb', 'pen_y.glb'];
-      penguinFiles.forEach((file, i) => {
-        loader.load(file, (pgltf) => {
-          const penguin = pgltf.scene;
-          penguin.scale.setScalar(CONFIG.PENGUIN_SCALE);
-          applyShadowFlags(penguin);
-
-          // 最初の位置は外周のランダム地点
-          const p0 = randomPointOnPerimeter(castleBBox, CONFIG.WALK_OFFSET);
-          penguin.position.set(p0.x, groundY, p0.z);
-          scene.add(penguin);
-
-          const mix = makeMixerIfAny(pgltf); if (mix) mixers.push(mix);
-
-          const agent = createAgent(penguin);
-          agents.push(agent);
-        });
-      });
-
-    });
-
-    // ===== ペンギンの簡易 AI =====
-    function createAgent(obj3d) {
-      const agent = {
-        obj: obj3d,
+    // ===================== AGENTS =====================
+    function createAgent(obj){
+      return {
+        obj,
         speed: THREE.MathUtils.randFloat(CONFIG.WALK_SPEED_MIN, CONFIG.WALK_SPEED_MAX),
         target: new THREE.Vector3(),
-        state: 'idle', // 'idle' | 'move'
+        state: 'move',
         waitUntil: 0,
       };
-      // すぐに目的地を設定
-      pickNextTarget(agent);
-      return agent;
     }
-
-    function pickNextTarget(agent) {
-      if (!castleBBox) return;
-      const next = randomPointOnPerimeter(castleBBox, CONFIG.WALK_OFFSET);
-      agent.target.copy(next);
-      agent.state = 'move';
+    function pickNextTarget(agent){
+      if(!castleBBox) return; const next = randomPointOnPerimeter(castleBBox, CONFIG.WALK_OFFSET);
+      agent.target.copy(next); agent.state = 'move';
     }
-
-    function randomPointOnPerimeter(bbox, offset) {
-      // 城の外周（矩形）のちょい外側を歩く
-      const minX = bbox.min.x - offset;
-      const maxX = bbox.max.x + offset;
-      const minZ = bbox.min.z - offset;
-      const maxZ = bbox.max.z + offset;
-      const side = Math.floor(Math.random() * 4);
-      let x, z;
-      switch (side) {
-        case 0: // 北（+Z 側）
-          x = THREE.MathUtils.lerp(minX, maxX, Math.random());
-          z = maxZ + THREE.MathUtils.randFloatSpread(offset * 0.35); // すこし外へゆらぎ
-          break;
-        case 1: // 南（-Z 側）
-          x = THREE.MathUtils.lerp(minX, maxX, Math.random());
-          z = minZ - THREE.MathUtils.randFloatSpread(offset * 0.35);
-          break;
-        case 2: // 東（+X 側）
-          x = maxX + THREE.MathUtils.randFloatSpread(offset * 0.35);
-          z = THREE.MathUtils.lerp(minZ, maxZ, Math.random());
-          break;
-        default: // 西（-X 側）
-          x = minX - THREE.MathUtils.randFloatSpread(offset * 0.35);
-          z = THREE.MathUtils.lerp(minZ, maxZ, Math.random());
-          break;
-      }
+    function randomPointOnPerimeter(bbox, offset){
+      const minX = bbox.min.x - offset, maxX = bbox.max.x + offset;
+      const minZ = bbox.min.z - offset, maxZ = bbox.max.z + offset;
+      const side = Math.floor(Math.random()*4); let x, z;
+      if(side===0){ x = THREE.MathUtils.lerp(minX, maxX, Math.random()); z = maxZ + THREE.MathUtils.randFloatSpread(offset*0.35); }
+      else if(side===1){ x = THREE.MathUtils.lerp(minX, maxX, Math.random()); z = minZ - THREE.MathUtils.randFloatSpread(offset*0.35); }
+      else if(side===2){ x = maxX + THREE.MathUtils.randFloatSpread(offset*0.35); z = THREE.MathUtils.lerp(minZ, maxZ, Math.random()); }
+      else { x = minX - THREE.MathUtils.randFloatSpread(offset*0.35); z = THREE.MathUtils.lerp(minZ, maxZ, Math.random()); }
       return new THREE.Vector3(x, groundY, z);
     }
 
-    // ===== ループ =====
+    // ===================== LOOP =====================
     const clock = new THREE.Clock();
-
-    function update(dt) {
-      // アニメーション
-      mixers.forEach(m => m.update(dt));
-
-      // ペンギン挙動
-      const now = performance.now() / 1000;
-      for (const a of agents) {
-        if (a.state === 'idle') {
-          if (now >= a.waitUntil) pickNextTarget(a);
-          continue;
-        }
-        const pos = a.obj.position;
-        const dir = new THREE.Vector3().subVectors(a.target, pos);
-        const dist = dir.length();
-        if (dist < 0.05) {
-          a.state = 'idle';
-          a.waitUntil = now + THREE.MathUtils.randFloat(CONFIG.PAUSE_TIME_MIN, CONFIG.PAUSE_TIME_MAX);
-          continue;
-        }
-        dir.normalize();
-        pos.addScaledVector(dir, a.speed * dt);
-        pos.y = groundY;
-        // 向きを進行方向へ
-        const yaw = Math.atan2(dir.x, dir.z); // +Z 前提
-        a.obj.rotation.y = yaw;
+    function update(dt){
+      mixers.forEach(m=>m.update(dt));
+      const now = performance.now()/1000;
+      for(const a of agents){
+        if(a.state==='idle'){ if(now>=a.waitUntil) pickNextTarget(a); continue; }
+        const pos = a.obj.position; const dir = new THREE.Vector3().subVectors(a.target, pos); const d = dir.length();
+        if(d < 0.05){ a.state='idle'; a.waitUntil = now + THREE.MathUtils.randFloat(CONFIG.PAUSE_TIME_MIN, CONFIG.PAUSE_TIME_MAX); continue; }
+        dir.normalize(); pos.addScaledVector(dir, a.speed*dt); pos.y = groundY; a.obj.rotation.y = Math.atan2(dir.x, dir.z);
       }
     }
+    renderer.setAnimationLoop(()=>{ const dt = clock.getDelta(); update(dt); controls.update(); renderer.render(scene, camera); });
 
-    function animate() {
-      const dt = clock.getDelta();
-      update(dt);
-      controls.update();
-      renderer.render(scene, camera);
-      requestAnimationFrame(animate);
-    }
-    animate();
-
-    // ===== リサイズ =====
-    addEventListener('resize', () => {
-      camera.aspect = innerWidth / innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(innerWidth, innerHeight);
-    });
+    // ===================== RESIZE =====================
+    addEventListener('resize', ()=>{ camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
   </script>
 </body>
 </html>
