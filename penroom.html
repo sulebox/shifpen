@@ -610,8 +610,20 @@ function queueWaitPos(name, p){
       }, undefined, (err)=>console.warn('neco.glb load error', err));
     }
 
+    // --- remove root motion from walk clip (in-place) ---
+    function makeInPlace(clip){
+      if (!clip) return clip;
+      const blocked = ['armature','mixamorig','hips','root','armature.001'];
+      const tracks = clip.tracks.filter(tr => {
+        if (!tr.name.endsWith('.position')) return true;
+        const low = tr.name.toLowerCase();
+        return !blocked.some(k => low.includes(k));
+      });
+      return new THREE.AnimationClip(clip.name, clip.duration, tracks);
+    }
+
     // --- boy loader with idle/walk actions ---
-    function spawnBoy(url, pos){
+    function spawnBoy(url, pos){url, pos){
       gltfLoader.load(url, (gltf)=>{
         const boy = new THREE.Group();
         const model = gltf.scene;
@@ -630,7 +642,9 @@ function queueWaitPos(name, p){
         if (gltf.animations && gltf.animations.length){
           boyMixer = new THREE.AnimationMixer(model);
           const idleClip = gltf.animations.find(a=>/idle/i.test(a.name)) || gltf.animations[0];
-          const walkClip = gltf.animations.find(a=>/walk/i.test(a.name)) || gltf.animations[gltf.animations.length-1];
+          let walkClip = gltf.animations.find(a=>/walk/i.test(a.name)) || gltf.animations[gltf.animations.length-1];
+          // remove root translation so walking doesn't snap back each loop
+          walkClip = makeInPlace(walkClip);
           boyActions.idle = boyMixer.clipAction(idleClip);
           boyActions.walk = boyMixer.clipAction(walkClip);
           boyActions.idle.setLoop(THREE.LoopRepeat, Infinity).play();
@@ -683,9 +697,9 @@ function queueWaitPos(name, p){
       let dir = new THREE.Vector3();
       let yawOff = 0; // 基準向きからの回転
       if (k === 'w'){ dir.set(0,0,-1); yawOff = Math.PI; }         // 上へ／180°回転
-      else if (k === 'a'){ dir.set(-1,0,0); yawOff = Math.PI/2; }  // 左へ／+90°（時計回り）
+      else if (k === 'a'){ dir.set(1,0,0); yawOff = -Math.PI/2; }  // 左へ（画面左は +X）／時計回り
       else if (k === 's'){ dir.set(0,0,1); yawOff = 0; }           // 下へ／そのまま
-      else if (k === 'd'){ dir.set(1,0,0); yawOff = -Math.PI/2; }  // 右へ／-90°（反時計回り）
+      else if (k === 'd'){ dir.set(-1,0,0); yawOff = Math.PI/2; }  // 右へ（画面右は -X）／反時計回り
 
       // 向き・移動
       boyRef.rotation.y = boyBaseYaw + yawOff;
