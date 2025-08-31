@@ -623,7 +623,7 @@ function queueWaitPos(name, p){
     }
 
     // --- boy loader with idle/walk actions ---
-    function spawnBoy(url, pos){url, pos){
+    function spawnBoy(url, pos){
       gltfLoader.load(url, (gltf)=>{
         const boy = new THREE.Group();
         const model = gltf.scene;
