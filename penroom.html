@@ -621,38 +621,53 @@ function queueWaitPos(name, p){
       });
       return new THREE.AnimationClip(clip.name, clip.duration, tracks);
     }
-
-    // --- boy loader with idle/walk actions ---
-    function spawnBoy(url, pos){
-      gltfLoader.load(url, (gltf)=>{
-        const boy = new THREE.Group();
-        const model = gltf.scene;
-        // 既存スケール方式
-        fitAndFloorToHeight(model, 1.55 * 0.007);
-        boy.add(model);
-        boy.position.copy(pos);
-        // 初期向きは現状のまま（画面下を向いている）
-        scene.add(boy);
-        boy.userData = boy.userData || {};
-        boy.userData.bubbleOffsetY = 4.5; // 吹き出し高さ
-        boyRef = boy;
-        boyBaseYaw = boy.rotation.y; // 基準向きを保存
-
-        // --- animation setup ---
-        if (gltf.animations && gltf.animations.length){
-          boyMixer = new THREE.AnimationMixer(model);
-          const idleClip = gltf.animations.find(a=>/idle/i.test(a.name)) || gltf.animations[0];
-          let walkClip = gltf.animations.find(a=>/walk/i.test(a.name)) || gltf.animations[gltf.animations.length-1];
-          // remove root translation so walking doesn't snap back each loop
-          walkClip = makeInPlace(walkClip);
-          boyActions.idle = boyMixer.clipAction(idleClip);
-          boyActions.walk = boyMixer.clipAction(walkClip);
-          boyActions.idle.setLoop(THREE.LoopRepeat, Infinity).play();
-          boyCurrent = boyActions.idle;
-          mixers.push(boyMixer);
-        }
-      }, undefined, (err)=>console.warn('boy2.glb load error', err));
+    
+    // --- remove root motion (in-place walk) ---
+    function makeInPlace(clip){
+      if (!clip) return clip;
+      const blocked = ['armature','mixamorig','hips','root','armature.001'];
+      const tracks = clip.tracks.filter(tr => {
+        if (!tr.name.endsWith('.position')) return true;
+        const low = tr.name.toLowerCase();
+        return !blocked.some(k => low.includes(k));
+      });
+      return new THREE.AnimationClip(clip.name, clip.duration, tracks);
     }
+    
+// --- boy loader with idle/walk actions ---
+function spawnBoy(url, pos){
+  gltfLoader.load(url, (gltf)=>{
+    const boy = new THREE.Group();
+    const model = gltf.scene;
+
+    // スケール＆床合わせ
+    fitAndFloorToHeight(model, 1.55 * 0.007);
+    boy.add(model);
+    boy.position.copy(pos);
+    scene.add(boy);
+
+    // 吹き出し高さ・参照
+    boy.userData = boy.userData || {};
+    boy.userData.bubbleOffsetY = 4.5;
+    boyRef = boy;
+    boyBaseYaw = boy.rotation.y;
+
+    // アニメーション（idle / walk）
+    if (gltf.animations && gltf.animations.length){
+      boyMixer = new THREE.AnimationMixer(model);
+      const idleClip = gltf.animations.find(a=>/idle/i.test(a.name)) || gltf.animations[0];
+      let walkClip  = gltf.animations.find(a=>/walk/i.test(a.name)) || gltf.animations[gltf.animations.length-1];
+      walkClip = makeInPlace(walkClip); // ← ルート移動を無効化
+      boyActions = {
+        idle: boyMixer.clipAction(idleClip),
+        walk: boyMixer.clipAction(walkClip),
+      };
+      boyActions.idle.setLoop(THREE.LoopRepeat, Infinity).play();
+      boyCurrent = boyActions.idle;
+      mixers.push(boyMixer);
+    }
+  }, undefined, (err)=>console.warn('boy2.glb load error', err));
+}
 
     // --- WASD control state ---
     const keyTimes = new Map(); // key -> last pressed time
@@ -685,34 +700,55 @@ function queueWaitPos(name, p){
       boyCurrent = next;
     }
 
-    const BOY_SPEED = 2.2; // m/s 相当
-    function updateBoy(dt){
-      if (!boyRef) return;
-      const k = activeKey();
-      if (!k){
-        setBoyAnim('idle');
-        return;
-      }
-      // 方向マップ（画面基準）
-      let dir = new THREE.Vector3();
-      let yawOff = 0; // 基準向きからの回転
-      if (k === 'w'){ dir.set(0,0,-1); yawOff = Math.PI; }         // 上へ／180°回転
-      else if (k === 'a'){ dir.set(1,0,0); yawOff = -Math.PI/2; }  // 左へ（画面左は +X）／時計回り
-      else if (k === 's'){ dir.set(0,0,1); yawOff = 0; }           // 下へ／そのまま
-      else if (k === 'd'){ dir.set(-1,0,0); yawOff = Math.PI/2; }  // 右へ（画面右は -X）／反時計回り
+const BOY_SPEED = 2.2; // m/s
 
-      // 向き・移動
-      boyRef.rotation.y = boyBaseYaw + yawOff;
-      boyRef.position.addScaledVector(dir, BOY_SPEED * dt);
-      boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, bounds.xMin, bounds.xMax);
-      boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, bounds.zMin, bounds.zMax);
-      boyRef.position.y = 0; // 地面に合わせる
-      setBoyAnim('walk');
-    }
+function setBoyAnim(name){
+  if (!boyMixer || !boyActions[name]) return;
+  const next = boyActions[name];
+  if (boyCurrent === next) return;
+  if (boyCurrent) boyCurrent.crossFadeTo(next, 0.18, false);
+  next.reset().play();
+  boyCurrent = next;
+}
+
+function updateBoy(dt){
+  if (!boyRef) return;
+
+  const k = activeKey();
+  if (!k){
+    setBoyAnim('idle');
+    return;
+  }
+
+  // ご指定の向き：
+  // W: 180°, A: 時計回り90°, S: 0°, D: 反時計回り90°
+  let yawOff = 0;
+  if (k === 'w') yawOff = Math.PI;
+  else if (k === 'a') yawOff = -Math.PI/2; // 時計回り
+  else if (k === 's') yawOff = 0;
+  else if (k === 'd') yawOff =  Math.PI/2; // 反時計回り
+
+  // まず向きを決定
+  boyRef.rotation.y = boyBaseYaw + yawOff;
+
+  // 向いている方向に進む（前方＝モデル+Z軸）
+  const fwd = new THREE.Vector3(0,0,1).applyQuaternion(boyRef.quaternion);
+  fwd.y = 0; fwd.normalize();
+  boyRef.position.addScaledVector(fwd, BOY_SPEED * dt);
+
+  // 床内に拘束
+  boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, bounds.xMin, bounds.xMax);
+  boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, bounds.zMin, bounds.zMax);
+  boyRef.position.y = 0;
+
+  setBoyAnim('walk');
+}
+
 
     // 池の右下あたりに Boy を配置（boy2.glb を使用）
     const boyPos = new THREE.Vector3(5, 0, 10);
     spawnBoy('boy2.glb', boyPos);
+
 
     // 左庭の元の猫位置に neco.glb を表示
     let necoRef = null;                // neco.glb の参照
