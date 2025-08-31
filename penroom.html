@@ -592,26 +592,36 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
 
     // ---- Neco (neco.glb) loader ----
     function spawnNeco(url, pos, targetH = 1.1){
-      gltfLoader.load(url, (gltf)=>{
-        const neco = new THREE.Group();
-        const model = gltf.scene;
-        model.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
-        fitAndFloorToHeight(model, targetH);
-        neco.add(model);
-        neco.position.copy(pos);
-        neco.rotation.y = Math.PI / 2; // +90°
-        scene.add(neco);
-        // 吹き出し位置（頭上）
-        neco.userData = neco.userData || {};
-        const bb = new THREE.Box3().setFromObject(model);
-        const h = Math.max(0.001, bb.max.y - bb.min.y);
-        neco.userData.bubbleOffsetY = Math.max(h * 1.2, h + 0.15);
-        // 参照とキュー位置を更新
-        necoRef = neco;
-        if (RES.neco) RES.neco.pos = neco.position.clone();
-        if (gltf.animations && gltf.animations.length){
-          // Log available clip names to help mapping
-          try { console.log('boy2 animations:', gltf.animations.map(a=>a.name)); } catch(e){}
+  gltfLoader.load(url, (gltf)=>{
+    const neco = new THREE.Group();
+    const model = gltf.scene;
+    model.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+    fitAndFloorToHeight(model, targetH);
+    neco.add(model);
+    neco.position.copy(pos);
+    neco.rotation.y = Math.PI / 2; // +90°
+    scene.add(neco);
+
+    // 吹き出し位置（頭上）
+    neco.userData = neco.userData || {};
+    const bb = new THREE.Box3().setFromObject(model);
+    const h = Math.max(0.001, bb.max.y - bb.min.y);
+    neco.userData.bubbleOffsetY = Math.max(h * 1.2, h + 0.15);
+
+    // 参照とキュー位置を更新
+    necoRef = neco;
+    if (RES.neco) RES.neco.pos = neco.position.clone();
+
+    // （あれば）アニメーションを再生
+    if (gltf.animations && gltf.animations.length){
+      const mixer = new THREE.AnimationMixer(model);
+      const act = mixer.clipAction(gltf.animations[0]);
+      act.setLoop(THREE.LoopRepeat, Infinity).play();
+      neco.userData.mixer = mixer;
+      mixers.push(mixer);
+    }
+  }, undefined, (err)=>console.warn('neco.glb load error', err));
+}
           const mixer = new THREE.AnimationMixer(model);
           const clips = gltf.animations;
           const names = clips.map(a=>a.name||'');
@@ -641,34 +651,47 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     }
 
     function spawnBoy(url, pos){
-      console.log('loading', url, '...');
-      gltfLoader.load(url, (gltf)=>{
-        const boy = new THREE.Group();
-        const model = gltf.scene;
-        fitAndFloorToHeight(model, 1.55 * 0.007); // 身長調整（元のやり方に戻す）
-        boy.add(model);
-        boy.position.copy(pos);
-      // 池の方向 +135° を向かせる
-      const yaw = Math.atan2(POND_POS.x - boy.position.x, POND_POS.z - boy.position.z) + (135 * Math.PI / 180);
-      boy.rotation.y = yaw;
-      boy.userData = boy.userData || {}; console.log('boy2 animations:', (gltf.animations||[]).map(a=>a.name));
-      boy.userData.baseYaw = boy.rotation.y; // base: facing screen bottom
-      scene.add(boy);
-        boy.userData = boy.userData || {};
-        // 吹き出しをさらに上へ（Boy は極小スケールのため固定オフセットを採用）
-        boy.userData.bubbleOffsetY = 4.5; // 少年の吹き出しの高さ
-        boyRef = boy; // Boy参照を保持
+  console.log('loading', url, '...');
+  gltfLoader.load(url, (gltf)=>{
+    const boy = new THREE.Group();
+    const model = gltf.scene;
+    fitAndFloorToHeight(model, 1.55 * 0.007); // 身長調整
+    boy.add(model);
+    boy.position.copy(pos);
 
-        // アニメーションを無限ループで自動再生
-        if (gltf.animations && gltf.animations.length){
-          const mixer = new THREE.AnimationMixer(model);
-          const idle = gltf.animations.find(a => /idle/i.test(a.name)) || gltf.animations[0];
-          const action = mixer.clipAction(idle);
-          action.setLoop(THREE.LoopRepeat, Infinity).play();
-          mixers.push(mixer);
-        }
-      }, undefined, (err)=>console.warn('Boy.glb load error', err));
-    }
+    // 池方向 +135° を向かせる（既存ロジック踏襲）
+    const yaw = Math.atan2(POND_POS.x - boy.position.x, POND_POS.z - boy.position.z) + (135 * Math.PI / 180);
+    boy.rotation.y = yaw;
+    scene.add(boy);
+
+    // 吹き出し等の初期化
+    boy.userData = boy.userData || {};
+    boy.userData.bubbleOffsetY = 4.5;
+    boy.userData.baseYaw = boy.rotation.y;
+    boyRef = boy;
+
+    // --- アニメーション設定 ---
+    const mixer = new THREE.AnimationMixer(model);
+    const clips = gltf.animations || [];
+    try { console.log('boy2 animations:', clips.map(c=>c.name)); } catch(e){}
+    const lower = n => (n||'').toLowerCase();
+    const exact = n => clips.find(c => lower(c.name)===n);
+    const pick  = (pats, avoid) =>
+      clips.find(c => pats.some(p => p.test(lower(c.name)))) ||
+      clips.find(c => c !== avoid) || clips[0];
+
+    const idleClip = exact('idle') || pick([/idle/,/stand/,/breath/], null) || new THREE.AnimationClip('empty', 0, []);
+    const walkClip = exact('walk') || pick([/walk/,/move/,/locomotion/], idleClip) || idleClip;
+
+    const idle = mixer.clipAction(idleClip); idle.setLoop(THREE.LoopRepeat, Infinity).play();
+    const walk = mixer.clipAction(walkClip); walk.setLoop(THREE.LoopRepeat, Infinity); walk.enabled = true; walk.weight = 0;
+
+    boy.userData.mixer = mixer;
+    boy.userData.actions = { idle, walk };
+    boy.userData.playing = 'idle';
+    mixers.push(mixer);
+  }, undefined, (err)=>console.warn('Boy.glb load error', err));
+}
 
     // 池の右下あたりに Boy を配置
     const boyPos = new THREE.Vector3(5, 0, 10);
@@ -941,13 +964,13 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     window.addEventListener('pointerup', handleAdvance);
 
     // --- Keyboard (WASD) for Boy ---
-    function __bindKey(el){
-      el.addEventListener('keydown', (e)=>{ const k=(e.key||'').toLowerCase(); if(k==='w'||k==='a'||k==='s'||k==='d'){ boyKeys[k]=true; e.preventDefault(); }});
-      el.addEventListener('keyup', (e)=>{ const k=(e.key||'').toLowerCase(); if(k==='w'||k==='a'||k==='s'||k==='d'){ boyKeys[k]=false; }});
-    }
-    __bindKey(window); __bindKey(document); __bindKey(renderer.domElement); if(k==='w'||k==='a'||k==='s'||k==='d'){ boyKeys[k]=false; }});
+function __bindKey(el){
+  el.addEventListener('keydown', (e)=>{ const k=(e.key||'').toLowerCase(); if(k in boyKeys){ boyKeys[k]=true; e.preventDefault(); }});
+  el.addEventListener('keyup',   (e)=>{ const k=(e.key||'').toLowerCase(); if(k in boyKeys){ boyKeys[k]=false; }});
+}
+__bindKey(window); __bindKey(document); __bindKey(renderer.domElement);
 
-    // ---- Drag & drop ----
+// ---- Drag & drop ----
     const drop = $('drop');
     addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('on'); });
     addEventListener('dragleave', (e) => { e.preventDefault(); drop.classList.remove('on'); });
