@@ -610,7 +610,18 @@ function queueWaitPos(name, p){
       }, undefined, (err)=>console.warn('neco.glb load error', err));
     }
 
-    
+// --- remove root motion from a clip (walk in-place) ---
+function makeInPlace(clip){
+  if (!clip) return clip;
+  const blocked = ['armature','mixamorig','hips','root','armature.001'];
+  const tracks = clip.tracks.filter(tr => {
+    if (!tr.name.endsWith('.position')) return true;
+    const low = tr.name.toLowerCase();
+    return !blocked.some(k => low.includes(k));
+  });
+  return new THREE.AnimationClip(clip.name, clip.duration, tracks);
+}    
+
 // --- boy loader with idle/walk actions ---
 function spawnBoy(url, pos){
   gltfLoader.load(url, (gltf)=>{
