@@ -635,6 +635,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     }
 
     function spawnBoy(url, pos){
+      console.log('loading', url, '...');
       gltfLoader.load(url, (gltf)=>{
         const boy = new THREE.Group();
         const model = gltf.scene;
@@ -644,7 +645,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
       // 池の方向 +135° を向かせる
       const yaw = Math.atan2(POND_POS.x - boy.position.x, POND_POS.z - boy.position.z) + (135 * Math.PI / 180);
       boy.rotation.y = yaw;
-      boy.userData = boy.userData || {};
+      boy.userData = boy.userData || {}; console.log('boy2 animations:', (gltf.animations||[]).map(a=>a.name));
       boy.userData.baseYaw = boy.rotation.y; // base: facing screen bottom
       scene.add(boy);
         boy.userData = boy.userData || {};
