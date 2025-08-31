@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>Castle — castle.html</title>
+  <style>
+    html, body { height: 100%; margin: 0; background: #e9f4ea; }
+    #app { position: fixed; inset: 0; }
+    .hud {
+      position: fixed; left: 12px; bottom: 12px; padding: 8px 10px;
+      background: rgba(255,255,255,0.9); border-radius: 10px;
+      font: 12px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      color: #222; box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    }
+    .hud b { font-weight: 700 }
+    canvas { display:block; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div class="hud">🧱 <b>Castle</b> — boy2 は城内、5匹のペンギンが城壁の外をウロウロします。</div>
+
+  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+    import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+
+    // ===== Config (サイズが合わない場合はここを調整) =====
+    const CONFIG = {
+      CAMERA_POS: new THREE.Vector3(0, 14, 22),
+      BOY_SCALE: 0.9,              // boy2.glb のスケール
+      PENGUIN_SCALE: 1.2,          // ペンギン（boy よりちょい大きめ）
+      WALK_OFFSET: 3.0,            // 城壁の外側の通路オフセット距離
+      WALK_SPEED_MIN: 1.2,         // m/s っぽいイメージ
+      WALK_SPEED_MAX: 2.2,
+      PAUSE_TIME_MIN: 1.5,
+      PAUSE_TIME_MAX: 3.0,
+      GROUND_COLOR: 0xbfe3bf,
+      ENABLE_SHADOWS: true
+    };
+
+    // ===== Three.js 基本セットアップ =====
+    const app = document.getElementById('app');
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = CONFIG.ENABLE_SHADOWS;
+    app.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xe9f4ea);
+
+    const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 1000);
+    camera.position.copy(CONFIG.CAMERA_POS);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.target.set(0, 1, 0);
+
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x667766, 0.55);
+    scene.add(hemi);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    dirLight.position.set(8, 18, 6);
+    dirLight.castShadow = CONFIG.ENABLE_SHADOWS;
+    dirLight.shadow.mapSize.set(2048, 2048);
+    dirLight.shadow.camera.near = 0.5;
+    dirLight.shadow.camera.far = 80;
+    dirLight.shadow.camera.left = -30;
+    dirLight.shadow.camera.right = 30;
+    dirLight.shadow.camera.top = 30;
+    dirLight.shadow.camera.bottom = -30;
+    scene.add(dirLight);
+
+    const loader = new GLTFLoader();
+
+    // 便利関数: 影の設定
+    function applyShadowFlags(root) {
+      root.traverse((obj) => {
+        if (obj.isMesh) {
+          obj.castShadow = true;
+          obj.receiveShadow = true;
+        }
+      });
+    }
+
+    // 便利関数: アニメーションがあれば全部再生
+    function makeMixerIfAny(gltf) {
+      if (!gltf.animations || gltf.animations.length === 0) return null;
+      const mixer = new THREE.AnimationMixer(gltf.scene);
+      gltf.animations.forEach(clip => {
+        const action = mixer.clipAction(clip);
+        action.play();
+      });
+      return mixer;
+    }
+
+    // ===== グローバル =====
+    let castle, castleBBox, ground, groundY = 0;
+    const mixers = [];
+    const agents = []; // ペンギン制御
+
+    // ===== モデル読み込み =====
+    loader.load('castle.glb', (gltf) => {
+      castle = gltf.scene;
+      applyShadowFlags(castle);
+      scene.add(castle);
+
+      castleBBox = new THREE.Box3().setFromObject(castle);
+      const castleCenter = castleBBox.getCenter(new THREE.Vector3());
+      groundY = castleBBox.min.y; // 城モデルの最下点を地面高さにする
+
+      // カメラ注視と地面
+      controls.target.copy(castleCenter);
+
+      const sizeX = (castleBBox.max.x - castleBBox.min.x) + CONFIG.WALK_OFFSET * 14;
+      const sizeZ = (castleBBox.max.z - castleBBox.min.z) + CONFIG.WALK_OFFSET * 14;
+
+      const g = new THREE.PlaneGeometry(sizeX, sizeZ);
+      const m = new THREE.MeshStandardMaterial({ color: CONFIG.GROUND_COLOR });
+      ground = new THREE.Mesh(g, m);
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.set(castleCenter.x, groundY - 0.001, castleCenter.z);
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      // boy を城の中心に小さめで配置
+      loader.load('boy2.glb', (gltfBoy) => {
+        const boy = gltfBoy.scene;
+        boy.scale.setScalar(CONFIG.BOY_SCALE);
+        applyShadowFlags(boy);
+        const c = castleBBox.getCenter(new THREE.Vector3());
+        boy.position.set(c.x, groundY, c.z);
+        scene.add(boy);
+        const mix = makeMixerIfAny(gltfBoy); if (mix) mixers.push(mix);
+      });
+
+      // ペンギン 5匹
+      const penguinFiles = ['pen.glb', 'pen_b.glb', 'pen_g.glb', 'pen_r.glb', 'pen_y.glb'];
+      penguinFiles.forEach((file, i) => {
+        loader.load(file, (pgltf) => {
+          const penguin = pgltf.scene;
+          penguin.scale.setScalar(CONFIG.PENGUIN_SCALE);
+          applyShadowFlags(penguin);
+
+          // 最初の位置は外周のランダム地点
+          const p0 = randomPointOnPerimeter(castleBBox, CONFIG.WALK_OFFSET);
+          penguin.position.set(p0.x, groundY, p0.z);
+          scene.add(penguin);
+
+          const mix = makeMixerIfAny(pgltf); if (mix) mixers.push(mix);
+
+          const agent = createAgent(penguin);
+          agents.push(agent);
+        });
+      });
+
+    });
+
+    // ===== ペンギンの簡易 AI =====
+    function createAgent(obj3d) {
+      const agent = {
+        obj: obj3d,
+        speed: THREE.MathUtils.randFloat(CONFIG.WALK_SPEED_MIN, CONFIG.WALK_SPEED_MAX),
+        target: new THREE.Vector3(),
+        state: 'idle', // 'idle' | 'move'
+        waitUntil: 0,
+      };
+      // すぐに目的地を設定
+      pickNextTarget(agent);
+      return agent;
+    }
+
+    function pickNextTarget(agent) {
+      if (!castleBBox) return;
+      const next = randomPointOnPerimeter(castleBBox, CONFIG.WALK_OFFSET);
+      agent.target.copy(next);
+      agent.state = 'move';
+    }
+
+    function randomPointOnPerimeter(bbox, offset) {
+      // 城の外周（矩形）のちょい外側を歩く
+      const minX = bbox.min.x - offset;
+      const maxX = bbox.max.x + offset;
+      const minZ = bbox.min.z - offset;
+      const maxZ = bbox.max.z + offset;
+      const side = Math.floor(Math.random() * 4);
+      let x, z;
+      switch (side) {
+        case 0: // 北（+Z 側）
+          x = THREE.MathUtils.lerp(minX, maxX, Math.random());
+          z = maxZ + THREE.MathUtils.randFloatSpread(offset * 0.35); // すこし外へゆらぎ
+          break;
+        case 1: // 南（-Z 側）
+          x = THREE.MathUtils.lerp(minX, maxX, Math.random());
+          z = minZ - THREE.MathUtils.randFloatSpread(offset * 0.35);
+          break;
+        case 2: // 東（+X 側）
+          x = maxX + THREE.MathUtils.randFloatSpread(offset * 0.35);
+          z = THREE.MathUtils.lerp(minZ, maxZ, Math.random());
+          break;
+        default: // 西（-X 側）
+          x = minX - THREE.MathUtils.randFloatSpread(offset * 0.35);
+          z = THREE.MathUtils.lerp(minZ, maxZ, Math.random());
+          break;
+      }
+      return new THREE.Vector3(x, groundY, z);
+    }
+
+    // ===== ループ =====
+    const clock = new THREE.Clock();
+
+    function update(dt) {
+      // アニメーション
+      mixers.forEach(m => m.update(dt));
+
+      // ペンギン挙動
+      const now = performance.now() / 1000;
+      for (const a of agents) {
+        if (a.state === 'idle') {
+          if (now >= a.waitUntil) pickNextTarget(a);
+          continue;
+        }
+        const pos = a.obj.position;
+        const dir = new THREE.Vector3().subVectors(a.target, pos);
+        const dist = dir.length();
+        if (dist < 0.05) {
+          a.state = 'idle';
+          a.waitUntil = now + THREE.MathUtils.randFloat(CONFIG.PAUSE_TIME_MIN, CONFIG.PAUSE_TIME_MAX);
+          continue;
+        }
+        dir.normalize();
+        pos.addScaledVector(dir, a.speed * dt);
+        pos.y = groundY;
+        // 向きを進行方向へ
+        const yaw = Math.atan2(dir.x, dir.z); // +Z 前提
+        a.obj.rotation.y = yaw;
+      }
+    }
+
+    function animate() {
+      const dt = clock.getDelta();
+      update(dt);
+      controls.update();
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // ===== リサイズ =====
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+  </script>
+</body>
+</html>
