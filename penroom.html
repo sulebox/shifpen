@@ -606,9 +606,21 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
         necoRef = neco;
         if (RES.neco) RES.neco.pos = neco.position.clone();
         if (gltf.animations && gltf.animations.length){
+          // Log available clip names to help mapping
+          try { console.log('boy2 animations:', gltf.animations.map(a=>a.name)); } catch(e){}
           const mixer = new THREE.AnimationMixer(model);
-          const idleClip = gltf.animations.find(a => /idle/i.test(a.name)) || gltf.animations[0];
-          const walkClip = gltf.animations.find(a => /walk/i.test(a.name)) || idleClip;
+          const names = gltf.animations.map(a=>a.name||'');
+          const pick = (patterns, avoid)=>{
+            for (const p of patterns){
+              const idx = names.findIndex(n=>p.test(n));
+              if (idx>=0) return gltf.animations[idx];
+            }
+            // fallback: first clip not equal to avoid
+            for (const clip of gltf.animations){ if (clip!==avoid) return clip; }
+            return gltf.animations[0];
+          };
+          const idleClip = pick([/idle/i, /stand/i, /breath/i], null);
+          const walkClip = pick([/walk/i, /move/i, /locomotion/i], idleClip);
           const idleAct = mixer.clipAction(idleClip);
           const walkAct = mixer.clipAction(walkClip);
           idleAct.setLoop(THREE.LoopRepeat, Infinity).play();
