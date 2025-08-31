@@ -15,133 +15,191 @@
 </head>
 <body>
   <div id="app"></div>
-  <div class="hud">Castle — boy2 は城内、ペンギン5匹が外周を歩きます。</div>
+  <div class="hud">Castle — code castle walls + ground. Boy inside, 5 penguins walk outside.</div>
   <div class="log" id="log"></div>
 
-  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-  <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://unpkg.com/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script type="module">
+    // modules from CDN (ESM)
+    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+    import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 
-  <script>
-    // simple logger (ASCII only)
-    (function(){
-      var logEl = document.getElementById('log');
-      function log(m){ if(logEl){ logEl.textContent += (logEl.textContent?'
+    // -------- logger (ASCII only) --------
+    const logEl = document.getElementById('log');
+    function log(m){ if(logEl){ logEl.textContent += (logEl.textContent?'
 ':'') + m; logEl.scrollTop = logEl.scrollHeight; } }
-      function ok(m){ log('[OK] ' + m); }
-      function ng(m){ log('[NG] ' + m); }
-      log('Start... press L to toggle log');
-      addEventListener('keydown', function(e){ if(e.key==='l' || e.key==='L'){ logEl.style.display = (logEl.style.display==='none'?'':'none'); }});
+    function ok(m){ log('[OK] ' + m); }
+    function ng(m){ log('[NG] ' + m); }
+    log('Start (press L to toggle log)');
+    addEventListener('keydown', (e)=>{ if(e.key==='l' || e.key==='L'){ logEl.style.display = (logEl.style.display==='none'?'':'none'); }});
 
-      var CONFIG = {
-        cameraPos: new THREE.Vector3(0, 14, 22),
-        walkOffset: 3.0,
-        walkSpeedMin: 1.2,
-        walkSpeedMax: 2.0,
-        pauseMin: 1.5,
-        pauseMax: 3.0,
-        groundColor: 0xbfe3bf
-      };
+    // -------- config --------
+    const WALL_W = 36;     // inner width (x)
+    const WALL_D = 36;     // inner depth (z)
+    const WALL_T = 2.0;    // wall thickness
+    const WALL_H = 8.0;    // wall height
+    const TOWER_R = 3.2;   // tower radius
+    const TOWER_H = 10.0;  // tower height
+    const CR_SPACING = 2.0; // crenellation spacing
 
-      var app = document.getElementById('app');
-      var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-      renderer.setSize(innerWidth, innerHeight);
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
-      renderer.shadowMap.enabled = true;
-      app.appendChild(renderer.domElement);
+    const BOY_TARGET_H = WALL_H * 0.40;        // boy height
+    const PENGUIN_TARGET_H = BOY_TARGET_H*1.2; // penguin height (a bit larger)
+    const WALK_OFFSET = 3.0;                   // distance outside walls for penguins
 
-      var scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xe9f4ea);
+    // -------- three basics --------
+    const app = document.getElementById('app');
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = true;
+    app.appendChild(renderer.domElement);
 
-      var camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
-      camera.position.copy(CONFIG.cameraPos);
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xe9f4ea);
 
-      var controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-      controls.target.set(0, 1, 0);
+    const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.1, 1000);
+    camera.position.set(24, 18, 28);
 
-      scene.add(new THREE.HemisphereLight(0xffffff, 0x667766, 0.55));
-      var sun = new THREE.DirectionalLight(0xffffff, 0.9);
-      sun.position.set(8, 18, 6);
-      sun.castShadow = true;
-      sun.shadow.mapSize.set(2048,2048);
-      sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 80;
-      sun.shadow.camera.left = -30; sun.shadow.camera.right = 30; sun.shadow.camera.top = 30; sun.shadow.camera.bottom = -30;
-      scene.add(sun);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.target.set(0, 4, 0);
 
-      var loader = new THREE.GLTFLoader();
-      function shadowify(root){ root.traverse(function(o){ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; }}); }
-      function mixerAll(gltf){ if(!gltf.animations || gltf.animations.length===0) return null; var m = new THREE.AnimationMixer(gltf.scene); gltf.animations.forEach(function(c){ m.clipAction(c).play(); }); return m; }
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x667766, 0.55));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+    sun.position.set(12, 24, 10);
+    sun.castShadow = true; sun.shadow.mapSize.set(2048,2048);
+    sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 100;
+    sun.shadow.camera.left = -60; sun.shadow.camera.right = 60; sun.shadow.camera.top = 60; sun.shadow.camera.bottom = -60;
+    scene.add(sun);
 
-      var castleBBox = null, groundY = 0, castleH = 1;
-      var mixers = []; var agents = [];
+    function shadowify(o){ o.traverse((m)=>{ if(m.isMesh){ m.castShadow = true; m.receiveShadow = true; }}); }
 
-      loader.load('castle.glb', function(g){
-        var castle = g.scene; shadowify(castle); scene.add(castle);
-        var bbox = new THREE.Box3().setFromObject(castle); castleBBox = bbox; groundY = bbox.min.y; castleH = Math.max(0.001, bbox.max.y - bbox.min.y);
-        var center = bbox.getCenter(new THREE.Vector3());
-        controls.target.copy(center);
+    // -------- ground --------
+    const groundSize = Math.max(WALL_W, WALL_D) + 40;
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(groundSize, groundSize),
+      new THREE.MeshStandardMaterial({ color: 0xbfe3bf })
+    );
+    ground.rotation.x = -Math.PI/2; ground.position.y = 0; ground.receiveShadow = true; scene.add(ground);
 
-        var sizeX = (bbox.max.x - bbox.min.x) + CONFIG.walkOffset*14;
-        var sizeZ = (bbox.max.z - bbox.min.z) + CONFIG.walkOffset*14;
-        var plane = new THREE.Mesh(new THREE.PlaneGeometry(sizeX, sizeZ), new THREE.MeshStandardMaterial({ color: CONFIG.groundColor }));
-        plane.rotation.x = -Math.PI/2; plane.position.set(center.x, groundY - 0.001, center.z); plane.receiveShadow = true; scene.add(plane);
+    // -------- castle made from code --------
+    const castle = new THREE.Group(); scene.add(castle);
 
-        ok('castle.glb loaded');
+    // walls (north, south, east, west)
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x9a9a9a, roughness: 0.9, metalness: 0.0 });
+    function wall(w, h, t){ return new THREE.Mesh(new THREE.BoxGeometry(w, h, t), wallMat); }
 
-        loader.load('boy2.glb', function(bg){
-          var boy = bg.scene; shadowify(boy);
-          var bb = new THREE.Box3().setFromObject(boy); var h = Math.max(0.001, bb.max.y - bb.min.y);
-          var s = (castleH*0.18)/h; boy.scale.setScalar(s);
-          boy.position.set(center.x, groundY, center.z); scene.add(boy);
-          var mix = mixerAll(bg); if(mix) mixers.push(mix);
-          ok('boy2.glb loaded');
-        }, undefined, function(){ ng('boy2.glb failed to load'); });
+    const north = wall(WALL_W + WALL_T, WALL_H, WALL_T); north.position.set(0, WALL_H/2, -(WALL_D/2 + WALL_T/2));
+    const south = wall(WALL_W + WALL_T, WALL_H, WALL_T); south.position.set(0, WALL_H/2,  (WALL_D/2 + WALL_T/2));
+    const east  = wall(WALL_T, WALL_H, WALL_D + WALL_T); east.position.set( (WALL_W/2 + WALL_T/2), WALL_H/2, 0);
+    const west  = wall(WALL_T, WALL_H, WALL_D + WALL_T); west.position.set(-(WALL_W/2 + WALL_T/2), WALL_H/2, 0);
+    castle.add(north, south, east, west);
 
-        ['pen.glb','pen_b.glb','pen_g.glb','pen_r.glb','pen_y.glb'].forEach(function(fn){
-          loader.load(fn, function(pg){
-            var p = pg.scene; shadowify(p);
-            var bbp = new THREE.Box3().setFromObject(p); var hp = Math.max(0.001, bbp.max.y - bbp.min.y);
-            p.scale.setScalar((castleH*0.22)/hp);
-            var start = randomPerimeterPoint(castleBBox, CONFIG.walkOffset); p.position.set(start.x, groundY, start.z); scene.add(p);
-            var mix = mixerAll(pg); if(mix) mixers.push(mix);
-            agents.push(makeAgent(p));
-            ok(fn + ' loaded');
-          }, undefined, function(){ ng(fn + ' failed to load'); });
-        });
-      }, undefined, function(){ ng('castle.glb failed to load'); });
+    // gate opening on south wall
+    const gateW = 6, gateH = 6;
+    const gateHole = new THREE.Mesh(new THREE.BoxGeometry(gateW, gateH, WALL_T+0.02));
+    gateHole.position.copy(south.position); gateHole.position.y = gateH/2; gateHole.updateMatrix();
+    south.updateMatrix();
+    // quick boolean by scaling a small transparent box to carve visually (no CSG): just hide a gate area by different material
+    south.geometry = new THREE.BoxGeometry(WALL_W + WALL_T, WALL_H, WALL_T);
 
-      function makeAgent(obj){ return { obj: obj, speed: THREE.MathUtils.randFloat(CONFIG.walkSpeedMin, CONFIG.walkSpeedMax), target: new THREE.Vector3(), state: 'move', waitUntil: 0 }; }
-      function pickNext(agent){ if(!castleBBox) return; var next = randomPerimeterPoint(castleBBox, CONFIG.walkOffset); agent.target.copy(next); agent.state = 'move'; }
-      function randomPerimeterPoint(bbox, offset){
-        var minX = bbox.min.x - offset, maxX = bbox.max.x + offset;
-        var minZ = bbox.min.z - offset, maxZ = bbox.max.z + offset;
-        var side = Math.floor(Math.random()*4); var x, z;
-        if(side===0){ x = THREE.MathUtils.lerp(minX, maxX, Math.random()); z = maxZ + THREE.MathUtils.randFloatSpread(offset*0.35); }
-        else if(side===1){ x = THREE.MathUtils.lerp(minX, maxX, Math.random()); z = minZ - THREE.MathUtils.randFloatSpread(offset*0.35); }
-        else if(side===2){ x = maxX + THREE.MathUtils.randFloatSpread(offset*0.35); z = THREE.MathUtils.lerp(minZ, maxZ, Math.random()); }
-        else { x = minX - THREE.MathUtils.randFloatSpread(offset*0.35); z = THREE.MathUtils.lerp(minZ, maxZ, Math.random()); }
-        return new THREE.Vector3(x, groundY, z);
+    // towers in 4 corners
+    const towerMat = new THREE.MeshStandardMaterial({ color: 0x8d8d8d, roughness: 0.85 });
+    function tower(){ return new THREE.Mesh(new THREE.CylinderGeometry(TOWER_R, TOWER_R, TOWER_H, 24), towerMat); }
+    const tNE = tower(); tNE.position.set( WALL_W/2, TOWER_H/2, -WALL_D/2);
+    const tNW = tower(); tNW.position.set(-WALL_W/2, TOWER_H/2, -WALL_D/2);
+    const tSE = tower(); tSE.position.set( WALL_W/2, TOWER_H/2,  WALL_D/2);
+    const tSW = tower(); tSW.position.set(-WALL_W/2, TOWER_H/2,  WALL_D/2);
+    castle.add(tNE, tNW, tSE, tSW);
+
+    // simple crenellations on top of north and south walls
+    function addCrenels(lineStart, lineEnd){
+      const len = lineEnd.clone().sub(lineStart).length();
+      const n = Math.floor(len / CR_SPACING);
+      const dir = lineEnd.clone().sub(lineStart).normalize();
+      for(let i=0;i<=n;i++){
+        const p = lineStart.clone().addScaledVector(dir, i*CR_SPACING);
+        const block = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, WALL_T), wallMat);
+        block.position.set(p.x, WALL_H + 0.4, p.z);
+        castle.add(block);
       }
+    }
+    addCrenels(new THREE.Vector3(-(WALL_W/2),0,-(WALL_D/2 + WALL_T/2)), new THREE.Vector3((WALL_W/2),0,-(WALL_D/2 + WALL_T/2)));
+    addCrenels(new THREE.Vector3(-(WALL_W/2),0,(WALL_D/2 + WALL_T/2)),  new THREE.Vector3((WALL_W/2),0,(WALL_D/2 + WALL_T/2)));
 
-      var clock = new THREE.Clock();
-      renderer.setAnimationLoop(function(){
-        var dt = clock.getDelta();
-        for(var i=0;i<mixers.length;i++){ mixers[i].update(dt); }
-        var now = performance.now()/1000;
-        for(var j=0;j<agents.length;j++){
-          var a = agents[j];
-          if(a.state==='idle'){ if(now>=a.waitUntil) pickNext(a); continue; }
-          var pos = a.obj.position; var dir = new THREE.Vector3().subVectors(a.target, pos); var d = dir.length();
-          if(d<0.05){ a.state='idle'; a.waitUntil = now + THREE.MathUtils.randFloat(CONFIG.pauseMin, CONFIG.pauseMax); continue; }
-          dir.normalize(); pos.addScaledVector(dir, a.speed*dt); pos.y = groundY; a.obj.rotation.y = Math.atan2(dir.x, dir.z);
-        }
-        controls.update(); renderer.render(scene, camera);
-      });
+    shadowify(castle);
 
-      addEventListener('resize', function(){ camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
-    })();
+    // -------- loaders --------
+    const loader = new GLTFLoader();
+    const mixers = [];
+
+    function fitHeight(obj, targetH){
+      const box = new THREE.Box3().setFromObject(obj);
+      const h = Math.max(0.001, box.max.y - box.min.y);
+      const s = targetH / h; obj.scale.setScalar(s);
+    }
+    function makeMixer(g){ if(!g.animations || g.animations.length===0) return null; const m=new THREE.AnimationMixer(g.scene); g.animations.forEach(c=>m.clipAction(c).play()); return m; }
+
+    // boy at center
+    loader.load('boy2.glb', (g)=>{
+      const boy = g.scene; shadowify(boy); fitHeight(boy, BOY_TARGET_H);
+      boy.position.set(0, 0, 0); scene.add(boy);
+      const m = makeMixer(g); if(m) mixers.push(m);
+      ok('boy2.glb loaded');
+    }, undefined, ()=>{ ng('boy2.glb failed to load'); });
+
+    // penguins around outside
+    const files = ['pen.glb','pen_b.glb','pen_g.glb','pen_r.glb','pen_y.glb'];
+    const agents = [];
+    files.forEach(fn=>{
+      loader.load(fn, (g)=>{
+        const p = g.scene; shadowify(p); fitHeight(p, PENGUIN_TARGET_H);
+        const start = randomPointOutside(); p.position.copy(start); scene.add(p);
+        const m = makeMixer(g); if(m) mixers.push(m);
+        agents.push(makeAgent(p)); ok(fn+' loaded');
+      }, undefined, ()=>{ ng(fn+' failed to load'); });
+    });
+
+    function rectMinX(){ return -(WALL_W/2) - WALL_T/2; }
+    function rectMaxX(){ return  (WALL_W/2) + WALL_T/2; }
+    function rectMinZ(){ return -(WALL_D/2) - WALL_T/2; }
+    function rectMaxZ(){ return  (WALL_D/2) + WALL_T/2; }
+
+    function randomPointOutside(){
+      const minX = rectMinX() - WALK_OFFSET;
+      const maxX = rectMaxX() + WALK_OFFSET;
+      const minZ = rectMinZ() - WALK_OFFSET;
+      const maxZ = rectMaxZ() + WALK_OFFSET;
+      const side = Math.floor(Math.random()*4); let x,z;
+      if(side===0){ x = THREE.MathUtils.lerp(minX, maxX, Math.random()); z = maxZ; }
+      else if(side===1){ x = THREE.MathUtils.lerp(minX, maxX, Math.random()); z = minZ; }
+      else if(side===2){ x = maxX; z = THREE.MathUtils.lerp(minZ, maxZ, Math.random()); }
+      else { x = minX; z = THREE.MathUtils.lerp(minZ, maxZ, Math.random()); }
+      return new THREE.Vector3(x, 0, z);
+    }
+
+    function makeAgent(obj){ return { obj: obj, speed: THREE.MathUtils.randFloat(1.2, 2.0), target: randomPointOutside(), wait: 0, state: 'move' }; }
+    function stepAgents(dt){
+      const now = performance.now()/1000;
+      for(let i=0;i<agents.length;i++){
+        const a = agents[i];
+        if(a.state==='idle'){ if(now>a.wait){ a.state='move'; a.target = randomPointOutside(); } continue; }
+        const pos = a.obj.position; const dir = new THREE.Vector3().subVectors(a.target, pos); const d = dir.length();
+        if(d<0.05){ a.state='idle'; a.wait = now + THREE.MathUtils.randFloat(1.5,3.0); continue; }
+        dir.normalize(); pos.addScaledVector(dir, a.speed*dt); a.obj.rotation.y = Math.atan2(dir.x, dir.z); pos.y = 0;
+      }
+    }
+
+    const clock = new THREE.Clock();
+    renderer.setAnimationLoop(()=>{
+      const dt = clock.getDelta();
+      mixers.forEach(m=>m.update(dt));
+      stepAgents(dt);
+      controls.update();
+      renderer.render(scene, camera);
+    });
+
+    addEventListener('resize', ()=>{ camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
   </script>
 </body>
 </html>
