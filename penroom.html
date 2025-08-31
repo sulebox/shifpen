@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>Penguin Room — penroom.html (v47)</title>
+  <title>Penguin Room — penroom.html (v48)</title>
   <style>
     html, body { height: 100%; margin: 0; background: #f6e6c9; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     #app { position: fixed; inset: 0; }
@@ -20,7 +20,7 @@
 <body>
   <div id="app"></div>
   <div class="status" id="status">初期化中…</div>
-  <div class="hud">クリック/タップで次の行動にスキップ</div>
+  <div class="hud">クリック/タップで次の行動にスキップ・WASDで少年を操作</div>
   <div class="drop" id="drop"><div style="background:#fff;padding:16px 18px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12)">ここにGLBをドロップ</div></div>
   <div class="bubble" id="bubble" style="display:none"></div>
 
@@ -52,10 +52,6 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     app.appendChild(renderer.domElement);
-    // make canvas focusable for keyboard input
-    renderer.domElement.setAttribute('tabindex','0');
-    renderer.domElement.style.outline = 'none';
-    renderer.domElement.addEventListener('pointerdown', ()=> renderer.domElement.focus());
 
     
     // ---- Camera ----
@@ -462,7 +458,9 @@ function queueWaitPos(name, p){
 
       if (ud.state !== 'sit' && ud.state !== 'sleep') { p.position.y = Math.max(0, Math.sin(performance.now()/1000*6)*0.03); }
 
-      if (['wander','play','playBlocks','eat','window','pond','neco','playWait','playBlocksWait','eatWait','pondWait','necoWait','sleepWait'].includes(ud.state) || (ud.state==='sleep' && ud.goingToBed)) {
+      if ([
+        'wander','play','playBlocks','eat','window','pond','neco','playWait','playBlocksWait','eatWait','pondWait','necoWait','sleepWait'
+      ].includes(ud.state) || (ud.state==='sleep' && ud.goingToBed)) {
         const target = ud.target;
         const v = new THREE.Vector3(target.x - p.position.x, 0, target.z - p.position.z);
 
@@ -555,27 +553,23 @@ function queueWaitPos(name, p){
       p.position.z = THREE.MathUtils.clamp(p.position.z, bounds.zMin, bounds.zMax);
     }
 
-    // ---- Boy.glb ----
-    const mixers = []; // Boyのアニメーション更新用
-let boyRef = null;           // Boy の参照
-let greetTimer = 0;          // あいさつ表示の残り秒数
-let lastGreetedPenguin = null; // 直近で挨拶したペンギン
-const GREET_RADIUS = 3.0;    // 近づいたとみなす距離（m相当）
-// 男の子のランダム台詞
-const BOY_LINES = [
-  'ここどこだろ','異世界かも','ペンギンたくさん','頭いたいかも','のどかわいた','あったかい','いいお天気','お庭きもちいい','いいにおいする','デジャヴかも','探し物あるかも','りんごたべたい','くつひもほどけてる','トイレどこかな','蚊にさされた','足のゆびかゆい','たまごごはん（TKG','ポトフたべたい','雲あんまりない','傘もってきたっけ','PASMOわすれた','コロッケたべたい','ドングリひろった','マインドフルネス','レベル25だって'
-];
-let boySpeakTimer = 0;          // 表示中の残り秒数
-let boyNextSpeakIn = 2 + Math.random()*4; // 次の発話まで（2〜6秒）
-// --- WASD control globals ---
-const BOY_SPEED = 2.2;           // 移動スピード
-const boyKeys = { w:false, a:false, s:false, d:false };
-let boyIsMoving = false;
-// --- Neco greeting/globals ---
-let necoRef = null;                // neco.glb の参照
-let necoGreetTimer = 0;            // 挨拶表示の残り秒数
-let necoGreetPenguin = null;       // 現在挨拶中のペンギン
-const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m）     // ペンギンとネコが近づいた距離
+    // ---- Boy (boy2.glb) ----
+    const mixers = []; // Animation mixers (boy/neco/others)
+    let boyRef = null;           // Boy group
+    let boyMixer = null;
+    let boyActions = { idle: null, walk: null };
+    let boyCurrent = null;
+    let boyBaseYaw = 0;          // 基準向き（画面の下を向いている現在の向き）
+    let greetTimer = 0;          // あいさつ表示の残り秒数
+    let lastGreetedPenguin = null; // 直近で挨拶したペンギン
+    const GREET_RADIUS = 3.0;    // 近づいたとみなす距離（m相当）
+    // 男の子のランダム台詞
+    const BOY_LINES = [
+      'ここどこだろ','異世界かも','ペンギンたくさん','頭いたいかも','のどかわいた','あったかい','いいお天気','お庭きもちいい','いいにおいする','デジャヴかも','探し物あるかも','りんごたべたい','くつひもほどけてる','トイレどこかな','蚊にさされた','足のゆびかゆい','たまごごはん（TKG','ポトフたべたい','雲あんまりない','傘もってきたっけ','PASMOわすれた','コロッケたべたい','ドングリひろった','マインドフルネス','レベル25だって'
+    ];
+    let boySpeakTimer = 0;          // 表示中の残り秒数
+    let boyNextSpeakIn = 2 + Math.random()*4; // 次の発話まで（2〜6秒）
+
     function fitAndFloorToHeight(obj, targetH){
       const tmp = new THREE.Group(); tmp.add(obj); scene.add(tmp);
       tmp.updateWorldMatrix(true,true);
@@ -590,114 +584,127 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
       return obj;
     }
 
-    // ---- Neco (neco.glb) loader ----
     function spawnNeco(url, pos, targetH = 1.1){
-  gltfLoader.load(url, (gltf)=>{
-    const neco = new THREE.Group();
-    const model = gltf.scene;
-    model.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
-    fitAndFloorToHeight(model, targetH);
-    neco.add(model);
-    neco.position.copy(pos);
-    neco.rotation.y = Math.PI / 2; // +90°
-    scene.add(neco);
-
-    // 吹き出し位置（頭上）
-    neco.userData = neco.userData || {};
-    const bb = new THREE.Box3().setFromObject(model);
-    const h = Math.max(0.001, bb.max.y - bb.min.y);
-    neco.userData.bubbleOffsetY = Math.max(h * 1.2, h + 0.15);
-
-    // 参照とキュー位置を更新
-    necoRef = neco;
-    if (RES.neco) RES.neco.pos = neco.position.clone();
-
-    // （あれば）アニメーションを再生
-    if (gltf.animations && gltf.animations.length){
-      const mixer = new THREE.AnimationMixer(model);
-      const act = mixer.clipAction(gltf.animations[0]);
-      act.setLoop(THREE.LoopRepeat, Infinity).play();
-      neco.userData.mixer = mixer;
-      mixers.push(mixer);
-    }
-  }, undefined, (err)=>console.warn('neco.glb load error', err));
-}
+      gltfLoader.load(url, (gltf)=>{
+        const neco = new THREE.Group();
+        const model = gltf.scene;
+        model.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+        fitAndFloorToHeight(model, targetH);
+        neco.add(model);
+        neco.position.copy(pos);
+        neco.rotation.y = Math.PI / 2; // +90°
+        scene.add(neco);
+        // 吹き出し位置（頭上）
+        neco.userData = neco.userData || {};
+        const bb = new THREE.Box3().setFromObject(model);
+        const h = Math.max(0.001, bb.max.y - bb.min.y);
+        neco.userData.bubbleOffsetY = Math.max(h * 1.2, h + 0.15);
+        // 参照とキュー位置を更新
+        necoRef = neco;
+        if (RES.neco) RES.neco.pos = neco.position.clone();
+        if (gltf.animations && gltf.animations.length){
           const mixer = new THREE.AnimationMixer(model);
-          const clips = gltf.animations;
-          const names = clips.map(a=>a.name||'');
-          const pick = (patterns, avoid)=>{
-            for (const p of patterns){
-              const idx = names.findIndex(n=>p.test(n));
-              if (idx>=0) return clips[idx];
-            }
-            for (const clip of clips){ if (clip!==avoid) return clip; }
-            return clips[0];
-          };
-          const exact = (n)=> clips.find(c => (c.name||'').toLowerCase()===n);
-          let idleClip = exact('idle') || pick([/idle/i, /stand/i, /breath/i], null);
-          let walkClip = exact('walk') || pick([/walk/i, /move/i, /locomotion/i], idleClip);
-          try { console.log('using clips:', idleClip?.name, walkClip?.name); } catch(e){}
-          const idleAct = mixer.clipAction(idleClip);
-          const walkAct = mixer.clipAction(walkClip);
-          idleAct.setLoop(THREE.LoopRepeat, Infinity).play();
-          walkAct.setLoop(THREE.LoopRepeat, Infinity);
-          walkAct.enabled = true; walkAct.weight = 0;
-          boy.userData.mixer = mixer;
-          boy.userData.actions = { idle: idleAct, walk: walkAct };
-          boy.userData.playing = 'idle';
+          gltf.animations.forEach(clip=> mixer.clipAction(clip).setLoop(THREE.LoopRepeat, Infinity).play());
           mixers.push(mixer);
         }
       }, undefined, (err)=>console.warn('neco.glb load error', err));
     }
 
+    // --- boy loader with idle/walk actions ---
     function spawnBoy(url, pos){
-  console.log('loading', url, '...');
-  gltfLoader.load(url, (gltf)=>{
-    const boy = new THREE.Group();
-    const model = gltf.scene;
-    fitAndFloorToHeight(model, 1.55 * 0.007); // 身長調整
-    boy.add(model);
-    boy.position.copy(pos);
+      gltfLoader.load(url, (gltf)=>{
+        const boy = new THREE.Group();
+        const model = gltf.scene;
+        // 既存スケール方式
+        fitAndFloorToHeight(model, 1.55 * 0.007);
+        boy.add(model);
+        boy.position.copy(pos);
+        // 初期向きは現状のまま（画面下を向いている）
+        scene.add(boy);
+        boy.userData = boy.userData || {};
+        boy.userData.bubbleOffsetY = 4.5; // 吹き出し高さ
+        boyRef = boy;
+        boyBaseYaw = boy.rotation.y; // 基準向きを保存
 
-    // 池方向 +135° を向かせる（既存ロジック踏襲）
-    const yaw = Math.atan2(POND_POS.x - boy.position.x, POND_POS.z - boy.position.z) + (135 * Math.PI / 180);
-    boy.rotation.y = yaw;
-    scene.add(boy);
+        // --- animation setup ---
+        if (gltf.animations && gltf.animations.length){
+          boyMixer = new THREE.AnimationMixer(model);
+          const idleClip = gltf.animations.find(a=>/idle/i.test(a.name)) || gltf.animations[0];
+          const walkClip = gltf.animations.find(a=>/walk/i.test(a.name)) || gltf.animations[gltf.animations.length-1];
+          boyActions.idle = boyMixer.clipAction(idleClip);
+          boyActions.walk = boyMixer.clipAction(walkClip);
+          boyActions.idle.setLoop(THREE.LoopRepeat, Infinity).play();
+          boyCurrent = boyActions.idle;
+          mixers.push(boyMixer);
+        }
+      }, undefined, (err)=>console.warn('boy2.glb load error', err));
+    }
 
-    // 吹き出し等の初期化
-    boy.userData = boy.userData || {};
-    boy.userData.bubbleOffsetY = 4.5;
-    boy.userData.baseYaw = boy.rotation.y;
-    boyRef = boy;
+    // --- WASD control state ---
+    const keyTimes = new Map(); // key -> last pressed time
+    const moveKeys = new Set(['w','a','s','d']);
+    function onKeyDown(e){
+      const k = (e.key || '').toLowerCase();
+      if (moveKeys.has(k)) { e.preventDefault(); keyTimes.set(k, performance.now()); }
+    }
+    function onKeyUp(e){
+      const k = (e.key || '').toLowerCase();
+      if (moveKeys.has(k)) { e.preventDefault(); keyTimes.delete(k); }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
 
-    // --- アニメーション設定 ---
-    const mixer = new THREE.AnimationMixer(model);
-    const clips = gltf.animations || [];
-    try { console.log('boy2 animations:', clips.map(c=>c.name)); } catch(e){}
-    const lower = n => (n||'').toLowerCase();
-    const exact = n => clips.find(c => lower(c.name)===n);
-    const pick  = (pats, avoid) =>
-      clips.find(c => pats.some(p => p.test(lower(c.name)))) ||
-      clips.find(c => c !== avoid) || clips[0];
+    function activeKey(){
+      let key = null, t = -Infinity;
+      for (const [k, time] of keyTimes.entries()){
+        if (time > t) { t = time; key = k; }
+      }
+      return key; // most recently pressed key held down
+    }
 
-    const idleClip = exact('idle') || pick([/idle/,/stand/,/breath/], null) || new THREE.AnimationClip('empty', 0, []);
-    const walkClip = exact('walk') || pick([/walk/,/move/,/locomotion/], idleClip) || idleClip;
+    function setBoyAnim(name){
+      if (!boyMixer || !boyActions[name]) return;
+      const next = boyActions[name];
+      if (boyCurrent === next) return;
+      if (boyCurrent) boyCurrent.crossFadeTo(next, 0.18, false);
+      next.reset().play();
+      boyCurrent = next;
+    }
 
-    const idle = mixer.clipAction(idleClip); idle.setLoop(THREE.LoopRepeat, Infinity).play();
-    const walk = mixer.clipAction(walkClip); walk.setLoop(THREE.LoopRepeat, Infinity); walk.enabled = true; walk.weight = 0;
+    const BOY_SPEED = 2.2; // m/s 相当
+    function updateBoy(dt){
+      if (!boyRef) return;
+      const k = activeKey();
+      if (!k){
+        setBoyAnim('idle');
+        return;
+      }
+      // 方向マップ（画面基準）
+      let dir = new THREE.Vector3();
+      let yawOff = 0; // 基準向きからの回転
+      if (k === 'w'){ dir.set(0,0,-1); yawOff = Math.PI; }         // 上へ／180°回転
+      else if (k === 'a'){ dir.set(-1,0,0); yawOff = Math.PI/2; }  // 左へ／+90°（時計回り）
+      else if (k === 's'){ dir.set(0,0,1); yawOff = 0; }           // 下へ／そのまま
+      else if (k === 'd'){ dir.set(1,0,0); yawOff = -Math.PI/2; }  // 右へ／-90°（反時計回り）
 
-    boy.userData.mixer = mixer;
-    boy.userData.actions = { idle, walk };
-    boy.userData.playing = 'idle';
-    mixers.push(mixer);
-  }, undefined, (err)=>console.warn('Boy.glb load error', err));
-}
+      // 向き・移動
+      boyRef.rotation.y = boyBaseYaw + yawOff;
+      boyRef.position.addScaledVector(dir, BOY_SPEED * dt);
+      boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, bounds.xMin, bounds.xMax);
+      boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, bounds.zMin, bounds.zMax);
+      boyRef.position.y = 0; // 地面に合わせる
+      setBoyAnim('walk');
+    }
 
-    // 池の右下あたりに Boy を配置
+    // 池の右下あたりに Boy を配置（boy2.glb を使用）
     const boyPos = new THREE.Vector3(5, 0, 10);
     spawnBoy('boy2.glb', boyPos);
 
     // 左庭の元の猫位置に neco.glb を表示
+    let necoRef = null;                // neco.glb の参照
+    let necoGreetTimer = 0;            // 挨拶表示の残り秒数
+    let necoGreetPenguin = null;       // 現在挨拶中のペンギン
+    const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m）
     spawnNeco('neco.glb', new THREE.Vector3(-11.2, 0, 2.0), 1.3);
 
     // ---- Sharon & Bee (right-front garden) ----
@@ -787,32 +794,8 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
       // update mixers (boy/neco/others)
       for (const m of mixers) m.update(dt);
 
-      // --- Boy keyboard movement ---
-      if (boyRef){
-        const dx = (boyKeys.d?1:0) + (boyKeys.a?-1:0);
-        const dz = (boyKeys.s?1:0) + (boyKeys.w?-1:0);
-        boyIsMoving = (dx!==0 || dz!==0);
-        const data = boyRef.userData || {};
-        const acts = data.actions || {};
-        if (boyIsMoving){
-          const len = Math.hypot(dx,dz) || 1;
-          const vx = dx/len, vz = dz/len;
-          const sp = BOY_SPEED * dt;
-          boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x + vx*sp, bounds.xMin, bounds.xMax);
-          boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z + vz*sp, bounds.zMin, bounds.zMax);
-          const base = data.baseYaw ?? boyRef.rotation.y;
-          const yaw = base + Math.atan2(vx, vz);
-          boyRef.rotation.y = yaw;
-          if (acts.walk && acts.idle && data.playing !== 'walk'){
-            acts.walk.reset(); acts.idle.crossFadeTo(acts.walk, 0.15, false); acts.walk.play(); data.playing = 'walk';
-          }
-        } else {
-          if (acts.walk && acts.idle && data.playing !== 'idle'){
-            acts.walk.crossFadeTo(acts.idle, 0.2, false); data.playing='idle';
-          }
-        }
-        boyRef.userData = data;
-      }
+      // boy control
+      updateBoy(dt);
 
       const t = performance.now()/1000;
 
@@ -919,7 +902,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
 
       // --- boy random talk ---
       if (boyRef){
-        if (greetTimer <= 0 && !boyIsMoving){
+        if (greetTimer <= 0){
           if (boySpeakTimer > 0){
             boySpeakTimer -= dt;
             updateBubblePositionFor(boyRef);
@@ -963,14 +946,7 @@ const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m�
     window.addEventListener('touchend', handleAdvance, { passive: true });
     window.addEventListener('pointerup', handleAdvance);
 
-    // --- Keyboard (WASD) for Boy ---
-function __bindKey(el){
-  el.addEventListener('keydown', (e)=>{ const k=(e.key||'').toLowerCase(); if(k in boyKeys){ boyKeys[k]=true; e.preventDefault(); }});
-  el.addEventListener('keyup',   (e)=>{ const k=(e.key||'').toLowerCase(); if(k in boyKeys){ boyKeys[k]=false; }});
-}
-__bindKey(window); __bindKey(document); __bindKey(renderer.domElement);
-
-// ---- Drag & drop ----
+    // ---- Drag & drop ----
     const drop = $('drop');
     addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('on'); });
     addEventListener('dragleave', (e) => { e.preventDefault(); drop.classList.remove('on'); });
