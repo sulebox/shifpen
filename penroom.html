@@ -731,18 +731,6 @@ function setBoyAnim(name){
   boyCurrent = next;
 }
 
-
-const BOY_SPEED = 2.2; // m/s
-
-function setBoyAnim(name){
-  if (!boyMixer || !boyActions[name]) return;
-  const next = boyActions[name];
-  if (boyCurrent === next) return;
-  if (boyCurrent) boyCurrent.crossFadeTo(next, 0.18, false);
-  next.reset().play();
-  boyCurrent = next;
-}
-
 function updateBoy(dt){
   if (!boyRef) return;
 
