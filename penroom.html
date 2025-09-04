@@ -679,6 +679,59 @@ function spawnBoy(url, pos){
       return key; // most recently pressed key held down
     }
 
+// --- tap-to-move (mobile/PC) ---
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+let boyTapTarget = null; // 目的地（nullなら未指定）
+
+function screenToGround(clientX, clientY){
+  const rect = renderer.domElement.getBoundingClientRect();
+  ndc.set(
+    ( (clientX - rect.left) / rect.width ) * 2 - 1,
+    - ( (clientY - rect.top)  / rect.height) * 2 + 1
+  );
+  raycaster.setFromCamera(ndc, camera);
+  const plane = new THREE.Plane(new THREE.Vector3(0,1,0), 0); // y=0
+  const hit = new THREE.Vector3();
+  if (raycaster.ray.intersectPlane(plane, hit)){
+    // 床の範囲に収める
+    hit.x = THREE.MathUtils.clamp(hit.x, bounds.xMin, bounds.xMax);
+    hit.z = THREE.MathUtils.clamp(hit.z, bounds.zMin, bounds.zMax);
+    hit.y = 0;
+    return hit;
+  }
+  return null;
+}
+
+function onCanvasPointerDown(e){
+  // 1本指タップ/クリックのみ
+  if (e.isPrimary === false) return;
+  const x = e.clientX ?? (e.touches && e.touches[0]?.clientX);
+  const y = e.clientY ?? (e.touches && e.touches[0]?.clientY);
+  const p = screenToGround(x, y);
+  if (p){ boyTapTarget = p; }
+  // ペンギンの「行動スキップ」クリックが発火しないよう抑止
+  e.stopPropagation();
+  e.preventDefault();
+}
+
+// キャンバス上のタップを拾う（PC/スマホ両対応）
+renderer.domElement.addEventListener('pointerdown', onCanvasPointerDown, { passive:false });
+// 念のため click も止めておく
+renderer.domElement.addEventListener('click', (e)=>{ e.stopPropagation(); }, true);
+
+const BOY_SPEED = 2.2; // m/s
+
+function setBoyAnim(name){
+  if (!boyMixer || !boyActions[name]) return;
+  const next = boyActions[name];
+  if (boyCurrent === next) return;
+  if (boyCurrent) boyCurrent.crossFadeTo(next, 0.18, false);
+  next.reset().play();
+  boyCurrent = next;
+}
+
+
 const BOY_SPEED = 2.2; // m/s
 
 function setBoyAnim(name){
@@ -693,36 +746,55 @@ function setBoyAnim(name){
 function updateBoy(dt){
   if (!boyRef) return;
 
+  // 1) キーボード優先（従来どおり）
   const k = activeKey();
-  if (!k){
-    setBoyAnim('idle');
+  if (k){
+    let yawOff = 0;
+    if (k === 'w') yawOff = Math.PI;        // 上へ
+    else if (k === 'a') yawOff = -Math.PI/2;// 左へ（時計回り）
+    else if (k === 's') yawOff = 0;         // 下へ
+    else if (k === 'd') yawOff =  Math.PI/2;// 右へ（反時計回り）
+
+    boyRef.rotation.y = boyBaseYaw + yawOff;
+
+    const fwd = new THREE.Vector3(0,0,1).applyQuaternion(boyRef.quaternion);
+    fwd.y = 0; fwd.normalize();
+    boyRef.position.addScaledVector(fwd, BOY_SPEED * dt);
+
+    boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, bounds.xMin, bounds.xMax);
+    boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, bounds.zMin, bounds.zMax);
+    boyRef.position.y = 0;
+
+    setBoyAnim('walk');
     return;
   }
 
-  // ご指定の向き：
-  // W: 180°, A: 時計回り90°, S: 0°, D: 反時計回り90°
-  let yawOff = 0;
-  if (k === 'w') yawOff = Math.PI;
-  else if (k === 'a') yawOff = -Math.PI/2; // 時計回り
-  else if (k === 's') yawOff = 0;
-  else if (k === 'd') yawOff =  Math.PI/2; // 反時計回り
+  // 2) タップ目的地へ移動
+  if (boyTapTarget){
+    const v = new THREE.Vector3(
+      boyTapTarget.x - boyRef.position.x,
+      0,
+      boyTapTarget.z - boyRef.position.z
+    );
+    const dist = Math.hypot(v.x, v.z);
+    if (dist > 0.03){
+      v.normalize();
+      boyRef.rotation.y = Math.atan2(v.x, v.z); // 進行方向を向く
+      boyRef.position.addScaledVector(v, Math.min(BOY_SPEED * dt, dist));
+      boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, bounds.xMin, bounds.xMax);
+      boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, bounds.zMin, bounds.zMax);
+      boyRef.position.y = 0;
+      setBoyAnim('walk');
+    } else {
+      boyTapTarget = null; // 到着
+      setBoyAnim('idle');
+    }
+    return;
+  }
 
-  // まず向きを決定
-  boyRef.rotation.y = boyBaseYaw + yawOff;
-
-  // 向いている方向に進む（前方＝モデル+Z軸）
-  const fwd = new THREE.Vector3(0,0,1).applyQuaternion(boyRef.quaternion);
-  fwd.y = 0; fwd.normalize();
-  boyRef.position.addScaledVector(fwd, BOY_SPEED * dt);
-
-  // 床内に拘束
-  boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, bounds.xMin, bounds.xMax);
-  boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, bounds.zMin, bounds.zMax);
-  boyRef.position.y = 0;
-
-  setBoyAnim('walk');
+  // 3) 何も入力が無ければ待機
+  setBoyAnim('idle');
 }
-
 
     // 池の右下あたりに Boy を配置（boy2.glb を使用）
     const boyPos = new THREE.Vector3(5, 0, 10);
