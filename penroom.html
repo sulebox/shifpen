@@ -1030,10 +1030,10 @@ function updateBoy(dt){
     animate();
 
     // ---- Interactions ----
-    function handleAdvance(e){ const el = e.target; if (el && el.closest && (el.closest('.picker') || el.closest('.drop'))) return; for (const p of penguins) chooseNextAction(p); }
-    window.addEventListener('click', handleAdvance);
-    window.addEventListener('touchend', handleAdvance, { passive: true });
-    window.addEventListener('pointerup', handleAdvance);
+    //function handleAdvance(e){ const el = e.target; if (el && el.closest && (el.closest('.picker') || el.closest('.drop'))) return; for (const p of penguins) chooseNextAction(p); }
+    //window.addEventListener('click', handleAdvance);
+    //window.addEventListener('touchend', handleAdvance, { passive: true });
+    //window.addEventListener('pointerup', handleAdvance);
 
     // ---- Drag & drop ----
     const drop = $('drop');
