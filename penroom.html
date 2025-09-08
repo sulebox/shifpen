@@ -357,12 +357,9 @@
 
     // ---- Behavior helpers ----
     function randomPointNear(x0, z0, r=5) {
-      const v = new THREE.Vector3(
-        x0 + (Math.random()*2-1)*r,
-        0,
-        z0 + (Math.random()*2-1)*r
-      );
-      return clampToBounds(v);
+      const x = THREE.MathUtils.clamp(x0 + (Math.random()*2-1)*r, bounds.xMin, bounds.xMax);
+      const z = THREE.MathUtils.clamp(z0 + (Math.random()*2-1)*r, bounds.zMin, bounds.zMax);
+      return new THREE.Vector3(x,0,z);
     }
 
     // === 右のガラス壁の回り込み経路 ===
@@ -372,15 +369,6 @@
     const GATE_EPS = 0.35;
     const GATE_FRONT_Z = RIGHT_WALL_Z_MAX + 0.2;
     const GATE_BACK_Z  = RIGHT_WALL_Z_MIN - 0.2;
-
-    function clampToBounds(v){
-      v.x = THREE.MathUtils.clamp(v.x, bounds.xMin, bounds.xMax);
-      v.z = THREE.MathUtils.clamp(v.z, bounds.zMin, bounds.zMax);
-      const innerX = RIGHT_WALL_X - wallT/2;
-      if (v.x > innerX && v.z > RIGHT_WALL_Z_MIN && v.z < RIGHT_WALL_Z_MAX){ v.x = innerX; }
-      return v;
-    }
-
     const doorWaypoint = (from, to) => null; // 左側は自由通行
 
     function pathAroundRightWall(from, to){
@@ -414,9 +402,9 @@
       else if (r < 0.57) setState(p,'playBlocks');
       else if (r < 0.72) setState(p,'eat');
       else if (r < 0.80) setState(p,'pond');
-      else if (r < 0.88) setState(p,'neco');
-      else if (r < 0.90) setState(p,'window');
-      else if (r < 0.94) setState(p,'sharon');
+      else if (r < 0.90) setState(p,'neco');
+      else if (r < 0.94) setState(p,'window');
+      //else if (r < 0.94) setState(p,'sharon');
       else if (r < 0.98) setState(p,'sleep');
       else setState(p,'sit');
     }
@@ -606,7 +594,8 @@
         if (Math.abs(p.rotation.x) < 0.02) { p.rotation.x = 0; releaseResource('sleep'); chooseNextAction(p); }
       }
 
-      clampToBounds(p.position);
+      p.position.x = THREE.MathUtils.clamp(p.position.x, bounds.xMin, bounds.xMax);
+      p.position.z = THREE.MathUtils.clamp(p.position.z, bounds.zMin, bounds.zMax);
     }
 
     // ---- Boy (boy2.glb) ----
@@ -721,7 +710,8 @@
       const plane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
       const hit = new THREE.Vector3();
       if (raycaster.ray.intersectPlane(plane, hit)){
-        clampToBounds(hit);
+        hit.x = THREE.MathUtils.clamp(hit.x, bounds.xMin, bounds.xMax);
+        hit.z = THREE.MathUtils.clamp(hit.z, bounds.zMin, bounds.zMax);
         hit.y = 0;
         return hit;
       }
@@ -760,7 +750,8 @@
         const fwd = new THREE.Vector3(0,0,1).applyQuaternion(boyRef.quaternion);
         fwd.y = 0; fwd.normalize();
         boyRef.position.addScaledVector(fwd, BOY_SPEED * dt);
-        clampToBounds(boyRef.position);
+        boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, bounds.xMin, bounds.xMax);
+        boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, bounds.zMin, bounds.zMax);
         boyRef.position.y = 0;
         setBoyAnim('walk');
         return;
@@ -772,7 +763,8 @@
           v.normalize();
           boyRef.rotation.y = Math.atan2(v.x, v.z);
           boyRef.position.addScaledVector(v, Math.min(BOY_SPEED * dt, dist));
-          clampToBounds(boyRef.position);
+          boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, bounds.xMin, bounds.xMax);
+          boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, bounds.zMin, bounds.zMax);
           boyRef.position.y = 0;
           setBoyAnim('walk');
         } else {
