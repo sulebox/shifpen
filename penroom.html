@@ -239,7 +239,7 @@
     function requestResource(p, name){ const r = RES[name]; if(!r.holder){ r.holder = p; return true; } if(!r.queue.includes(p)) r.queue.push(p); return false; }
     function releaseResource(name){ const r = RES[name]; if(r.holder) r.holder = null; const next = r.queue.shift(); if(next) setState(next, name); }
     function dequeueAll(p){
-  ['play','playBlocks','eat','sleep','pond','neco'].forEach((name)=>{
+  ['play','playBlocks','eat','sleep','pond','neco','sharon'].forEach((name)=>{
     const r = RES[name];
     // 待機列から自分を外す
     const i = r.queue.indexOf(p);
@@ -300,7 +300,8 @@ function queueWaitPos(name, p){
       wake:   '',
       sit:    'ちょときゅうけい',
       pond:   'ちょとあつい',
-      neco:   'ネコみよっと'
+      neco:   'ネコみよっと',
+      sharon: 'シャロンみよっと'
     };
     function ensureBubble(p){ if (!p.userData.bubbleEl) { const el = document.createElement('div'); el.className='bubble'; document.body.appendChild(el); p.userData.bubbleEl = el; } return p.userData.bubbleEl; }
     function setBubble(p, state){ const el = ensureBubble(p); el.textContent = commentMap[state] || ''; el.style.opacity = el.textContent ? 1 : 0; }
@@ -384,6 +385,7 @@ function queueWaitPos(name, p){
       else if (r < 0.80) setState(p,'pond');
       else if (r < 0.88) setState(p,'neco');
       else if (r < 0.94) setState(p,'window');
+      else if (r < 0.91) setState(p,'sharon');
       else if (r < 0.98) setState(p,'sleep');
       else setState(p,'sit');
     }
@@ -430,6 +432,20 @@ function queueWaitPos(name, p){
           final = 'wander'; setRoute(p, randomPointNear(p.position.x, p.position.z, 5));
         }
       }
+      else if(state === 'sharon'){
+        ud.speed = 1.0;
+        if (sharonRef){
+          if (requestResource(p,'sharon')){
+            const base = (RES.sharon && RES.sharon.pos) ? RES.sharon.pos : SHARON_POS.clone();
+            const dest = base.clone().add(new THREE.Vector3(-1.0,0,0)); // 左側に少し寄せる
+            setRoute(p, dest);
+          } else {
+            final = 'sharonWait'; setRoute(p, queueWaitPos('sharon',p)); bubbleKey = 'sharon';
+          }
+        } else {
+          final = 'wander'; setRoute(p, randomPointNear(p.position.x, p.position.z, 5));
+        }
+      }
       else if(state === 'window'){ ud.speed = 1.0; setRoute(p, new THREE.Vector3(7.4,0,0)); }
       else if(state === 'sit'){ ud.speed = 0; }
       else if(state === 'sleep'){
@@ -459,7 +475,7 @@ function queueWaitPos(name, p){
       if (ud.state !== 'sit' && ud.state !== 'sleep') { p.position.y = Math.max(0, Math.sin(performance.now()/1000*6)*0.03); }
 
       if ([
-        'wander','play','playBlocks','eat','window','pond','neco','playWait','playBlocksWait','eatWait','pondWait','necoWait','sleepWait'
+        'wander','play','playBlocks','eat','window','pond','neco','sharon','playWait','playBlocksWait','eatWait','pondWait','necoWait','sleepWait'
       ].includes(ud.state) || (ud.state==='sleep' && ud.goingToBed)) {
         const target = ud.target;
         const v = new THREE.Vector3(target.x - p.position.x, 0, target.z - p.position.z);
@@ -522,6 +538,19 @@ function queueWaitPos(name, p){
             // ネコの近くで少し観察してから別行動へ
             if (ud.timer > (1.0 + Math.random()*1.2)) {
             releaseResource('neco');  // ★追加：neco のリソースを解放
+            chooseNextAction(p);
+          }
+        }
+
+          else if (ud.state === 'sharon') {
+            if (!ud.arrived) { ud.arrived = true; ud.timer = 0;
+            setBubbleText(p, 'シャロンかわいい');
+            if (sharonRef) setBubbleText(sharonRef, '^^');
+          }
+            if (ud.timer > (1.0 + Math.random()*1.2)) {
+            setBubbleText(p, '');
+            if (sharonRef) setBubbleText(sharonRef, '')
+            releaseResource('sharon');
             chooseNextAction(p);
           }
         }
@@ -799,6 +828,10 @@ function updateBoy(dt){
     // ---- Sharon & Bee (right-front garden) ----
     let sharonRef = null, beeRef = null, oguruRef = null;
     const SHARON_POS = new THREE.Vector3(12.5, 0, 1.0); // updated position
+    // resource queue: sharon (nearby look)
+    if (!RES.sharon) RES.sharon = {
+      holder: null, queue: [], pos: SHARON_POS.clone(), waitDir: new THREE.Vector3(-1,0,0)
+    };
     const BEE_BASE   = new THREE.Vector3(12.5, 0.6, -2.0); // updated hover center
     const OGURU_POS  = new THREE.Vector3(13.0, 0, 9.0);
 
@@ -814,6 +847,13 @@ function updateBoy(dt){
         g.rotation.y = -Math.PI/4 + Math.PI*2; // flipped additional 180° from current
         scene.add(g);
         sharonRef = g;
+        // bubble height & queue anchor
+        g.userData = g.userData || {};
+        const sbb = new THREE.Box3().setFromObject(model);
+        const sh = Math.max(0.001, sbb.max.y - sbb.min.y);
+        g.userData.bubbleOffsetY = Math.max(sh * 1.2, sh + 0.15);
+        if (RES.sharon) RES.sharon.pos = g.position.clone();
+        
         if (gltf.animations && gltf.animations.length){
           const mx = new THREE.AnimationMixer(model);
           gltf.animations.forEach(clip=> mx.clipAction(clip).setLoop(THREE.LoopRepeat, Infinity).play());
@@ -929,6 +969,7 @@ function updateBoy(dt){
 
       penguin = penguins[0] || null;
       for (const p of penguins) updateBubblePositionFor(p);
+      if (sharonRef) updateBubblePositionFor(sharonRef);
 
       // --- greeting when penguin approaches boy ---
       if (boyRef && penguins.length){
