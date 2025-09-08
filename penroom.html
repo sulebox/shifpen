@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>Penguin Room — penroom.html (v48)</title>
+  <title>Penguin Room — penroom.html (v49)</title>
   <style>
     html, body { height: 100%; margin: 0; background: #f6e6c9; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     #app { position: fixed; inset: 0; }
@@ -53,7 +53,6 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     app.appendChild(renderer.domElement);
 
-    
     // ---- Camera ----
     let aspect = window.innerWidth / window.innerHeight;
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
@@ -112,15 +111,15 @@
     const wallMat = new THREE.MeshStandardMaterial({ color: 0xF7CD8F });
     const mkWall = (w,h,t) => new THREE.Mesh(new THREE.BoxGeometry(w,h,t), wallMat);
 
-    // 後ろの壁（元に戻す）
+    // 後ろの壁
     const back = mkWall(18, wallH, wallT); back.position.set(0, wallH/2, -7); room.add(back);
 
-    // 左壁：上側（ドアより前のパート）を削除、下側だけ残す
+    // 左壁：上を開放（下だけ残す）
     const DOOR_X = -9, DOOR_Z_MIN = 3.5, DOOR_Z_MAX = 6.5;
-    // const leftA = mkWall(wallT, wallH, (DOOR_Z_MIN - (-7))); leftA.position.set(-9, wallH/2, (-7 + DOOR_Z_MIN)/2); room.add(leftA); // ← 削除指示
-    // const leftB = mkWall(wallT, wallH, (7 - DOOR_Z_MAX));   leftB.position.set(-9, wallH/2, (7 + DOOR_Z_MAX)/2);   room.add(leftB); // ← 削除指示
+    // const leftA = mkWall(wallT, wallH, (DOOR_Z_MIN - (-7))); leftA.position.set(-9, wallH/2, (-7 + DOOR_Z_MIN)/2); room.add(leftA);
+    // const leftB = mkWall(wallT, wallH, (7 - DOOR_Z_MAX));   leftB.position.set(-9, wallH/2, (7 + DOOR_Z_MAX)/2);   room.add(leftB);
 
-    // 右壁＋窓はそのまま
+    // 右壁＋窓
     const rightGroup = new THREE.Group(); room.add(rightGroup); const rightX = 9;
     const beamMat = new THREE.MeshStandardMaterial({ color: 0xE9A86B });
     const beamT = wallT;
@@ -143,7 +142,7 @@
     const frontLawn = new THREE.Mesh(new THREE.PlaneGeometry(18, 8), lawnMat); frontLawn.rotation.x = -Math.PI/2; frontLawn.position.set(0, 0, 11); garden.add(frontLawn);
     const leftLawn  = new THREE.Mesh(new THREE.PlaneGeometry(8, 14), lawnMat); leftLawn.rotation.x = -Math.PI/2; leftLawn.position.set(-13, 0, 0); garden.add(leftLawn);
 
-    // 追加: 右側・右前・左前にも芝を延長（見た目の庭の拡張）
+    // 追加: 右側・右前・左前にも芝を延長
     const rightLawn = new THREE.Mesh(new THREE.PlaneGeometry(8, 14), lawnMat); rightLawn.rotation.x = -Math.PI/2; rightLawn.position.set(13, 0, 0); garden.add(rightLawn);
     const rightFrontLawn = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), lawnMat); rightFrontLawn.rotation.x = -Math.PI/2; rightFrontLawn.position.set(13, 0, 11); garden.add(rightFrontLawn);
     const leftFrontLawn = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), lawnMat); leftFrontLawn.rotation.x = -Math.PI/2; leftFrontLawn.position.set(-13, 0, 11); garden.add(leftFrontLawn);
@@ -192,7 +191,6 @@
     const catTail = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 10), catMat); catTail.position.set(0, 0.6, -0.45); catTail.rotation.x = Math.PI/3; cat.add(catTail);
     garden.userData.catHead = catHead; garden.userData.catTail = catTail;
 
-    
     // ---- Toys & props ----
     const toys = new THREE.Group(); scene.add(toys);
     const RING_X = 4.0, RING_Z = -3.0;
@@ -213,7 +211,7 @@
 
     const dish = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.1, 24), new THREE.MeshStandardMaterial({ color: 0x90caf9 })); dish.position.set(2, 0.05, 2); scene.add(dish);
 
-    // ---- Bed（元の位置・向きのまま） ----
+    // ---- Bed ----
     const bed = new THREE.Group(); scene.add(bed);
     const bedX = -4.8, bedZ = 5.2;
     const woodMat = new THREE.MeshStandardMaterial({ color: 0xC18E66 });
@@ -234,36 +232,32 @@
       sleep: { holder: null, queue: [], pos: new THREE.Vector3(BED_SLEEP.x, 0, BED_SLEEP.z), waitDir: new THREE.Vector3(1,0,0) },
       pond:  { holder: null, queue: [], pos: POND_POS.clone(), waitDir: new THREE.Vector3(1,0,0) }
     };
-    // 追加: ネコ用のリソースキュー（最初は予備位置にしておく）
+    // 追加: ネコ用キュー（予備位置）
     RES.neco = { holder: null, queue: [], pos: new THREE.Vector3(-11.2,0,2.5), waitDir: new THREE.Vector3(1,0,0) };
+
     function requestResource(p, name){ const r = RES[name]; if(!r.holder){ r.holder = p; return true; } if(!r.queue.includes(p)) r.queue.push(p); return false; }
     function releaseResource(name){ const r = RES[name]; if(r.holder) r.holder = null; const next = r.queue.shift(); if(next) setState(next, name); }
     function dequeueAll(p){
-  ['play','playBlocks','eat','sleep','pond','neco','sharon'].forEach((name)=>{
-    const r = RES[name];
-    // 待機列から自分を外す
-    const i = r.queue.indexOf(p);
-    if (i >= 0) r.queue.splice(i, 1);
-    // 自分がホルダーなら解放して次の待機者を進める
-    if (r.holder === p) {
-      r.holder = null;
-      const next = r.queue.shift();
-      if (next) setState(next, name);
+      ['play','playBlocks','eat','sleep','pond','neco','sharon'].forEach((name)=>{
+        const r = RES[name]; if(!r) return;
+        const i = r.queue.indexOf(p);
+        if (i >= 0) r.queue.splice(i, 1);
+        if (r.holder === p) {
+          r.holder = null;
+          const next = r.queue.shift();
+          if (next) setState(next, name);
+        }
+      });
     }
-  });
-}
-
-// 待機列の見やすい位置（リソース周りに整列）
-function queueWaitPos(name, p){
-  const r = RES[name];
-  const base = (r && r.pos) ? r.pos.clone() : new THREE.Vector3();
-  const dir = (r && r.waitDir) ? r.waitDir.clone() : new THREE.Vector3(1,0,0);
-  const idx = r && r.queue ? r.queue.indexOf(p) : -1;
-  const k = (idx >= 0 ? idx + 1 : ((r && r.queue ? r.queue.length : 0) + 1));
-  const off = dir.multiplyScalar(0.7 * k);
-  return base.add(off);
-}
-
+    function queueWaitPos(name, p){
+      const r = RES[name];
+      const base = (r && r.pos) ? r.pos.clone() : new THREE.Vector3();
+      const dir  = (r && r.waitDir) ? r.waitDir.clone() : new THREE.Vector3(1,0,0);
+      const idx  = r && r.queue ? r.queue.indexOf(p) : -1;
+      const k    = (idx >= 0 ? idx + 1 : ((r && r.queue ? r.queue.length : 0) + 1));
+      const off  = dir.multiplyScalar(0.7 * k);
+      return base.add(off);
+    }
 
     // ---- Mobile toy ----
     const mobile = new THREE.Group(); scene.add(mobile); mobile.position.set(-5, 3.8, -4.5);
@@ -284,11 +278,12 @@ function queueWaitPos(name, p){
     gltfLoader.setKTX2Loader(ktx2);
     gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
-    const bounds = { xMin: -16, xMax: 7.5, zMin: -5.5, zMax: 13 };
+    // === 可動範囲を右庭まで拡張 ===
+    const bounds = { xMin: -16, xMax: 17, zMin: -7, zMax: 15 };
     const targetHeight = 2.2;
     const HEADING_OFFSET = Math.PI;
 
-    // ---- Comments / bubbles ----
+    // ---- Bubbles ----
     const commentMap = {
       wander: 'おさんぽしよっと',
       lounge: 'ちょとつかれた',
@@ -313,7 +308,6 @@ function queueWaitPos(name, p){
       el.style.left = (q.x*0.5+0.5)*window.innerWidth+'px';
       el.style.top  = (-q.y*0.5+0.5)*window.innerHeight+'px';
     }
-    // 任意テキストの吹き出しを表示/非表示
     function setBubbleText(obj, text){ const el = ensureBubble(obj); el.textContent = text || ''; el.style.opacity = text ? 1 : 0; }
 
     // ---- Penguin load helpers ----
@@ -367,12 +361,37 @@ function queueWaitPos(name, p){
       const z = THREE.MathUtils.clamp(z0 + (Math.random()*2-1)*r, bounds.zMin, bounds.zMax);
       return new THREE.Vector3(x,0,z);
     }
-    const doorWaypoint = (from, to) => null; // 左側は自由通行なので経由点なし
+
+    // === 右のガラス壁の回り込み経路 ===
+    const RIGHT_WALL_X = 9.0;
+    const RIGHT_WALL_Z_MIN = -6.5;
+    const RIGHT_WALL_Z_MAX =  6.5;
+    const GATE_EPS = 0.35;
+    const GATE_FRONT_Z = RIGHT_WALL_Z_MAX + 0.2;
+    const GATE_BACK_Z  = RIGHT_WALL_Z_MIN - 0.2;
+    const doorWaypoint = (from, to) => null; // 左側は自由通行
+
+    function pathAroundRightWall(from, to){
+      const crosses = ((from.x <= RIGHT_WALL_X && to.x > RIGHT_WALL_X) || (from.x >= RIGHT_WALL_X && to.x < RIGHT_WALL_X));
+      const zInBand = (z)=> (z > RIGHT_WALL_Z_MIN && z < RIGHT_WALL_Z_MAX);
+      if (!crosses || !zInBand(from.z) || !zInBand(to.z)) return null;
+      const insideX = RIGHT_WALL_X - GATE_EPS, outsideX = RIGHT_WALL_X + GATE_EPS;
+      const frontIn  = new THREE.Vector3(insideX,0,GATE_FRONT_Z), frontOut = new THREE.Vector3(outsideX,0,GATE_FRONT_Z);
+      const backIn   = new THREE.Vector3(insideX,0,GATE_BACK_Z),  backOut  = new THREE.Vector3(outsideX,0,GATE_BACK_Z);
+      const frontLen = from.distanceTo(frontIn)+frontIn.distanceTo(frontOut)+frontOut.distanceTo(to);
+      const backLen  = from.distanceTo(backIn)+backIn.distanceTo(backOut)+backOut.distanceTo(to);
+      return (frontLen <= backLen) ? [frontIn, frontOut] : [backIn, backOut];
+    }
+
     function setRoute(p, dest){
-      const d = doorWaypoint(p.position, dest);
+      const via = pathAroundRightWall(p.position, dest);
       p.userData.way = [];
-      if (d) { p.userData.way = [dest.clone()]; p.userData.target.copy(d); }
-      else { p.userData.target.copy(dest); }
+      if (via && via.length){
+        p.userData.way = [...via, dest.clone()];
+        p.userData.target.copy(p.userData.way.shift());
+      } else {
+        p.userData.target.copy(dest);
+      }
     }
 
     function chooseNextAction(p){
@@ -381,9 +400,9 @@ function queueWaitPos(name, p){
       else if (r < 0.42) setState(p,'lounge');
       else if (r < 0.49) setState(p,'play');
       else if (r < 0.57) setState(p,'playBlocks');
-      else if (r < 0.70) setState(p,'eat');
-      else if (r < 0.78) setState(p,'pond');
-      else if (r < 0.84) setState(p,'neco');
+      else if (r < 0.72) setState(p,'eat');
+      else if (r < 0.80) setState(p,'pond');
+      else if (r < 0.88) setState(p,'neco');
       else if (r < 0.90) setState(p,'window');
       else if (r < 0.94) setState(p,'sharon');
       else if (r < 0.98) setState(p,'sleep');
@@ -423,7 +442,7 @@ function queueWaitPos(name, p){
         if (necoRef){
           if (requestResource(p,'neco')){
             const base = (RES.neco && RES.neco.pos) ? RES.neco.pos : new THREE.Vector3(-11.2,0,2.5);
-            const dest = base.clone().add(new THREE.Vector3(1.0,0,0)); // 右側に少し寄る
+            const dest = base.clone().add(new THREE.Vector3(1.0,0,0));
             setRoute(p, dest);
           } else {
             final = 'necoWait'; setRoute(p, queueWaitPos('neco',p)); bubbleKey = 'neco';
@@ -435,9 +454,11 @@ function queueWaitPos(name, p){
       else if(state === 'sharon'){
         ud.speed = 1.0;
         if (sharonRef){
+          if (!RES.sharon) RES.sharon = { holder:null, queue:[], pos: SHARON_POS.clone(), waitDir: new THREE.Vector3(-1,0,0) };
           if (requestResource(p,'sharon')){
             const base = (RES.sharon && RES.sharon.pos) ? RES.sharon.pos : SHARON_POS.clone();
-            const dest = base.clone().add(new THREE.Vector3(-1.0,0,0)); // 左側に少し寄せる
+            // シャロンの手前で少し散らす
+            const dest = base.clone().add(new THREE.Vector3(-1.0 + Math.random()*0.6, 0, (Math.random()-0.5)*0.8));
             setRoute(p, dest);
           } else {
             final = 'sharonWait'; setRoute(p, queueWaitPos('sharon',p)); bubbleKey = 'sharon';
@@ -474,9 +495,8 @@ function queueWaitPos(name, p){
 
       if (ud.state !== 'sit' && ud.state !== 'sleep') { p.position.y = Math.max(0, Math.sin(performance.now()/1000*6)*0.03); }
 
-      if ([
-        'wander','play','playBlocks','eat','window','pond','neco','sharon','playWait','playBlocksWait','eatWait','pondWait','necoWait','sleepWait'
-      ].includes(ud.state) || (ud.state==='sleep' && ud.goingToBed)) {
+      if ([ 'wander','play','playBlocks','eat','window','pond','neco','sharon',
+            'playWait','playBlocksWait','eatWait','pondWait','necoWait','sharonWait','sleepWait' ].includes(ud.state) || (ud.state==='sleep' && ud.goingToBed)) {
         const target = ud.target;
         const v = new THREE.Vector3(target.x - p.position.x, 0, target.z - p.position.z);
 
@@ -535,27 +555,23 @@ function queueWaitPos(name, p){
             ud.goingToBed = false; ud.timer = 0;
           } else if (ud.state === 'neco') {
             if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
-            // ネコの近くで少し観察してから別行動へ
             if (ud.timer > (1.0 + Math.random()*1.2)) {
-            releaseResource('neco');  // ★追加：neco のリソースを解放
-            chooseNextAction(p);
-          }
-        }
-
-          else if (ud.state === 'sharon') {
-            if (!ud.arrived) { ud.arrived = true; ud.timer = 0;
-            setBubbleText(p, 'シャロンかわいい');
-            if (sharonRef) setBubbleText(sharonRef, '^^');
-          }
+              releaseResource('neco');
+              chooseNextAction(p);
+            }
+          } else if (ud.state === 'sharon') {
+            if (!ud.arrived) {
+              ud.arrived = true; ud.timer = 0;
+              setBubbleText(p, 'シャロンかわいい');
+              if (sharonRef) setBubbleText(sharonRef, '^^');
+            }
             if (ud.timer > (1.0 + Math.random()*1.2)) {
-            setBubbleText(p, '');
-            if (sharonRef) setBubbleText(sharonRef, '')
-            releaseResource('sharon');
-            chooseNextAction(p);
-          }
-        }
-
-          else if (ud.state === 'window') {
+              setBubbleText(p, '');
+              if (sharonRef) setBubbleText(sharonRef, '');
+              releaseResource('sharon');
+              chooseNextAction(p);
+            }
+          } else if (ud.state === 'window') {
             p.rotation.y = Math.PI/2 + HEADING_OFFSET;
             if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
             if (ud.timer > (1.0 + Math.random()*1.0)) chooseNextAction(p);
@@ -584,20 +600,19 @@ function queueWaitPos(name, p){
 
     // ---- Boy (boy2.glb) ----
     const mixers = []; // Animation mixers (boy/neco/others)
-    let boyRef = null;           // Boy group
+    let boyRef = null;           
     let boyMixer = null;
     let boyActions = { idle: null, walk: null };
     let boyCurrent = null;
-    let boyBaseYaw = 0;          // 基準向き（画面の下を向いている現在の向き）
-    let greetTimer = 0;          // あいさつ表示の残り秒数
-    let lastGreetedPenguin = null; // 直近で挨拶したペンギン
-    const GREET_RADIUS = 3.0;    // 近づいたとみなす距離（m相当）
-    // 男の子のランダム台詞
+    let boyBaseYaw = 0;          
+    let greetTimer = 0;          
+    let lastGreetedPenguin = null; 
+    const GREET_RADIUS = 3.0;    
     const BOY_LINES = [
       'ここどこだろ','異世界かも','ペンギンたくさん','頭いたいかも','のどかわいた','あったかい','いいお天気','お庭きもちいい','いいにおいする','デジャヴかも','探し物あるかも','りんごたべたい','くつひもほどけてる','トイレどこかな','蚊にさされた','足のゆびかゆい','たまごごはん（TKG','ポトフたべたい','雲あんまりない','傘もってきたっけ','PASMOわすれた','コロッケたべたい','ドングリひろった','マインドフルネス','レベル25だって'
     ];
-    let boySpeakTimer = 0;          // 表示中の残り秒数
-    let boyNextSpeakIn = 2 + Math.random()*4; // 次の発話まで（2〜6秒）
+    let boySpeakTimer = 0;
+    let boyNextSpeakIn = 2 + Math.random()*4;
 
     function fitAndFloorToHeight(obj, targetH){
       const tmp = new THREE.Group(); tmp.add(obj); scene.add(tmp);
@@ -621,14 +636,12 @@ function queueWaitPos(name, p){
         fitAndFloorToHeight(model, targetH);
         neco.add(model);
         neco.position.copy(pos);
-        neco.rotation.y = Math.PI / 2; // +90°
+        neco.rotation.y = Math.PI / 2;
         scene.add(neco);
-        // 吹き出し位置（頭上）
         neco.userData = neco.userData || {};
         const bb = new THREE.Box3().setFromObject(model);
         const h = Math.max(0.001, bb.max.y - bb.min.y);
         neco.userData.bubbleOffsetY = Math.max(h * 1.2, h + 0.15);
-        // 参照とキュー位置を更新
         necoRef = neco;
         if (RES.neco) RES.neco.pos = neco.position.clone();
         if (gltf.animations && gltf.animations.length){
@@ -639,221 +652,177 @@ function queueWaitPos(name, p){
       }, undefined, (err)=>console.warn('neco.glb load error', err));
     }
 
-// --- remove root motion from a clip (walk in-place) ---
-function makeInPlace(clip){
-  if (!clip) return clip;
-  const blocked = ['armature','mixamorig','hips','root','armature.001'];
-  const tracks = clip.tracks.filter(tr => {
-    if (!tr.name.endsWith('.position')) return true;
-    const low = tr.name.toLowerCase();
-    return !blocked.some(k => low.includes(k));
-  });
-  return new THREE.AnimationClip(clip.name, clip.duration, tracks);
-}    
-
-// --- boy loader with idle/walk actions ---
-function spawnBoy(url, pos){
-  gltfLoader.load(url, (gltf)=>{
-    const boy = new THREE.Group();
-    const model = gltf.scene;
-
-    // スケール＆床合わせ
-    fitAndFloorToHeight(model, 1.55 * 0.007);
-    boy.add(model);
-    boy.position.copy(pos);
-    scene.add(boy);
-
-    // 吹き出し高さ・参照
-    boy.userData = boy.userData || {};
-    boy.userData.bubbleOffsetY = 4.5;
-    boyRef = boy;
-    boyBaseYaw = boy.rotation.y;
-
-    // アニメーション（idle / walk）
-    if (gltf.animations && gltf.animations.length){
-      boyMixer = new THREE.AnimationMixer(model);
-      const idleClip = gltf.animations.find(a=>/idle/i.test(a.name)) || gltf.animations[0];
-      let walkClip  = gltf.animations.find(a=>/walk/i.test(a.name)) || gltf.animations[gltf.animations.length-1];
-      walkClip = makeInPlace(walkClip); // ← ルート移動を無効化
-      boyActions = {
-        idle: boyMixer.clipAction(idleClip),
-        walk: boyMixer.clipAction(walkClip),
-      };
-      boyActions.idle.setLoop(THREE.LoopRepeat, Infinity).play();
-      boyCurrent = boyActions.idle;
-      mixers.push(boyMixer);
+    function makeInPlace(clip){
+      if (!clip) return clip;
+      const blocked = ['armature','mixamorig','hips','root','armature.001'];
+      const tracks = clip.tracks.filter(tr => {
+        if (!tr.name.endsWith('.position')) return true;
+        const low = tr.name.toLowerCase();
+        return !blocked.some(k => low.includes(k));
+      });
+      return new THREE.AnimationClip(clip.name, clip.duration, tracks);
     }
-  }, undefined, (err)=>console.warn('boy2.glb load error', err));
-}
 
-    // --- WASD control state ---
-    const keyTimes = new Map(); // key -> last pressed time
+    function spawnBoy(url, pos){
+      gltfLoader.load(url, (gltf)=>{
+        const boy = new THREE.Group();
+        const model = gltf.scene;
+        fitAndFloorToHeight(model, 1.55 * 0.007);
+        boy.add(model);
+        boy.position.copy(pos);
+        scene.add(boy);
+        boy.userData = boy.userData || {};
+        boy.userData.bubbleOffsetY = 4.5;
+        boyRef = boy;
+        boyBaseYaw = boy.rotation.y;
+
+        if (gltf.animations && gltf.animations.length){
+          boyMixer = new THREE.AnimationMixer(model);
+          const idleClip = gltf.animations.find(a=>/idle/i.test(a.name)) || gltf.animations[0];
+          let walkClip  = gltf.animations.find(a=>/walk/i.test(a.name)) || gltf.animations[gltf.animations.length-1];
+          walkClip = makeInPlace(walkClip);
+          boyActions.idle = boyMixer.clipAction(idleClip);
+          boyActions.walk = boyMixer.clipAction(walkClip);
+          boyActions.idle.setLoop(THREE.LoopRepeat, Infinity).play();
+          boyCurrent = boyActions.idle;
+          mixers.push(boyMixer);
+        }
+      }, undefined, (err)=>console.warn('boy2.glb load error', err));
+    }
+
+    // --- WASD & タップ移動 ---
+    const keyTimes = new Map();
     const moveKeys = new Set(['w','a','s','d']);
-    function onKeyDown(e){
-      const k = (e.key || '').toLowerCase();
-      if (moveKeys.has(k)) { e.preventDefault(); keyTimes.set(k, performance.now()); }
-    }
-    function onKeyUp(e){
-      const k = (e.key || '').toLowerCase();
-      if (moveKeys.has(k)) { e.preventDefault(); keyTimes.delete(k); }
-    }
+    function onKeyDown(e){ const k = (e.key || '').toLowerCase(); if (moveKeys.has(k)) { e.preventDefault(); keyTimes.set(k, performance.now()); } }
+    function onKeyUp(e){ const k = (e.key || '').toLowerCase(); if (moveKeys.has(k)) { e.preventDefault(); keyTimes.delete(k); } }
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    function activeKey(){ let key = null, t = -Infinity; for (const [k, time] of keyTimes.entries()){ if (time > t) { t = time; key = k; } } return key; }
 
-    function activeKey(){
-      let key = null, t = -Infinity;
-      for (const [k, time] of keyTimes.entries()){
-        if (time > t) { t = time; key = k; }
+    // タップで目的地
+    const raycaster = new THREE.Raycaster();
+    const ndc = new THREE.Vector2();
+    let boyTapTarget = null;
+    function screenToGround(clientX, clientY){
+      const rect = renderer.domElement.getBoundingClientRect();
+      ndc.set( ((clientX - rect.left) / rect.width ) * 2 - 1, - ( (clientY - rect.top)  / rect.height) * 2 + 1 );
+      raycaster.setFromCamera(ndc, camera);
+      const plane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
+      const hit = new THREE.Vector3();
+      if (raycaster.ray.intersectPlane(plane, hit)){
+        hit.x = THREE.MathUtils.clamp(hit.x, bounds.xMin, bounds.xMax);
+        hit.z = THREE.MathUtils.clamp(hit.z, bounds.zMin, bounds.zMax);
+        hit.y = 0;
+        return hit;
       }
-      return key; // most recently pressed key held down
+      return null;
     }
+    function onCanvasPointerDown(e){
+      if (e.isPrimary === false) return;
+      const x = e.clientX ?? (e.touches && e.touches[0]?.clientX);
+      const y = e.clientY ?? (e.touches && e.touches[0]?.clientY);
+      const p = screenToGround(x, y);
+      if (p){ boyTapTarget = p; }
+      e.stopPropagation(); e.preventDefault();
+    }
+    renderer.domElement.addEventListener('pointerdown', onCanvasPointerDown, { passive:false });
+    renderer.domElement.addEventListener('click', (e)=>{ e.stopPropagation(); }, true);
 
-// --- tap-to-move (mobile/PC) ---
-const raycaster = new THREE.Raycaster();
-const ndc = new THREE.Vector2();
-let boyTapTarget = null; // 目的地（nullなら未指定）
-
-function screenToGround(clientX, clientY){
-  const rect = renderer.domElement.getBoundingClientRect();
-  ndc.set(
-    ( (clientX - rect.left) / rect.width ) * 2 - 1,
-    - ( (clientY - rect.top)  / rect.height) * 2 + 1
-  );
-  raycaster.setFromCamera(ndc, camera);
-  const plane = new THREE.Plane(new THREE.Vector3(0,1,0), 0); // y=0
-  const hit = new THREE.Vector3();
-  if (raycaster.ray.intersectPlane(plane, hit)){
-    // 床の範囲に収める
-    hit.x = THREE.MathUtils.clamp(hit.x, bounds.xMin, bounds.xMax);
-    hit.z = THREE.MathUtils.clamp(hit.z, bounds.zMin, bounds.zMax);
-    hit.y = 0;
-    return hit;
-  }
-  return null;
-}
-
-function onCanvasPointerDown(e){
-  // 1本指タップ/クリックのみ
-  if (e.isPrimary === false) return;
-  const x = e.clientX ?? (e.touches && e.touches[0]?.clientX);
-  const y = e.clientY ?? (e.touches && e.touches[0]?.clientY);
-  const p = screenToGround(x, y);
-  if (p){ boyTapTarget = p; }
-  // ペンギンの「行動スキップ」クリックが発火しないよう抑止
-  e.stopPropagation();
-  e.preventDefault();
-}
-
-// キャンバス上のタップを拾う（PC/スマホ両対応）
-renderer.domElement.addEventListener('pointerdown', onCanvasPointerDown, { passive:false });
-// 念のため click も止めておく
-renderer.domElement.addEventListener('click', (e)=>{ e.stopPropagation(); }, true);
-
-const BOY_SPEED = 2.2; // m/s
-
-function setBoyAnim(name){
-  if (!boyMixer || !boyActions[name]) return;
-  const next = boyActions[name];
-  if (boyCurrent === next) return;
-  if (boyCurrent) boyCurrent.crossFadeTo(next, 0.18, false);
-  next.reset().play();
-  boyCurrent = next;
-}
-
-function updateBoy(dt){
-  if (!boyRef) return;
-
-  // 1) キーボード優先（従来どおり）
-  const k = activeKey();
-  if (k){
-    let yawOff = 0;
-    if (k === 'w') yawOff = Math.PI;        // 上へ
-    else if (k === 'a') yawOff = -Math.PI/2;// 左へ（時計回り）
-    else if (k === 's') yawOff = 0;         // 下へ
-    else if (k === 'd') yawOff =  Math.PI/2;// 右へ（反時計回り）
-
-    boyRef.rotation.y = boyBaseYaw + yawOff;
-
-    const fwd = new THREE.Vector3(0,0,1).applyQuaternion(boyRef.quaternion);
-    fwd.y = 0; fwd.normalize();
-    boyRef.position.addScaledVector(fwd, BOY_SPEED * dt);
-
-    boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, bounds.xMin, bounds.xMax);
-    boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, bounds.zMin, bounds.zMax);
-    boyRef.position.y = 0;
-
-    setBoyAnim('walk');
-    return;
-  }
-
-  // 2) タップ目的地へ移動
-  if (boyTapTarget){
-    const v = new THREE.Vector3(
-      boyTapTarget.x - boyRef.position.x,
-      0,
-      boyTapTarget.z - boyRef.position.z
-    );
-    const dist = Math.hypot(v.x, v.z);
-    if (dist > 0.03){
-      v.normalize();
-      boyRef.rotation.y = Math.atan2(v.x, v.z); // 進行方向を向く
-      boyRef.position.addScaledVector(v, Math.min(BOY_SPEED * dt, dist));
-      boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, bounds.xMin, bounds.xMax);
-      boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, bounds.zMin, bounds.zMax);
-      boyRef.position.y = 0;
-      setBoyAnim('walk');
-    } else {
-      boyTapTarget = null; // 到着
+    const BOY_SPEED = 2.2;
+    function setBoyAnim(name){
+      if (!boyMixer || !boyActions[name]) return;
+      const next = boyActions[name];
+      if (boyCurrent === next) return;
+      if (boyCurrent) boyCurrent.crossFadeTo(next, 0.18, false);
+      next.reset().play();
+      boyCurrent = next;
+    }
+    function updateBoy(dt){
+      if (!boyRef) return;
+      const k = activeKey();
+      if (k){
+        let yawOff = 0;
+        if (k === 'w') yawOff = Math.PI;
+        else if (k === 'a') yawOff = -Math.PI/2;
+        else if (k === 's') yawOff = 0;
+        else if (k === 'd') yawOff =  Math.PI/2;
+        boyRef.rotation.y = boyBaseYaw + yawOff;
+        const fwd = new THREE.Vector3(0,0,1).applyQuaternion(boyRef.quaternion);
+        fwd.y = 0; fwd.normalize();
+        boyRef.position.addScaledVector(fwd, BOY_SPEED * dt);
+        boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, bounds.xMin, bounds.xMax);
+        boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, bounds.zMin, bounds.zMax);
+        boyRef.position.y = 0;
+        setBoyAnim('walk');
+        return;
+      }
+      if (boyTapTarget){
+        const v = new THREE.Vector3(boyTapTarget.x - boyRef.position.x, 0, boyTapTarget.z - boyRef.position.z);
+        const dist = Math.hypot(v.x, v.z);
+        if (dist > 0.03){
+          v.normalize();
+          boyRef.rotation.y = Math.atan2(v.x, v.z);
+          boyRef.position.addScaledVector(v, Math.min(BOY_SPEED * dt, dist));
+          boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, bounds.xMin, bounds.xMax);
+          boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, bounds.zMin, bounds.zMax);
+          boyRef.position.y = 0;
+          setBoyAnim('walk');
+        } else {
+          boyTapTarget = null;
+          setBoyAnim('idle');
+        }
+        return;
+      }
       setBoyAnim('idle');
     }
-    return;
-  }
 
-  // 3) 何も入力が無ければ待機
-  setBoyAnim('idle');
-}
-
-    // 池の右下あたりに Boy を配置（boy2.glb を使用）
+    // 池の右下あたりに Boy
     const boyPos = new THREE.Vector3(5, 0, 10);
     spawnBoy('boy2.glb', boyPos);
 
-
-    // 左庭の元の猫位置に neco.glb を表示
-    let necoRef = null;                // neco.glb の参照
-    let necoGreetTimer = 0;            // 挨拶表示の残り秒数
-    let necoGreetPenguin = null;       // 現在挨拶中のペンギン
-    const NECO_GREET_RADIUS = 2.0;     // ペンギンとネコの発動距離（m）
+    // 左庭の元の猫位置に neco.glb
+    let necoRef = null;               
+    let necoGreetTimer = 0;           
+    let necoGreetPenguin = null;      
+    const NECO_GREET_RADIUS = 2.0;    
     spawnNeco('neco.glb', new THREE.Vector3(-11.2, 0, 2.0), 1.3);
 
     // ---- Sharon & Bee (right-front garden) ----
     let sharonRef = null, beeRef = null, oguruRef = null;
-    const SHARON_POS = new THREE.Vector3(12.5, 0, 1.0); // updated position
-    // resource queue: sharon (nearby look)
-    if (!RES.sharon) RES.sharon = {
-      holder: null, queue: [], pos: SHARON_POS.clone(), waitDir: new THREE.Vector3(-1,0,0)
-    };
-    const BEE_BASE   = new THREE.Vector3(12.5, 0.6, -2.0); // updated hover center
+    const SHARON_POS = new THREE.Vector3(12.5, 0, 1.0);
+    if (!RES.sharon) RES.sharon = { holder: null, queue: [], pos: SHARON_POS.clone(), waitDir: new THREE.Vector3(-1,0,0) };
+    const BEE_BASE   = new THREE.Vector3(12.5, 0.6, -2.0);
     const OGURU_POS  = new THREE.Vector3(13.0, 0, 9.0);
+
+    function fitAndFloorToHeightSimple(model, targetH = 1.5){
+      const tmp = new THREE.Group(); tmp.add(model); scene.add(tmp);
+      tmp.updateWorldMatrix(true,true);
+      const box = new THREE.Box3().setFromObject(tmp);
+      const size = new THREE.Vector3(); box.getSize(size);
+      const s = (size.y>0 ? targetH/size.y : 1);
+      model.scale.setScalar(s);
+      tmp.updateWorldMatrix(true,true);
+      const box2 = new THREE.Box3().setFromObject(tmp);
+      model.position.y += -box2.min.y;
+      scene.remove(tmp);
+    }
 
     function spawnSharon(url, pos, targetH = 1.5){
       gltfLoader.load(url, (gltf)=>{
         const g = new THREE.Group();
         const model = gltf.scene;
-        fitAndFloorToHeight(model, targetH);
+        fitAndFloorToHeightSimple(model, targetH);
         g.add(model);
-        // fix: some models export black due to vertex colors; disable them
         model.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; const mats = Array.isArray(o.material)? o.material : [o.material]; mats.forEach(m=>{ if(!m) return; if(m.vertexColors){ m.vertexColors = false; } if('metalness' in m){ m.metalness = Math.min(0.2, m.metalness ?? 0); } if('roughness' in m && (m.roughness ?? 1) > 0.95){ m.roughness = 0.7; } m.envMapIntensity = 1.0; if(m.color && (m.color.r + m.color.g + m.color.b) < 0.3){ m.color.multiplyScalar(2.0); } m.needsUpdate = true; }); } });
         g.position.copy(pos);
-        g.rotation.y = -Math.PI/4 + Math.PI*2; // flipped additional 180° from current
+        g.rotation.y = -Math.PI/4 + Math.PI*2;
         scene.add(g);
         sharonRef = g;
-        // bubble height & queue anchor
         g.userData = g.userData || {};
         const sbb = new THREE.Box3().setFromObject(model);
         const sh = Math.max(0.001, sbb.max.y - sbb.min.y);
         g.userData.bubbleOffsetY = Math.max(sh * 1.2, sh + 0.15);
         if (RES.sharon) RES.sharon.pos = g.position.clone();
-        
         if (gltf.animations && gltf.animations.length){
           const mx = new THREE.AnimationMixer(model);
           gltf.animations.forEach(clip=> mx.clipAction(clip).setLoop(THREE.LoopRepeat, Infinity).play());
@@ -866,15 +835,12 @@ function updateBoy(dt){
       gltfLoader.load(url, (gltf)=>{
         const g = new THREE.Group();
         const model = gltf.scene;
-        fitAndFloorToHeight(model, targetH);
+        fitAndFloorToHeightSimple(model, targetH);
         g.add(model);
-        // Try to detect wings in the bee model
         const wings = [];
         model.traverse(o=>{
           const n = (o.name||'').toLowerCase();
-          if (n.includes('wing') || n.includes('羽') || n.includes('hane')){
-            wings.push(o);
-          }
+          if (n.includes('wing') || n.includes('羽') || n.includes('hane')){ wings.push(o); }
         });
         g.userData.wings = wings;
         wings.forEach(w=>{ w.userData = w.userData||{}; w.userData.base = {x:w.rotation.x, y:w.rotation.y, z:w.rotation.z}; });
@@ -893,10 +859,10 @@ function updateBoy(dt){
       gltfLoader.load(url, (gltf)=>{
         const g = new THREE.Group();
         const model = gltf.scene;
-        fitAndFloorToHeight(model, targetH);
+        fitAndFloorToHeightSimple(model, targetH);
         g.add(model);
         g.position.copy(pos);
-        g.rotation.y = -Math.PI/6; // slight turn toward room
+        g.rotation.y = -Math.PI/6;
         scene.add(g);
         oguruRef = g;
         if (gltf.animations && gltf.animations.length){
@@ -920,10 +886,10 @@ function updateBoy(dt){
       // penguins
       for (const p of penguins) updatePenguin(p, dt);
 
-      // update mixers (boy/neco/others)
+      // mixers
       for (const m of mixers) m.update(dt);
 
-      // boy control
+      // boy
       updateBoy(dt);
 
       const t = performance.now()/1000;
@@ -939,47 +905,42 @@ function updateBoy(dt){
         beeRef.position.z = BEE_BASE.z + Math.sin(t*2.0)*0.6;
         beeRef.position.y = 0.6 + Math.sin(t*5.0)*0.12;
         beeRef.rotation.y += 2.5*dt;
-        // wing flapping (name-detected wings)
         const wings = (beeRef.userData && beeRef.userData.wings) ? beeRef.userData.wings : null;
         if (wings && wings.length){
-          const flap = Math.sin(t*22.0); // fast, subtle flap
-          const amp = 0.6;               // radians
+          const flap = Math.sin(t*22.0);
+          const amp = 0.6;
           for (let i=0;i<wings.length;i++){
             const w = wings[i];
             const b = (w.userData && w.userData.base) ? w.userData.base : {x:0,y:0,z:0};
-            // rotate around Z (often works for GLB bees); alternate direction per side
             w.rotation.z = b.z + (i%2?1:-1) * amp * flap;
           }
         }
       }
 
-      // gentle idle motions for oguru & sharon (fast version)
+      // idle motions for oguru & sharon
       if (oguruRef){
         const tt = t*1.4;
-        oguruRef.rotation.z = Math.sin(tt)*0.06;  // heavy left-right sway
-        oguruRef.rotation.x = Math.cos(tt*0.9)*0.03; // slight forward/back lean
-        oguruRef.position.y = Math.max(0, 0.02 + Math.sin(tt*0.5)*0.02); // subtle bob
+        oguruRef.rotation.z = Math.sin(tt)*0.06;
+        oguruRef.rotation.x = Math.cos(tt*0.9)*0.03;
+        oguruRef.position.y = Math.max(0, 0.02 + Math.sin(tt*0.5)*0.02);
       }
       if (sharonRef){
         const ts = t*1.8;
-        sharonRef.rotation.x = Math.sin(ts)*0.05; // gentle nod
-        sharonRef.rotation.z = Math.cos(ts*1.6)*0.08; // petal sway feel
+        sharonRef.rotation.x = Math.sin(ts)*0.05;
+        sharonRef.rotation.z = Math.cos(ts*1.6)*0.08;
         sharonRef.position.y = Math.max(0, 0.02 + Math.sin(ts*2.2)*0.015);
       }
 
-      penguin = penguins[0] || null;
+      // bubbles
       for (const p of penguins) updateBubblePositionFor(p);
       if (sharonRef) updateBubblePositionFor(sharonRef);
 
-      // --- greeting when penguin approaches boy ---
+      // --- greeting boy ---
       if (boyRef && penguins.length){
         let nearest = null, minD = Infinity;
-        for (const p of penguins){
-          const d = p.position.distanceTo(boyRef.position);
-          if (d < minD){ minD = d; nearest = p; }
-        }
+        for (const p of penguins){ const d = p.position.distanceTo(boyRef.position); if (d < minD){ minD = d; nearest = p; } }
         if (nearest && minD <= GREET_RADIUS && greetTimer <= 0){
-          greetTimer = 1.8; // 秒
+          greetTimer = 1.8;
           lastGreetedPenguin = nearest;
           setBubbleText(nearest, 'こんこん');
           setBubbleText(boyRef, 'こんこん＾＾');
@@ -998,16 +959,11 @@ function updateBoy(dt){
 
       // --- neco greeting ---
       if (necoRef){
-        // 各ペンギンのクールダウンを減衰
-        for (const p of penguins){
-          p.userData.necoCooldown = Math.max(0, (p.userData.necoCooldown || 0) - dt);
-        }
-        // 近づいたらどの行動中でも発動（同時に1組のみ）
+        for (const p of penguins){ p.userData.necoCooldown = Math.max(0, (p.userData.necoCooldown || 0) - dt); }
         if (necoGreetTimer <= 0){
           let nearest = null, minD = Infinity;
           for (const p of penguins){
-            const cd = p.userData.necoCooldown || 0;
-            if (cd > 0) continue; // クールダウン中はスキップ
+            const cd = p.userData.necoCooldown || 0; if (cd > 0) continue;
             const d = p.position.distanceTo(necoRef.position);
             if (d < minD){ minD = d; nearest = p; }
           }
@@ -1016,7 +972,6 @@ function updateBoy(dt){
             necoGreetPenguin = nearest;
             setBubbleText(nearest, 'ネコかわいい');
             setBubbleText(necoRef, 'にゃあ');
-            // 同じペンギンがすぐ再発火しないよう 5 秒のクールダウン
             nearest.userData.necoCooldown = 5.0;
           }
         } else {
@@ -1030,33 +985,6 @@ function updateBoy(dt){
         }
       }
 
-      // --- boy random talk ---
-      if (boyRef){
-        if (greetTimer <= 0){
-          if (boySpeakTimer > 0){
-            boySpeakTimer -= dt;
-            updateBubblePositionFor(boyRef);
-            if (boySpeakTimer <= 0) setBubbleText(boyRef, '');
-          } else {
-            boyNextSpeakIn -= dt;
-            if (boyNextSpeakIn <= 0){
-              const line = BOY_LINES[Math.floor(Math.random()*BOY_LINES.length)];
-              setBubbleText(boyRef, line);
-              updateBubblePositionFor(boyRef);
-              boySpeakTimer = 3.0;                 // 表示秒数
-              boyNextSpeakIn = 2 + Math.random()*4; // 次の発話まで（2〜6秒）
-            }
-          }
-        } else {
-          // 挨拶（こんにちは）表示中はランダム発話を一時停止
-          if (boySpeakTimer > 0) boySpeakTimer = 0;
-        }
-      }
-      // --- cat idle (hidden by default) ---
-      if (garden.userData && garden.userData.catHead && cat.visible) {
-        garden.userData.catHead.rotation.y = Math.sin(t*0.7)*0.3;
-        garden.userData.catTail.rotation.z = Math.sin(t*2.4)*0.35;
-      }
       // droplets
       for (let i=droplets.length-1; i>=0; i--) {
         const d = droplets[i];
@@ -1071,10 +999,7 @@ function updateBoy(dt){
     animate();
 
     // ---- Interactions ----
-    //function handleAdvance(e){ const el = e.target; if (el && el.closest && (el.closest('.picker') || el.closest('.drop'))) return; for (const p of penguins) chooseNextAction(p); }
-    //window.addEventListener('click', handleAdvance);
-    //window.addEventListener('touchend', handleAdvance, { passive: true });
-    //window.addEventListener('pointerup', handleAdvance);
+    // 行動スキップは廃止（クリック/タップは少年の移動のみに使用）
 
     // ---- Drag & drop ----
     const drop = $('drop');
@@ -1106,13 +1031,8 @@ function updateBoy(dt){
         .then((g)=>{ if (start) g.position.copy(start); scene.add(g); penguins.push(g); if (!penguin) penguin = g; setState(g,'wander'); })
         .catch(()=>{ const fb=fallbackPenguin(); if (start) fb.position.copy(start); scene.add(fb); penguins.push(fb); if (!penguin) penguin = fb; setState(fb,'wander'); });
     }
-    // If a custom ?model= is given (not one of the standard penguins), spawn it once
     const STANDARD = ['Pen.glb','Pen_b.glb','Pen_r.glb','Pen_y.glb','Pen_g.glb'];
-    if (modelUrl && !STANDARD.includes(modelUrl)) {
-      spawn(modelUrl, new THREE.Vector3(-1,0,0));
-    }
-
-    // Spawn two of each color (total 10 penguins)
+    if (modelUrl && !STANDARD.includes(modelUrl)) { spawn(modelUrl, new THREE.Vector3(-1,0,0)); }
     const startsMap = {
       'Pen.glb': [ new THREE.Vector3(-1.2,0, 0.0), new THREE.Vector3(-0.2,0,-1.6) ],
       'Pen_b.glb': [ new THREE.Vector3( 1.0,0,-1.2), new THREE.Vector3( 1.6,0,-2.2) ],
