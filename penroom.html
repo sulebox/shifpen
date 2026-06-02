@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>Penguin Room — penroom.html (v49)</title>
+  <title>Penguin Room / ペンギンまみれ — penroom.html (v50)</title>
   <style>
     html, body { height: 100%; margin: 0; background: #f6e6c9; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     #app { position: fixed; inset: 0; }
@@ -15,6 +15,22 @@
     .drop.on { opacity: 1; }
     a { color: inherit; }
     .bubble { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -100%); padding: 6px 10px; background: rgba(255,255,255,.95); border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.12); font: 12px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; pointer-events: none; transition: opacity .2s; }
+
+    /* ===== ペンギンまみれ ゲームUI ===== */
+    .g-score { position: fixed; right: 12px; top: 12px; padding: 8px 12px; background: rgba(0,0,0,.55); color:#fff; border-radius: 12px; font: 600 14px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; box-shadow: 0 4px 14px rgba(0,0,0,.18); display:none; text-align:right; }
+    .g-score .big { font-size: 20px; }
+    .g-over { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: rgba(20,16,10,.62); z-index: 50; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+    .g-over .card { background: #fff; border-radius: 20px; padding: 28px 30px; text-align: center; box-shadow: 0 18px 50px rgba(0,0,0,.28); max-width: 80vw; }
+    .g-over h1 { margin: 0 0 6px; font: 800 26px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; color:#2b2b2b; }
+    .g-over p { margin: 4px 0 18px; font: 15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; color:#555; }
+    .g-over p .res { font-weight: 800; font-size: 22px; color:#e07a3e; }
+    .g-over button { font: 700 16px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; padding: 12px 26px; border-radius: 999px; border: none; background: #2bb3a3; color:#fff; box-shadow: 0 6px 16px rgba(43,179,163,.4); cursor:pointer; }
+    .g-over button:active { transform: translateY(1px); }
+    .g-start { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: rgba(246,230,201,.86); z-index: 50; }
+    .g-start .card { background:#fff; border-radius: 20px; padding: 26px 28px; text-align: center; box-shadow: 0 18px 50px rgba(0,0,0,.18); max-width: 80vw; }
+    .g-start h1 { margin: 0 0 8px; font: 800 24px/1.25 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; color:#2b2b2b; }
+    .g-start p { margin: 4px 0 18px; font: 14px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; color:#666; }
+    .g-start button { font: 700 16px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; padding: 12px 30px; border-radius: 999px; border: none; background: #2bb3a3; color:#fff; box-shadow: 0 6px 16px rgba(43,179,163,.4); cursor:pointer; }
   </style>
 </head>
 <body>
@@ -23,6 +39,11 @@
   <div class="hud">クリック/タップ・WASDで少年を操作</div>
   <div class="drop" id="drop"><div style="background:#fff;padding:16px 18px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12)">ここにGLBをドロップ</div></div>
   <div class="bubble" id="bubble" style="display:none"></div>
+
+  <!-- ペンギンまみれ ゲームUI -->
+  <div class="g-score" id="gScore"><div>生存 <span class="big" id="gTime">0.0</span> 秒</div><div id="gCount" style="opacity:.85;font-weight:500;font-size:12px;margin-top:2px">ペンギン 0 / 囲まれ 0</div></div>
+  <div class="g-start" id="gStart"><div class="card"><h1>🐧 ペンギンまみれ</h1><p>少年を操作して逃げきろう。<br>近づいたペンギンが「あそぼっと」と寄ってきて、<br>どんどん増えていきます。<br>囲まれて身動きできなくなったら終わり。</p><button id="gStartBtn">はじめる</button></div></div>
+  <div class="g-over" id="gOver"><div class="card"><h1>ペンギンまみれ！</h1><p>生存時間 <span class="res" id="gResult">0.0</span> 秒<br><span id="gResultSub" style="font-size:13px;color:#888"></span></p><button id="gRetryBtn">もういちど</button></div></div>
 
   <script type="importmap">
   {
@@ -267,6 +288,24 @@
     const hangFish = (oz) => { const s = new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,1.0,8), stringMat); s.position.set(0,-0.5,oz); mobile.add(s); const f = makeFish(); f.position.set(0,-1.1,oz); mobile.add(f); return f; };
     const mf1 = hangFish(-0.35), mf2 = hangFish(0), mf3 = hangFish(0.35);
 
+    // ===== ペンギンまみれ: ゲーム設定 =====
+    const GAME = {
+      enabled: new URLSearchParams(location.search).get('game') === '1',
+      running: false,
+      over: false,
+      startTime: 0,
+      elapsed: 0,
+      spawnEvery: 5.0,      // 何秒ごとに1羽増えるか
+      spawnTimer: 0,
+      initialCount: 3,      // 開始時の羽数
+      surroundRadius: 2.2,  // この距離内にいるペンギンを「囲み」とカウント
+      surroundLimit: 7,     // 囲みがこの数を超えたらゲームオーバー
+      chaseRadius: 5.0,     // 少年がこの距離に入ると追尾を開始
+      chaseSpeed: 1.15,     // 追尾速度（少年より少し遅い）
+      colorCycle: ['Pen.glb','Pen_b.glb','Pen_r.glb','Pen_y.glb','Pen_g.glb'],
+      colorIdx: 0
+    };
+
     // ---- GLTF loader (shared) ----
     let penguin = null; const penguins = [];
     let gltfLoader = new GLTFLoader();
@@ -296,7 +335,8 @@
       sit:    'ちょときゅうけい',
       pond:   'ちょとあつい',
       neco:   'ネコみよっと',
-      sharon: 'シャロンみよっと'
+      sharon: 'シャロンみよっと',
+      chase:  'あそぼっと'
     };
     function ensureBubble(p){ if (!p.userData.bubbleEl) { const el = document.createElement('div'); el.className='bubble'; document.body.appendChild(el); p.userData.bubbleEl = el; } return p.userData.bubbleEl; }
     function setBubble(p, state){ const el = ensureBubble(p); el.textContent = commentMap[state] || ''; el.style.opacity = el.textContent ? 1 : 0; }
@@ -347,10 +387,23 @@
       });
     }
 
-    function fallbackPenguin() {
+    const FALLBACK_COLORS = {
+      'Pen.glb':   { body: 0x4b4f57, belly: 0xe9e9ee },
+      'Pen_b.glb': { body: 0x4f7bd6, belly: 0xe9eeff },
+      'Pen_r.glb': { body: 0xe06aa0, belly: 0xffe9f2 },
+      'Pen_y.glb': { body: 0xe0c24f, belly: 0xfff7e0 },
+      'Pen_g.glb': { body: 0x5fb56a, belly: 0xe9ffe9 }
+    };
+    function fallbackPenguin(url) {
+      const c = FALLBACK_COLORS[url] || FALLBACK_COLORS['Pen.glb'];
       const g = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 18), new THREE.MeshStandardMaterial({ color: 0x4b4f57 })); body.scale.set(1, 1.4, 1); body.position.y = 1.2; g.add(body);
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 24, 18), new THREE.MeshStandardMaterial({ color: 0x1f2124 })); head.position.set(0, 2.05, 0.05); g.add(head);
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 18), new THREE.MeshStandardMaterial({ color: c.body })); body.scale.set(1, 1.4, 1); body.position.y = 1.2; g.add(body);
+      const belly = new THREE.Mesh(new THREE.SphereGeometry(0.62, 24, 18), new THREE.MeshStandardMaterial({ color: c.belly })); belly.scale.set(0.85, 1.25, 0.7); belly.position.set(0, 1.15, 0.42); g.add(belly);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 24, 18), new THREE.MeshStandardMaterial({ color: c.body })); head.position.set(0, 2.05, 0.05); g.add(head);
+      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.34, 12), new THREE.MeshStandardMaterial({ color: 0xf2a73e })); beak.rotation.x = Math.PI/2; beak.position.set(0, 2.0, 0.5); g.add(beak);
+      const eyeMat = new THREE.MeshStandardMaterial({ color: 0x111 });
+      const eL = new THREE.Mesh(new THREE.SphereGeometry(0.06,10,8), eyeMat); eL.position.set(-0.16, 2.15, 0.42); g.add(eL);
+      const eR = eL.clone(); eR.position.x = 0.16; g.add(eR);
       g.userData = { speed: 0, state: 'idle', target: new THREE.Vector3(), timer: 0 };
       return g;
     }
@@ -369,7 +422,7 @@
     const GATE_EPS = 0.35;
     const GATE_FRONT_Z = RIGHT_WALL_Z_MAX + 0.2;
     const GATE_BACK_Z  = RIGHT_WALL_Z_MIN - 0.2;
-    const doorWaypoint = (from, to) => null; // 左側は自由通行
+    // （左側は壁が無く自由通行。回り込みは右ガラス壁のみ pathAroundRightWall で処理）
 
     function pathAroundRightWall(from, to){
       const crosses = ((from.x <= RIGHT_WALL_X && to.x > RIGHT_WALL_X) || (from.x >= RIGHT_WALL_X && to.x < RIGHT_WALL_X));
@@ -395,7 +448,9 @@
     }
 
     function chooseNextAction(p){
-      if (!p) return; const r = Math.random();
+      if (!p) return;
+      if (GAME.enabled && GAME.running){ setState(p,'chase'); return; }
+      const r = Math.random();
       if (r < 0.27) setState(p,'wander');
       else if (r < 0.42) setState(p,'lounge');
       else if (r < 0.49) setState(p,'play');
@@ -474,6 +529,12 @@
         if (requestResource(p,'sleep')) { setRoute(p, new THREE.Vector3(BED_SLEEP.x, 0, BED_SLEEP.z)); ud.goingToBed = true; }
         else { final = 'sleepWait'; setRoute(p, queueWaitPos('sleep',p)); bubbleKey = 'sleep'; }
       }
+      else if(state === 'chase'){
+        ud.speed = GAME.chaseSpeed;
+        // 追尾はリソースキューに関与しない（dequeueAllは冒頭で実行済み）
+        if (boyRef) { setRoute(p, boyRef.position.clone()); }
+        else { final = 'wander'; setRoute(p, randomPointNear(p.position.x, p.position.z, 5)); }
+      }
       else if(state === 'wake'){ ud.speed = 0; }
 
       ud.state = final;
@@ -495,8 +556,10 @@
 
       if (ud.state !== 'sit' && ud.state !== 'sleep') { p.position.y = Math.max(0, Math.sin(performance.now()/1000*6)*0.03); }
 
-      if ([ 'wander','play','playBlocks','eat','window','pond','neco','sharon',
+      if ([ 'wander','play','playBlocks','eat','window','pond','neco','sharon','chase',
             'playWait','playBlocksWait','eatWait','pondWait','necoWait','sharonWait','sleepWait' ].includes(ud.state) || (ud.state==='sleep' && ud.goingToBed)) {
+        // chase 中は毎フレーム少年の現在位置を狙い続ける
+        if (ud.state === 'chase' && boyRef) { ud.way = []; ud.target.copy(boyRef.position); }
         const target = ud.target;
         const v = new THREE.Vector3(target.x - p.position.x, 0, target.z - p.position.z);
 
@@ -579,6 +642,9 @@
             if (!ud.arrived) { ud.arrived = true; ud.timer = 0; spawnSplash(p.position.clone().setY(0.08), 8); }
             p.position.y = Math.sin(performance.now()/1000 * 8) * 0.03;
             if (ud.timer > (1.4 + Math.random()*0.8)) { p.position.y = 0; releaseResource('pond'); chooseNextAction(p); }
+          } else if (ud.state === 'chase') {
+            // 少年に追いついた（密着）状態。何もしない＝張り付く。
+            // 少年が動けば retarget 側で再び追う。
           }
         }
       } else if (ud.state === 'lounge') {
@@ -687,7 +753,34 @@
           boyCurrent = boyActions.idle;
           mixers.push(boyMixer);
         }
-      }, undefined, (err)=>console.warn('boy2.glb load error', err));
+      }, undefined, (err)=>{
+        console.warn('boy2.glb load error -> fallback boy', err);
+        spawnFallbackBoy(pos);
+      });
+    }
+
+    function spawnFallbackBoy(pos){
+      const boy = new THREE.Group();
+      const skin = new THREE.MeshStandardMaterial({ color: 0xf2c9a0 });
+      const shirt = new THREE.MeshStandardMaterial({ color: 0x5aa9c9 });
+      const pants = new THREE.MeshStandardMaterial({ color: 0x33373d });
+      const hair  = new THREE.MeshStandardMaterial({ color: 0x3a2a22 });
+      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.28, 0.8, 16), shirt); torso.position.y = 1.15; boy.add(torso);
+      const hips  = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.24, 0.5, 16), pants); hips.position.y = 0.6; boy.add(hips);
+      const head  = new THREE.Mesh(new THREE.SphereGeometry(0.3, 20, 16), skin); head.position.y = 1.78; boy.add(head);
+      const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.32, 20, 16, 0, Math.PI*2, 0, Math.PI*0.6), hair); hairCap.position.y = 1.82; boy.add(hairCap);
+      const legGeo = new THREE.CylinderGeometry(0.1,0.09,0.55,12);
+      const legL = new THREE.Mesh(legGeo, pants); legL.position.set(-0.13,0.28,0); boy.add(legL);
+      const legR = legL.clone(); legR.position.x = 0.13; boy.add(legR);
+      const armGeo = new THREE.CylinderGeometry(0.08,0.07,0.6,12);
+      const armL = new THREE.Mesh(armGeo, shirt); armL.position.set(-0.42,1.2,0); armL.rotation.z = 0.12; boy.add(armL);
+      const armR = armL.clone(); armR.position.x = 0.42; armR.rotation.z = -0.12; boy.add(armR);
+      boy.position.copy(pos);
+      boy.userData = { bubbleOffsetY: 2.3, _fallback: true };
+      scene.add(boy);
+      boyRef = boy;
+      boyBaseYaw = 0;
+      // フォールバックboyはmixer無し。setBoyAnimは安全に無視される。
     }
 
     // --- WASD & タップ移動 ---
@@ -752,7 +845,7 @@
         boyRef.position.addScaledVector(fwd, BOY_SPEED * dt);
         boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, bounds.xMin, bounds.xMax);
         boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, bounds.zMin, bounds.zMax);
-        boyRef.position.y = 0;
+        boyRef.position.y = boyRef.userData._fallback ? Math.abs(Math.sin(performance.now()/1000*10))*0.06 : 0;
         setBoyAnim('walk');
         return;
       }
@@ -765,10 +858,11 @@
           boyRef.position.addScaledVector(v, Math.min(BOY_SPEED * dt, dist));
           boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, bounds.xMin, bounds.xMax);
           boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, bounds.zMin, bounds.zMax);
-          boyRef.position.y = 0;
+          boyRef.position.y = boyRef.userData._fallback ? Math.abs(Math.sin(performance.now()/1000*10))*0.06 : 0;
           setBoyAnim('walk');
         } else {
           boyTapTarget = null;
+          if (boyRef.userData._fallback) boyRef.position.y = 0;
           setBoyAnim('idle');
         }
         return;
@@ -891,6 +985,9 @@
 
       // boy
       updateBoy(dt);
+
+      // ペンギンまみれ: ゲーム進行
+      updateGame(dt);
 
       const t = performance.now()/1000;
 
@@ -1029,7 +1126,7 @@
     function spawn(url, start){
       loadPenguin(url)
         .then((g)=>{ if (start) g.position.copy(start); scene.add(g); penguins.push(g); if (!penguin) penguin = g; setState(g,'wander'); })
-        .catch(()=>{ const fb=fallbackPenguin(); if (start) fb.position.copy(start); scene.add(fb); penguins.push(fb); if (!penguin) penguin = fb; setState(fb,'wander'); });
+        .catch(()=>{ const fb=fallbackPenguin(url); if (start) fb.position.copy(start); scene.add(fb); penguins.push(fb); if (!penguin) penguin = fb; setState(fb,'wander'); });
     }
     const STANDARD = ['Pen.glb','Pen_b.glb','Pen_r.glb','Pen_y.glb','Pen_g.glb'];
     if (modelUrl && !STANDARD.includes(modelUrl)) { spawn(modelUrl, new THREE.Vector3(-1,0,0)); }
@@ -1040,7 +1137,103 @@
       'Pen_y.glb': [ new THREE.Vector3( 0.0,0, 2.0), new THREE.Vector3( 1.0,0, 2.4) ],
       'Pen_g.glb': [ new THREE.Vector3( 2.5,0, 2.0), new THREE.Vector3( 3.3,0, 1.0) ]
     };
-    STANDARD.forEach((u)=> startsMap[u].forEach(pos => spawn(u, pos)));
+    if (!GAME.enabled){
+      STANDARD.forEach((u)=> startsMap[u].forEach(pos => spawn(u, pos)));
+    }
+
+    // ===== ペンギンまみれ: ゲームロジック =====
+    function gameSpawnOne(){
+      const url = GAME.colorCycle[GAME.colorIdx % GAME.colorCycle.length];
+      GAME.colorIdx++;
+      // 少年から少し離れた場所（部屋の縁寄り）に出現させる
+      let sx, sz, tries = 0;
+      do {
+        sx = THREE.MathUtils.lerp(bounds.xMin+1, bounds.xMax-1, Math.random());
+        sz = THREE.MathUtils.lerp(bounds.zMin+1, bounds.zMax-1, Math.random());
+        tries++;
+      } while (boyRef && Math.hypot(sx-boyRef.position.x, sz-boyRef.position.z) < 6 && tries < 12);
+      spawn(url, new THREE.Vector3(sx, 0, sz));
+    }
+
+    function countSurrounding(){
+      if (!boyRef) return 0;
+      let c = 0;
+      for (const p of penguins){
+        if (p.position.distanceTo(boyRef.position) <= GAME.surroundRadius) c++;
+      }
+      return c;
+    }
+
+    function startGame(){
+      // 既存ペンギンを消す
+      for (const p of penguins){
+        if (p.userData && p.userData.bubbleEl){ p.userData.bubbleEl.remove(); }
+        scene.remove(p);
+      }
+      penguins.length = 0; penguin = null;
+      // リソースキューをクリア
+      for (const k in RES){ if (RES[k]){ RES[k].holder = null; RES[k].queue = []; } }
+
+      GAME.over = false; GAME.running = true; GAME.elapsed = 0;
+      GAME.spawnTimer = 0; GAME.colorIdx = 0;
+      GAME.startTime = performance.now();
+
+      $('gStart').style.display = 'none';
+      $('gOver').style.display = 'none';
+      $('gScore').style.display = 'block';
+
+      // 初期ペンギン
+      for (let i=0;i<GAME.initialCount;i++) gameSpawnOne();
+    }
+
+    function endGame(){
+      GAME.running = false; GAME.over = true;
+      $('gResult').textContent = GAME.elapsed.toFixed(1);
+      $('gResultSub').textContent = 'ペンギン ' + penguins.length + ' 羽に囲まれた';
+      $('gOver').style.display = 'flex';
+      $('gScore').style.display = 'none';
+    }
+
+    function updateGame(dt){
+      if (!GAME.enabled || !GAME.running) return;
+      GAME.elapsed = (performance.now() - GAME.startTime) / 1000;
+
+      // 増殖
+      GAME.spawnTimer += dt;
+      if (GAME.spawnTimer >= GAME.spawnEvery){
+        GAME.spawnTimer -= GAME.spawnEvery;
+        gameSpawnOne();
+      }
+
+      // 追尾の発火: chaseRadius 内に少年が入ったペンギンを chase に
+      if (boyRef){
+        for (const p of penguins){
+          const ud = p.userData; if (!ud) continue;
+          if (ud.state === 'chase') continue;
+          if (p.position.distanceTo(boyRef.position) <= GAME.chaseRadius){
+            setState(p, 'chase');
+          }
+        }
+      }
+
+      // HUD更新
+      const surrounded = countSurrounding();
+      $('gTime').textContent = GAME.elapsed.toFixed(1);
+      $('gCount').textContent = 'ペンギン ' + penguins.length + ' / 囲まれ ' + surrounded;
+
+      // ゲームオーバー判定
+      if (surrounded >= GAME.surroundLimit){ endGame(); }
+    }
+
+    // ボタン配線
+    (function wireGameUI(){
+      const sb = $('gStartBtn'); if (sb) sb.addEventListener('click', startGame);
+      const rb = $('gRetryBtn'); if (rb) rb.addEventListener('click', startGame);
+      if (GAME.enabled){
+        $('gStart').style.display = 'flex';
+        const hud = document.querySelector('.hud'); if (hud) hud.textContent = 'クリック/タップ・WASDで逃げろ';
+      }
+    })();
 
     // ---- Console helpers ----
     window.__penguin = { scene, camera, setState, chooseNextAction, get penguin(){ return penguin; }, get penguins(){ return penguins; } };
