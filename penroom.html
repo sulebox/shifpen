@@ -300,7 +300,8 @@
       initialCount: 3,      // 開始時の羽数
       surroundRadius: 2.2,  // この距離内にいるペンギンを「囲み」とカウント
       surroundLimit: 7,     // 囲みがこの数を超えたらゲームオーバー
-      chaseRadius: 5.0,     // 少年がこの距離に入ると追尾を開始
+      trigger: 'greet',     // 'greet'=挨拶した子が追尾 / 'radius'=距離で追尾
+      chaseRadius: 5.0,     // trigger:'radius' のときの発火距離
       chaseSpeed: 1.15,     // 追尾速度（少年より少し遅い）
       colorCycle: ['Pen.glb','Pen_b.glb','Pen_r.glb','Pen_y.glb','Pen_g.glb'],
       colorIdx: 0
@@ -1035,19 +1036,33 @@
       // --- greeting boy ---
       if (boyRef && penguins.length){
         let nearest = null, minD = Infinity;
-        for (const p of penguins){ const d = p.position.distanceTo(boyRef.position); if (d < minD){ minD = d; nearest = p; } }
+        const greetMode = (GAME.enabled && GAME.running && GAME.trigger === 'greet');
+        for (const p of penguins){
+          // ゲームの挨拶ロックオン方式では、追尾中の子は挨拶対象から外す
+          if (greetMode && p.userData.state === 'chase') continue;
+          const d = p.position.distanceTo(boyRef.position); if (d < minD){ minD = d; nearest = p; }
+        }
         if (nearest && minD <= GREET_RADIUS && greetTimer <= 0){
           greetTimer = 1.8;
           lastGreetedPenguin = nearest;
           setBubbleText(nearest, 'こんこん');
           setBubbleText(boyRef, 'こんこん＾＾');
+          // ペンギンまみれ: 挨拶した子がロックオン＝追尾開始
+          if (GAME.enabled && GAME.running && GAME.trigger === 'greet' && nearest.userData.state !== 'chase'){
+            nearest.userData.greetedLock = true;
+            setState(nearest, 'chase');
+          }
         }
         if (greetTimer > 0){
           greetTimer -= dt;
           updateBubblePositionFor(boyRef);
           if (lastGreetedPenguin) updateBubblePositionFor(lastGreetedPenguin);
           if (greetTimer <= 0){
-            if (lastGreetedPenguin) setBubbleText(lastGreetedPenguin, '');
+            if (lastGreetedPenguin){
+              // 追尾中の子は『あそぼっと』に戻す。それ以外は消す。
+              if (lastGreetedPenguin.userData.state === 'chase') setBubbleText(lastGreetedPenguin, 'あそぼっと');
+              else setBubbleText(lastGreetedPenguin, '');
+            }
             setBubbleText(boyRef, '');
             lastGreetedPenguin = null;
           }
@@ -1205,8 +1220,8 @@
         gameSpawnOne();
       }
 
-      // 追尾の発火: chaseRadius 内に少年が入ったペンギンを chase に
-      if (boyRef){
+      // 追尾の発火（trigger:'radius' のときのみ。'greet' は挨拶側で発火）
+      if (boyRef && GAME.trigger === 'radius'){
         for (const p of penguins){
           const ud = p.userData; if (!ud) continue;
           if (ud.state === 'chase') continue;
