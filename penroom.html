@@ -320,6 +320,15 @@
 
     // === 可動範囲を右庭まで拡張 ===
     const bounds = { xMin: -16, xMax: 17, zMin: -7, zMax: 15 };
+    // 少年の行動範囲: 通常は全域(bounds)、ゲーム中は部屋の中だけに閉じ込める
+    const ROOM_BOUNDS = { xMin: -8.5, xMax: 8.5, zMin: -6.5, zMax: 6.5 };
+    function boyBounds(){ return (GAME.enabled && GAME.running) ? ROOM_BOUNDS : bounds; }
+    function clampBoy(){
+      if (!boyRef) return;
+      const b = boyBounds();
+      boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, b.xMin, b.xMax);
+      boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, b.zMin, b.zMax);
+    }
     const targetHeight = 2.2;
     const HEADING_OFFSET = Math.PI;
 
@@ -337,7 +346,7 @@
       pond:   'ちょとあつい',
       neco:   'ネコみよっと',
       sharon: 'シャロンみよっと',
-      chase:  'あそぼっと'
+      chase:  'ねぇ、あそぼ'
     };
     function ensureBubble(p){ if (!p.userData.bubbleEl) { const el = document.createElement('div'); el.className='bubble'; document.body.appendChild(el); p.userData.bubbleEl = el; } return p.userData.bubbleEl; }
     function setBubble(p, state){ const el = ensureBubble(p); el.textContent = commentMap[state] || ''; el.style.opacity = el.textContent ? 1 : 0; }
@@ -850,8 +859,7 @@
         const fwd = new THREE.Vector3(0,0,1).applyQuaternion(boyRef.quaternion);
         fwd.y = 0; fwd.normalize();
         boyRef.position.addScaledVector(fwd, BOY_SPEED * dt);
-        boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, bounds.xMin, bounds.xMax);
-        boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, bounds.zMin, bounds.zMax);
+        clampBoy();
         boyRef.position.y = boyRef.userData._fallback ? Math.abs(Math.sin(performance.now()/1000*10))*0.06 : 0;
         setBoyAnim('walk');
         return;
@@ -863,8 +871,7 @@
           v.normalize();
           boyRef.rotation.y = Math.atan2(v.x, v.z);
           boyRef.position.addScaledVector(v, Math.min(BOY_SPEED * dt, dist));
-          boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, bounds.xMin, bounds.xMax);
-          boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, bounds.zMin, bounds.zMax);
+          clampBoy();
           boyRef.position.y = boyRef.userData._fallback ? Math.abs(Math.sin(performance.now()/1000*10))*0.06 : 0;
           setBoyAnim('walk');
         } else {
@@ -1066,7 +1073,7 @@
           if (greetTimer <= 0){
             if (lastGreetedPenguin){
               // 追尾中の子は『あそぼっと』に戻す。それ以外は消す。
-              if (lastGreetedPenguin.userData.state === 'chase') setBubbleText(lastGreetedPenguin, 'あそぼっと');
+              if (lastGreetedPenguin.userData.state === 'chase') setBubbleText(lastGreetedPenguin, 'ねぇ、あそぼ');
               else setBubbleText(lastGreetedPenguin, '');
             }
             setBubbleText(boyRef, '');
@@ -1166,7 +1173,7 @@
     function gameSpawnOne(){
       const url = GAME.colorCycle[GAME.colorIdx % GAME.colorCycle.length];
       GAME.colorIdx++;
-      // 少年から少し離れた場所（部屋の縁寄り）に出現させる
+      // 少年から少し離れた場所（庭含む全域）に出現。ペンギンはうろついて部屋に入ってくる
       let sx, sz, tries = 0;
       do {
         sx = THREE.MathUtils.lerp(bounds.xMin+1, bounds.xMax-1, Math.random());
@@ -1202,6 +1209,9 @@
       $('gStart').style.display = 'none';
       $('gOver').style.display = 'none';
       $('gScore').style.display = 'block';
+
+      // 少年を部屋の中央あたりに配置（庭にいた場合の瞬間ワープ防止）
+      if (boyRef){ boyRef.position.set(0, 0, 2); boyTapTarget = null; }
 
       // 初期ペンギン
       for (let i=0;i<GAME.initialCount;i++) gameSpawnOne();
