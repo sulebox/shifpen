@@ -450,7 +450,13 @@
 
     function chooseNextAction(p){
       if (!p) return;
-      if (GAME.enabled && GAME.running){ setState(p,'chase'); return; }
+      if (GAME.enabled && GAME.running){
+        // radius方式: 全員 chase に寄せる（距離トリガーは updateGame 側でも発火）
+        if (GAME.trigger === 'radius'){ setState(p,'chase'); return; }
+        // greet方式: 一度ロックオンされた子だけ chase を維持。未挨拶の子は普通にうろつく。
+        if (p.userData.greetedLock){ setState(p,'chase'); return; }
+        // 未挨拶の子はそのまま下のランダム行動へ（挨拶でロックオンされるまで自由）
+      }
       const r = Math.random();
       if (r < 0.27) setState(p,'wander');
       else if (r < 0.42) setState(p,'lounge');
