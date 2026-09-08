@@ -3695,5 +3695,287 @@ function installDayNight() {
 if(window.__penguin) installDayNight();
 else window.addEventListener('load',installDayNight,{once:true});
 </script>
+<!-- SHIFPEN GARDEN LIGHTS & GREETINGS v56 -->
+<script type="module">
+import * as THREE from 'three';
+
+function installGardenMeet() {
+  const api=window.__penguin;
+  if(!api?.renderer || window.__shifpenGardenMeet) return;
+  window.__shifpenGardenMeet=true;
+
+  const {scene,camera,renderer}=api;
+  const canvas=renderer.domElement;
+  const group=new THREE.Group();
+  group.name='Extra garden lamps';
+  scene.add(group);
+
+  const copies=[];
+  let lampsReady=false;
+
+  // 既存ライトをお手本に、池のそばと右のお庭へ追加。
+  function addLamps() {
+    if(lampsReady) return;
+    const source=scene.getObjectByName('Evening lights');
+    const templates=source?.children.filter(o=>
+      Math.abs(o.position.x-5.2)<.01 &&
+      Math.abs(o.position.z-8.2)<.01
+    );
+    if(!templates?.some(o=>o.isPointLight)) return;
+
+    let glass;
+    scene.getObjectByName('Garden')?.traverse(o=>{
+      if(o.material?.emissive?.getHex()===0xffc36c) {
+        glass=o.material;
+      }
+    });
+    if(!glass) return;
+    lampsReady=true;
+
+    const dark=new THREE.MeshStandardMaterial({
+      color:0x263d38,roughness:.83
+    });
+
+    function cylinder(x,y,z,r,h,material) {
+      const mesh=new THREE.Mesh(
+        new THREE.CylinderGeometry(r,r,h,16),material
+      );
+      mesh.position.set(x,y,z);
+      mesh.receiveShadow=true;
+      group.add(mesh);
+    }
+
+    for(const [x,z] of [[-4.8,11.8],[12.8,10.8]]) {
+      cylinder(x,.3,z,.055,.6,dark);
+      cylinder(x,.7,z,.19,.28,glass);
+      cylinder(x,.86,z,.25,.05,dark);
+
+      for(let i=0;i<4;i++) {
+        const a=i*Math.PI/2;
+        const bar=new THREE.Mesh(
+          new THREE.BoxGeometry(.025,.31,.025),dark
+        );
+        bar.position.set(
+          x+Math.sin(a)*.17,.7,z+Math.cos(a)*.17
+        );
+        group.add(bar);
+      }
+
+      for(const template of templates) {
+        const copy=template.clone();
+        copy.position.x=x;
+        copy.position.z=z;
+        group.add(copy);
+        copies.push({template,copy});
+      }
+    }
+  }
+
+  function syncLamps() {
+    addLamps();
+    for(const {template,copy} of copies) {
+      copy.visible=template.visible;
+      if(copy.isLight) {
+        copy.intensity=template.intensity;
+        copy.color.copy(template.color);
+      }
+    }
+  }
+
+  const friends=[
+    {
+      id:'sharon',range:2.5,
+      say:'シャロンかわいい',reply:'♪'
+    },
+    {
+      id:'cheryl',range:2.4,
+      say:'ハチさんだ',reply:'フワフワ'
+    },
+    {
+      id:'oguru',range:3,
+      say:'オーグルおおきい',reply:'^^'
+    }
+  ].map(c=>({
+    ...c,near:new WeakMap(),next:0,root:null
+  }));
+
+  const active=new Map();
+  const cooldowns=new WeakMap(),heights=new WeakMap();
+  const world=new THREE.Vector3(),box=new THREE.Box3();
+
+  const style=document.createElement('style');
+  style.textContent=`
+    #shifpen-bubbles .shifpen-meet-muted {
+      opacity:0 !important;
+    }
+    #shifpen-bubbles .shifpen-meet {
+      position:absolute;
+      width:max-content;
+      max-width:none;
+      white-space:nowrap;
+      pointer-events:none;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // 会話用の吹き出しを重ね、元の行動やセリフはそのまま進める。
+  function say(root,text,now) {
+    const layer=document.getElementById('shifpen-bubbles');
+    if(!layer) return;
+
+    const el=document.createElement('div');
+    el.className='bubble shifpen-meet';
+    el.textContent=text;
+    el.style.opacity='1';
+    layer.appendChild(el);
+    active.set(root,{el,until:now+2.8,base:null});
+  }
+
+  function finish(root,s) {
+    s.base?.classList.remove('shifpen-meet-muted');
+    s.el.remove();
+    active.delete(root);
+  }
+
+  function headHeight(root) {
+    if(typeof root.userData.bubbleOffsetY==='number') {
+      return root.userData.bubbleOffsetY;
+    }
+    if(!root.userData.gardenResident) return 2.6;
+
+    if(!heights.has(root)) {
+      root.getWorldPosition(world);
+      const floor=world.y;
+      box.setFromObject(root);
+      heights.set(
+        root,
+        box.isEmpty()?2.6:Math.max(1.3,box.max.y-floor+.3)
+      );
+    }
+    return heights.get(root);
+  }
+
+  let nextScan=0;
+
+  function updateMeet(now) {
+    const penguins=api.penguins;
+
+    for(const [root,s] of active) {
+      if(now>=s.until || root.parent!==scene || !root.visible) {
+        finish(root,s);
+      }
+    }
+
+    if(now>=nextScan) {
+      nextScan=now+.12;
+      const candidates=[];
+
+      for(const f of friends) {
+        const root=scene.children.find(o=>
+          o.userData.gardenResident===f.id
+        );
+        if(root!==f.root) {
+          f.root=root;
+          f.near=new WeakMap();
+        }
+        if(!root?.visible) continue;
+
+        for(const p of penguins) {
+          if(p.parent!==scene || !p.visible) continue;
+
+          const d=Math.hypot(
+            p.position.x-root.position.x,
+            p.position.z-root.position.z
+          );
+
+          // 少し離れてから近づくと、また会話できる。
+          if(d>f.range+1) f.near.delete(p);
+
+          if(
+            d<=f.range &&
+            !f.near.has(p) &&
+            p.userData.state!=='sleep' &&
+            now>=f.next &&
+            now>=(cooldowns.get(p)||0) &&
+            !active.has(root) &&
+            !active.has(p)
+          ) {
+            candidates.push({f,p,d});
+          }
+        }
+      }
+
+      candidates.sort((a,b)=>a.d-b.d);
+
+      for(const {f,p} of candidates) {
+        if(active.has(f.root) || active.has(p)) continue;
+
+        say(p,f.say,now);
+        say(f.root,f.reply,now);
+        f.near.set(p,true);
+        f.next=now+6;
+        cooldowns.set(p,now+6);
+      }
+    }
+
+    for(const [root,s] of active) {
+      const base=root.userData.bubbleEl;
+      if(base!==s.base) {
+        s.base?.classList.remove('shifpen-meet-muted');
+        s.base=base;
+        s.base?.classList.add('shifpen-meet-muted');
+      }
+
+      const height=headHeight(root);
+      root.getWorldPosition(world);
+      world.y+=height;
+      world.project(camera);
+
+      s.el.style.visibility=(
+        world.z< -1 || world.z>1 ||
+        Math.abs(world.x)>1 || Math.abs(world.y)>1
+      )?'hidden':'visible';
+
+      s.el.style.left=(
+        canvas.offsetLeft+
+        (world.x*.5+.5)*canvas.clientWidth
+      )+'px';
+
+      s.el.style.top=(
+        canvas.offsetTop+
+        (-world.y*.5+.5)*canvas.clientHeight
+      )+'px';
+    }
+  }
+
+  const renderBefore=renderer.render.bind(renderer);
+  renderer.render=function(s,c) {
+    const here=s===scene && c===camera;
+    if(here) syncLamps();
+
+    const result=renderBefore(s,c);
+
+    if(here) {
+      syncLamps();
+      if(!document.hidden) {
+        updateMeet(performance.now()/1000);
+      }
+    }
+    return result;
+  };
+
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden) {
+      for(const [root,s] of active) finish(root,s);
+    }
+    nextScan=0;
+  });
+
+  syncLamps();
+}
+
+if(window.__penguin) installGardenMeet();
+else window.addEventListener('load',installGardenMeet,{once:true});
+</script>
 </body>
 </html>
