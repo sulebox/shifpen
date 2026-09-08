@@ -3389,5 +3389,311 @@ else window.addEventListener(
   'load',installFacingBubbleFix,{once:true}
 );
 </script>
+<!-- SHIFPEN DAY & NIGHT v55 -->
+<script type="module">
+import * as THREE from 'three';
+
+function installDayNight() {
+  const api=window.__penguin;
+  if(!api?.renderer || window.__shifpenDayNight) return;
+  window.__shifpenDayNight=true;
+
+  const {scene,camera,renderer}=api;
+  const C=hex=>new THREE.Color(hex);
+  const mix=THREE.MathUtils.lerp;
+  const smooth=THREE.MathUtils.smoothstep;
+  const mode=new URLSearchParams(location.search).get('lighting');
+
+  // 東京の太陽の高さ。端末のタイムゾーンに依存しないUTC計算。
+  // NOAA: https://gml.noaa.gov/grad/solcalc/solareqns.PDF
+  function sunHeight(ms) {
+    const d=new Date(ms),year=d.getUTCFullYear();
+    const start=Date.UTC(year,0,1);
+    const days=(Date.UTC(year+1,0,1)-start)/86400000;
+    const g=2*Math.PI*((ms-start)/86400000-.5)/days;
+    const sin=Math.sin,cos=Math.cos,rad=Math.PI/180;
+
+    const eq=229.18*(
+      .000075+.001868*cos(g)-.032077*sin(g)
+      -.014615*cos(2*g)-.040849*sin(2*g)
+    );
+    const dec=.006918-.399912*cos(g)+.070257*sin(g)
+      -.006758*cos(2*g)+.000907*sin(2*g)
+      -.002697*cos(3*g)+.00148*sin(3*g);
+
+    const minutes=d.getUTCHours()*60
+      +d.getUTCMinutes()+d.getUTCSeconds()/60;
+    const angle=((minutes+eq+4*139.6917)/4-180)*rad;
+    const lat=35.6895*rad;
+
+    return Math.asin(THREE.MathUtils.clamp(
+      sin(lat)*sin(dec)+cos(lat)*cos(dec)*cos(angle),
+      -1,1
+    ))/rad;
+  }
+
+  const skyDay=scene.background.clone();
+  const skyNight=C(0x152237),skyDusk=C(0xc3a3a0);
+  const lights=scene.children
+    .filter(o=>o.isHemisphereLight || o.isDirectionalLight)
+    .map(o=>({
+      o,
+      color:o.color.clone(),
+      power:o.intensity,
+      ground:o.isHemisphereLight?o.groundColor.clone():null,
+      night:C(o.isHemisphereLight?0x91afd5:0x8fabd8),
+      dusk:C(o.isHemisphereLight?0xffd7bb:0xffa35c),
+      low:o.isHemisphereLight ? .23 : o.castShadow ? .2 : .1
+    }));
+
+  const stage=scene.children.find(o=>
+    o.isMesh && o.geometry.type==='PlaneGeometry' &&
+    Math.abs(o.position.y+.74)<.01
+  );
+  const stageDay=stage?.material.color.clone();
+  const stageNight=C(0x35445e),groundNight=C(0x24324c);
+
+  const emissive=new Set(),waters=[],ripples=[];
+  for(const name of ['Garden','Garden room details']) {
+    scene.getObjectByName(name)?.traverse(o=>{
+      const m=o.material;
+      if(!m || Array.isArray(m)) return;
+
+      if(m.emissive &&
+        [0xffc36c,0xf1b560].includes(m.emissive.getHex())) {
+        emissive.add(m);
+      }
+
+      if(m.uniforms?.uDeep && m.uniforms?.uShallow) {
+        waters.push({
+          m,
+          deep:m.uniforms.uDeep.value.clone(),
+          shallow:m.uniforms.uShallow.value.clone()
+        });
+        m.uniforms.uNight={value:0};
+        m.fragmentShader='uniform float uNight;\n'
+          +m.fragmentShader.replace(
+            'gl_FragColor=vec4(color,.91);',
+            'gl_FragColor=vec4(color*mix(1.0,.32,uNight),.91);'
+          );
+        m.needsUpdate=true;
+      }
+
+      if(m.isMeshBasicMaterial &&
+        o.geometry?.type==='RingGeometry') {
+        ripples.push({m,color:m.color.clone()});
+      }
+    });
+  }
+
+  const glowMaterials=[...emissive].map(m=>({
+    m,day:m.emissiveIntensity
+  }));
+  const deepNight=C(0x163747);
+  const shallowNight=C(0x52737c),rippleNight=C(0x779fac);
+
+  const nightGroup=new THREE.Group();
+  nightGroup.name='Evening lights';
+  scene.add(nightGroup);
+
+  const addedLights=[];
+  function point(x,y,z,power,range) {
+    const light=new THREE.PointLight(0xffcc8a,0,range,2);
+    light.position.set(x,y,z);
+    light.castShadow=false;
+    nightGroup.add(light);
+    addedLights.push({light,power});
+  }
+
+  // 室内全体は暖かく。追加ライトでは影の描画を増やさない。
+  point(-4,4.3,-1,95,11);
+  point(4,4.3,-1,95,11);
+
+  const tableLamp=scene.getObjectByName('Garden room details')
+    ?.children.find(o=>o.isPointLight);
+  const tablePower=tableLamp?.intensity??0;
+
+  // 外部画像を使わず、やわらかな光のにじみを作る。
+  const size=64,pixels=new Uint8Array(size*size*4);
+  for(let y=0;y<size;y++) for(let x=0;x<size;x++) {
+    const i=(y*size+x)*4;
+    const r=Math.hypot(
+      (x+.5-size/2)/(size/2),
+      (y+.5-size/2)/(size/2)
+    );
+    pixels[i]=pixels[i+1]=pixels[i+2]=255;
+    pixels[i+3]=Math.round(
+      255*Math.pow(Math.max(0,1-r),2)
+    );
+  }
+
+  const texture=new THREE.DataTexture(pixels,size,size);
+  texture.minFilter=texture.magFilter=THREE.LinearFilter;
+  texture.needsUpdate=true;
+
+  const glowMat=new THREE.MeshBasicMaterial({
+    map:texture,color:0xffbf70,
+    transparent:true,opacity:0,
+    blending:THREE.AdditiveBlending,
+    depthWrite:false,toneMapped:false
+  });
+  const haloMat=new THREE.SpriteMaterial({
+    map:texture,color:0xffd9a1,
+    transparent:true,opacity:0,
+    blending:THREE.AdditiveBlending,
+    depthWrite:false,toneMapped:false
+  });
+
+  const glowPlanes=[];
+  function glow(x,y,z,w,h,floor=false) {
+    const p=new THREE.Mesh(
+      new THREE.PlaneGeometry(w,h),glowMat
+    );
+    p.position.set(x,y,z);
+    if(floor) p.rotation.x=-Math.PI/2;
+    p.renderOrder=1;
+    nightGroup.add(p);
+    glowPlanes.push(p);
+  }
+
+  for(const [x,z] of [
+    [5.2,8.2],[6.3,12.5],[-7.8,12.7],[-12.5,6.5]
+  ]) {
+    point(x,.82,z,5,4.2);
+    glow(x,.026,z,4.8,4.8,true);
+
+    const halo=new THREE.Sprite(haloMat);
+    halo.position.set(x,.72,z);
+    halo.scale.set(.9,.9,1);
+    nightGroup.add(halo);
+    glowPlanes.push(halo);
+  }
+
+  // 壁に小さな照明を追加。
+  const brass=new THREE.MeshStandardMaterial({
+    color:0xb88a51,roughness:.45,metalness:.45
+  });
+  const shade=new THREE.MeshStandardMaterial({
+    color:0xffecd0,emissive:0xffc578,
+    emissiveIntensity:0,roughness:.65
+  });
+
+  for(const x of [-7.5,6.5]) {
+    const mount=new THREE.Mesh(
+      new THREE.BoxGeometry(.32,.7,.12),brass
+    );
+    mount.position.set(x,3.85,-6.65);
+    nightGroup.add(mount);
+
+    const bulb=new THREE.Mesh(
+      new THREE.SphereGeometry(.26,16,10),shade
+    );
+    bulb.scale.set(.8,1.15,.8);
+    bulb.position.set(x,3.9,-6.35);
+    nightGroup.add(bulb);
+    glow(x,3.9,-6.57,2.2,2.7);
+  }
+
+  const style=document.createElement('style');
+  style.textContent=`
+    .room-title {
+      color:var(--shifpen-title,#36524b);
+    }
+    html,body {
+      background:var(--shifpen-page,#f6e6c9);
+    }
+  `;
+  document.head.appendChild(style);
+
+  const titleDay=C(0x36524b),titleNight=C(0xe3dcca);
+  const title=new THREE.Color();
+  const pageDay=C(0xf6e6c9),page=new THREE.Color();
+  let lastSecond=null;
+
+  function updateTime() {
+    const now=Date.now(),second=Math.floor(now/1000);
+    if(second===lastSecond) return;
+    lastSecond=second;
+
+    const altitude=mode==='night' ? -20
+      : mode==='day' ? 30
+      : mode==='sunset' ? 0
+      : sunHeight(now);
+
+    const night=1-smooth(altitude,-5,8);
+    const lamps=1-smooth(altitude,-.833,4);
+    const dusk=Math.exp(-Math.pow((altitude-2)/6,2));
+
+    scene.background.copy(skyDay)
+      .lerp(skyDusk,dusk*.65).lerp(skyNight,night);
+
+    for(const s of lights) {
+      s.o.intensity=mix(s.power,s.low,night);
+      s.o.color.copy(s.color)
+        .lerp(s.dusk,dusk*.8).lerp(s.night,night*night);
+      if(s.ground) {
+        s.o.groundColor.copy(s.ground)
+          .lerp(groundNight,night);
+      }
+    }
+
+    if(stage) {
+      stage.material.color.copy(stageDay)
+        .lerp(stageNight,night);
+    }
+
+    for(const {light,power} of addedLights) {
+      light.intensity=power*lamps;
+      light.visible=lamps>.001;
+    }
+    if(tableLamp) {
+      tableLamp.intensity=mix(tablePower,10,lamps);
+    }
+    for(const {m,day} of glowMaterials) {
+      m.emissiveIntensity=mix(day,2.2,lamps);
+    }
+
+    shade.emissiveIntensity=lamps*2;
+    glowMat.opacity=lamps*.4;
+    haloMat.opacity=lamps*.6;
+    for(const o of glowPlanes) o.visible=lamps>.001;
+
+    for(const {m,deep,shallow} of waters) {
+      m.uniforms.uDeep.value.copy(deep)
+        .lerp(deepNight,night);
+      m.uniforms.uShallow.value.copy(shallow)
+        .lerp(shallowNight,night);
+      m.uniforms.uNight.value=night;
+    }
+    for(const {m,color} of ripples) {
+      m.color.copy(color).lerp(rippleNight,night);
+    }
+
+    title.copy(titleDay).lerp(titleNight,night);
+    page.copy(pageDay).lerp(skyNight,night);
+    document.documentElement.style.setProperty(
+      '--shifpen-title','#'+title.getHexString()
+    );
+    document.documentElement.style.setProperty(
+      '--shifpen-page','#'+page.getHexString()
+    );
+  }
+
+  const renderBefore=renderer.render.bind(renderer);
+  renderer.render=function(s,c) {
+    if(s===scene && c===camera) updateTime();
+    return renderBefore(s,c);
+  };
+
+  document.addEventListener('visibilitychange',()=>{
+    lastSecond=null;
+    updateTime();
+  });
+  updateTime();
+}
+
+if(window.__penguin) installDayNight();
+else window.addEventListener('load',installDayNight,{once:true});
+</script>
 </body>
 </html>
