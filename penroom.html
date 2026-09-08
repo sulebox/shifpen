@@ -3,47 +3,208 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>Penguin Room / ペンギンまみれ — penroom.html (v50)</title>
+  <title>シフペンの部屋 — お庭のある暮らし</title>
+  <meta name="description" content="シフペンたちがのんびり暮らす、木のお部屋と小さなお庭。" />
   <style>
-    html, body { height: 100%; margin: 0; background: #f6e6c9; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      overflow: hidden;
+      height: 100%;
+      margin: 0;
+      background: #f6e6c9;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
     #app { position: fixed; inset: 0; }
-    .hud { position: fixed; left: 12px; bottom: 12px; padding: 8px 10px; background: rgba(255,255,255,0.85); border-radius: 10px; font: 12px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; color: #333; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
-    .status { position: fixed; left: 12px; top: 12px; padding: 6px 8px; background: rgba(0,0,0,.6); color: #fff; border-radius: 8px; font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; white-space: pre-wrap; max-width: 60ch; }
+    .hud {
+      position: fixed; left: 12px; bottom: 12px;
+      padding: 8px 10px; background: rgba(255,255,255,0.85);
+      border-radius: 10px;
+      font: 12px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      color: #333; box-shadow: 0 4px 14px rgba(0,0,0,.08);
+    }
+    .status {
+      position: fixed; left: 12px; top: 12px;
+      padding: 6px 8px; background: rgba(0,0,0,.6);
+      color: #fff; border-radius: 8px;
+      font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      white-space: pre-wrap; max-width: 60ch;
+    }
     .picker { position: fixed; right: 12px; top: 12px; }
-    .picker button { font: 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif; padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,.15); background: #fff; }
-    .drop { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; border: 2px dashed rgba(0,0,0,.15); border-radius: 16px; pointer-events: none; opacity: 0; transition: .2s; }
+    .picker button {
+      font: 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      padding: 6px 10px; border-radius: 10px;
+      border: 1px solid rgba(0,0,0,.15); background: #fff;
+    }
+    .drop {
+      position: fixed; inset: 0; display: flex;
+      align-items: center; justify-content: center;
+      border: 2px dashed rgba(0,0,0,.15); border-radius: 16px;
+      pointer-events: none; opacity: 0; transition: .2s;
+    }
     .drop.on { opacity: 1; }
     a { color: inherit; }
-    .bubble { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -100%); padding: 6px 10px; background: rgba(255,255,255,.95); border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.12); font: 12px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; pointer-events: none; transition: opacity .2s; }
-
-    /* ===== ペンギンまみれ ゲームUI ===== */
-    .g-score { position: fixed; right: 12px; top: 12px; padding: 8px 12px; background: rgba(0,0,0,.55); color:#fff; border-radius: 12px; font: 600 14px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; box-shadow: 0 4px 14px rgba(0,0,0,.18); display:none; text-align:right; }
+    .bubble {
+      position: fixed; left: 50%; top: 50%;
+      transform: translate(-50%, -100%);
+      padding: 6px 10px; background: rgba(255,255,255,.95);
+      border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.12);
+      font: 12px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+      pointer-events: none; transition: opacity .2s;
+    }
+    .g-score {
+      position: fixed; right: 12px; top: 12px;
+      padding: 8px 12px; background: rgba(0,0,0,.55);
+      color: #fff; border-radius: 12px;
+      font: 600 14px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+      box-shadow: 0 4px 14px rgba(0,0,0,.18);
+      display: none; text-align: right;
+    }
     .g-score .big { font-size: 20px; }
-    .g-over { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: rgba(20,16,10,.62); z-index: 50; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
-    .g-over .card { background: #fff; border-radius: 20px; padding: 28px 30px; text-align: center; box-shadow: 0 18px 50px rgba(0,0,0,.28); max-width: 80vw; }
-    .g-over h1 { margin: 0 0 6px; font: 800 26px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; color:#2b2b2b; }
-    .g-over p { margin: 4px 0 18px; font: 15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; color:#555; }
-    .g-over p .res { font-weight: 800; font-size: 22px; color:#e07a3e; }
-    .g-over button { font: 700 16px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; padding: 12px 26px; border-radius: 999px; border: none; background: #2bb3a3; color:#fff; box-shadow: 0 6px 16px rgba(43,179,163,.4); cursor:pointer; }
+    .g-over {
+      position: fixed; inset: 0; display: none;
+      align-items: center; justify-content: center;
+      flex-direction: column; background: rgba(20,16,10,.62);
+      z-index: 50; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+    }
+    .g-over .card {
+      background: #fff; border-radius: 20px;
+      padding: 28px 30px; text-align: center;
+      box-shadow: 0 18px 50px rgba(0,0,0,.28); max-width: 80vw;
+    }
+    .g-over h1 {
+      margin: 0 0 6px;
+      font: 800 26px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+      color: #2b2b2b;
+    }
+    .g-over p {
+      margin: 4px 0 18px;
+      font: 15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+      color: #555;
+    }
+    .g-over p .res { font-weight: 800; font-size: 22px; color: #e07a3e; }
+    .g-over button {
+      font: 700 16px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+      padding: 12px 26px; border-radius: 999px;
+      border: none; background: #2bb3a3; color: #fff;
+      box-shadow: 0 6px 16px rgba(43,179,163,.4); cursor: pointer;
+    }
     .g-over button:active { transform: translateY(1px); }
-    .g-start { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: rgba(246,230,201,.86); z-index: 50; }
-    .g-start .card { background:#fff; border-radius: 20px; padding: 26px 28px; text-align: center; box-shadow: 0 18px 50px rgba(0,0,0,.18); max-width: 80vw; }
-    .g-start h1 { margin: 0 0 8px; font: 800 24px/1.25 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; color:#2b2b2b; }
-    .g-start p { margin: 4px 0 18px; font: 14px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; color:#666; }
-    .g-start button { font: 700 16px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif; padding: 12px 30px; border-radius: 999px; border: none; background: #2bb3a3; color:#fff; box-shadow: 0 6px 16px rgba(43,179,163,.4); cursor:pointer; }
+    .g-start {
+      position: fixed; inset: 0; display: none;
+      align-items: center; justify-content: center;
+      flex-direction: column; background: rgba(246,230,201,.86); z-index: 50;
+    }
+    .g-start .card {
+      background: #fff; border-radius: 20px;
+      padding: 26px 28px; text-align: center;
+      box-shadow: 0 18px 50px rgba(0,0,0,.18); max-width: 80vw;
+    }
+    .g-start h1 {
+      margin: 0 0 8px;
+      font: 800 24px/1.25 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+      color: #2b2b2b;
+    }
+    .g-start p {
+      margin: 4px 0 18px;
+      font: 14px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+      color: #666;
+    }
+    .g-start button {
+      font: 700 16px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+      padding: 12px 30px; border-radius: 999px;
+      border: none; background: #2bb3a3; color: #fff;
+      box-shadow: 0 6px 16px rgba(43,179,163,.4); cursor: pointer;
+    }
+    body {
+      color: #354d47;
+      font-family: -apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+    }
+    .room-title {
+      position: fixed;
+      left: max(24px,env(safe-area-inset-left));
+      top: max(22px,env(safe-area-inset-top));
+      pointer-events: none; color: #36524b;
+    }
+    .room-title span {
+      display: block; font-size: 11px; font-weight: 600;
+      letter-spacing: .2em; margin-bottom: 7px;
+    }
+    .room-title strong { font-size: 20px; font-weight: 600; letter-spacing: .1em; }
+    .hud {
+      left: 50%; bottom: max(18px,env(safe-area-inset-bottom));
+      transform: translateX(-50%); padding: 11px 18px;
+      border: 1px solid #fff9; background: #fffaf0dc;
+      border-radius: 30px; color: #4f645a;
+      box-shadow: 0 4px 20px #344b3910;
+      font-size: 14px; white-space: nowrap; pointer-events: none;
+    }
+    .status {
+      left: 24px; top: 89px; color: #586957;
+      background: #fffaf0de; border: 1px solid #fff9;
+      font-size: 12px; max-width: calc(100vw - 72px);
+    }
+    .bubble {
+      color: #38574d; border: 1px solid #f4efdc;
+      background: #fffdf4f0; padding: 7px 11px;
+      border-radius: 13px; box-shadow: 0 3px 12px #34504414;
+      font-size: 12px; white-space: nowrap;
+    }
+    .g-start { background: #e8e9dcdd; }
+    .g-start .card,.g-over .card {
+      background: #fffdf4; border: 1px solid #e4dfcd; border-radius: 24px;
+    }
+    .g-start button,.g-over button { background: #39776c; box-shadow: 0 5px 16px #39776c26; }
+    button:focus-visible { outline: 3px solid #bd8750; outline-offset: 4px; }
+    #app canvas { display: block; touch-action: manipulation; }
+    @media(max-width:600px) {
+      .room-title {
+        left: max(18px,env(safe-area-inset-left));
+        top: max(18px,env(safe-area-inset-top));
+      }
+      .room-title strong { font-size: 18px; }
+      .room-title span { font-size: 10px; }
+      .status { left: 18px; top: 78px; font-size: 12px; }
+      .hud {
+        font-size: 12px; padding: 10px 14px;
+        bottom: max(16px,env(safe-area-inset-bottom));
+      }
+      .bubble { font-size: 11px; padding: 5px 8px; }
+    }
+    @media(prefers-reduced-motion:reduce) {
+      .bubble,.drop { transition: none; }
+    }
   </style>
 </head>
 <body>
-  <div id="app"></div>
-  <div class="status" id="status">初期化中…</div>
+  <div id="app" aria-label="シフペンの部屋とお庭"></div>
+  <div class="room-title">
+    <span>SHIFPEN’S HOME</span>
+    <strong>シフペンの部屋</strong>
+  </div>
+  <div class="status" id="status" role="status">お部屋を準備しています…</div>
   <div class="hud">クリック/タップ・WASDで少年を操作</div>
-  <div class="drop" id="drop"><div style="background:#fff;padding:16px 18px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12)">ここにGLBをドロップ</div></div>
+  <div class="drop" id="drop">
+    <div style="background:#fff;padding:16px 18px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12)">ここにGLBをドロップ</div>
+  </div>
   <div class="bubble" id="bubble" style="display:none"></div>
-
-  <!-- ペンギンまみれ ゲームUI -->
-  <div class="g-score" id="gScore"><div>生存 <span class="big" id="gTime">0.0</span> 秒</div><div id="gCount" style="opacity:.85;font-weight:500;font-size:12px;margin-top:2px">ペンギン 0 / 囲まれ 0</div></div>
-  <div class="g-start" id="gStart"><div class="card"><h1>🐧 ペンギンまみれ</h1><p>少年を操作して逃げきろう。<br>近づいたペンギンが「あそぼっと」と寄ってきて、<br>どんどん増えていきます。<br>囲まれて身動きできなくなったら終わり。</p><button id="gStartBtn">はじめる</button></div></div>
-  <div class="g-over" id="gOver"><div class="card"><h1>ペンギンまみれ！</h1><p>生存時間 <span class="res" id="gResult">0.0</span> 秒<br><span id="gResultSub" style="font-size:13px;color:#888"></span></p><button id="gRetryBtn">もういちど</button></div></div>
+  <div class="g-score" id="gScore">
+    <div>生存 <span class="big" id="gTime">0.0</span> 秒</div>
+    <div id="gCount" style="opacity:.85;font-weight:500;font-size:12px;margin-top:2px">ペンギン 0 / 囲まれ 0</div>
+  </div>
+  <div class="g-start" id="gStart">
+    <div class="card">
+      <h1>🐧 ペンギンまみれ</h1>
+      <p>少年を操作して逃げきろう。<br>近づいたペンギンが「あそぼっと」と寄ってきて、<br>どんどん増えていきます。<br>囲まれて身動きできなくなったら終わり。</p>
+      <button id="gStartBtn">はじめる</button>
+    </div>
+  </div>
+  <div class="g-over" id="gOver">
+    <div class="card">
+      <h1>ペンギンまみれ！</h1>
+      <p>生存時間 <span class="res" id="gResult">0.0</span> 秒<br><span id="gResultSub" style="font-size:13px;color:#888"></span></p>
+      <button id="gRetryBtn">もういちど</button>
+    </div>
+  </div>
 
   <script type="importmap">
   {
@@ -54,829 +215,1850 @@
   </script>
 
   <script type="module">
-    // ---- Imports ----
     import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+    import { RoundedBoxGeometry } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/geometries/RoundedBoxGeometry.js';
+    import { mergeGeometries } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/utils/BufferGeometryUtils.js';
     import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
     import { DRACOLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/DRACOLoader.js';
     import { KTX2Loader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/KTX2Loader.js';
     import { MeshoptDecoder } from 'https://cdn.jsdelivr.net/npm/meshoptimizer@0.20.0/meshopt_decoder.module.js';
-        // ---- Helpers ----
-    const $ = (id) => document.getElementById(id);
-    const setStatus = (m) => { const st=$('status'); if(st){ st.textContent = m; } console.log(m); };
 
-    // ---- Renderer / Scene ----
+    const $ = id => document.getElementById(id);
+    let missingPenguinModels = false;
+    const setStatus = m => {
+      const st = $('status');
+      if (!st) return;
+      if (/^GLB load error/.test(m)) {
+        missingPenguinModels = true;
+        st.textContent = '一部のキャラクターを簡易表示しています';
+        st.style.display = 'block';
+      } else if (m === 'initialized OK' || m === 'parsed.') {
+        st.style.display = missingPenguinModels ? 'block' : 'none';
+      } else if (!missingPenguinModels) {
+        st.textContent = 'シフペンたちを呼んでいます…';
+      }
+      if (new URLSearchParams(location.search).get('debug') === '1') console.log(m);
+    };
+
     const app = $('app');
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xF8EBD5);
+    scene.background = new THREE.Color(0xeeeae0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const mobileQuality = window.matchMedia('(pointer: coarse)').matches;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobileQuality ? 1.5 : 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.12;
     renderer.setSize(window.innerWidth, window.innerHeight);
     app.appendChild(renderer.domElement);
 
-    // ---- Camera ----
+    // カメラ
     let aspect = window.innerWidth / window.innerHeight;
-    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
-    camera.position.set(14, 16, 14);
-    camera.lookAt(0, 0, 0);
-    function fitCameraToRoom(){
-      const corners = [
-        new THREE.Vector3(-9,0,-7), new THREE.Vector3(9,0,-7), new THREE.Vector3(-9,0,7), new THREE.Vector3(9,0,7),
-        new THREE.Vector3(-9,5,-7), new THREE.Vector3(9,5,-7), new THREE.Vector3(-9,5,7), new THREE.Vector3(9,5,7)
+    const camera = new THREE.OrthographicCamera(-1,1,1,-1,.1,140);
+    camera.position.set(29,33,39);
+    camera.lookAt(0,0,3);
+
+    function fitCameraToRoom() {
+      camera.updateMatrixWorld(true);
+      const points = [
+        [-18,-.72,-8], [18,-.72,-8], [-18,-.72,16], [18,-.72,16],
+        [-9,5.25,-7], [9,5.25,-7], [9,5.25,7],
+        [-16.6,7,-5], [-11.3,7,-2], [12,6.1,-6.8], [16.8,6.1,-3]
       ];
-      const inv = new THREE.Matrix4().copy(camera.matrixWorldInverse);
       let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
-      for(const v of corners){ const vc = v.clone().applyMatrix4(inv); minX=Math.min(minX,vc.x); maxX=Math.max(maxX,vc.x); minY=Math.min(minY,vc.y); maxY=Math.max(maxY,vc.y); }
-      const pad = 0.6;
-      const width = (maxX-minX) + pad*2;
-      const height = (maxY-minY) + pad*2;
-      aspect = window.innerWidth / window.innerHeight;
-      const frustumSize = Math.max(height, width / aspect);
-      camera.left = -frustumSize * aspect / 2;
-      camera.right = frustumSize * aspect / 2;
-      camera.top = frustumSize / 2;
-      camera.bottom = -frustumSize / 2;
+      for (const p of points) {
+        const v = new THREE.Vector3(...p).applyMatrix4(camera.matrixWorldInverse);
+        minX=Math.min(minX,v.x);
+        maxX=Math.max(maxX,v.x);
+        minY=Math.min(minY,v.y);
+        maxY=Math.max(maxY,v.y);
+      }
+      aspect = window.innerWidth/window.innerHeight;
+      const pad=1.0;
+      const width=maxX-minX+pad*2, height=maxY-minY+pad*2;
+      const h=Math.max(height,width/aspect),w=h*aspect;
+      const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
+      camera.left=cx-w/2;
+      camera.right=cx+w/2;
+      camera.top=cy+h/2;
+      camera.bottom=cy-h/2;
       camera.updateProjectionMatrix();
     }
-    function setDesktopOrtho(){
-      const frustumSize = 22;
-      aspect = window.innerWidth / window.innerHeight;
-      camera.left = -frustumSize * aspect / 2;
-      camera.right = frustumSize * aspect / 2;
-      camera.top = frustumSize / 2;
-      camera.bottom = -frustumSize / 2;
-      camera.updateProjectionMatrix();
+    function isSmallScreen() {
+      return Math.min(window.innerWidth,window.innerHeight)<800;
     }
-    function isSmallScreen(){ return Math.min(window.innerWidth, window.innerHeight) < 800; }
-    function updateCameraMode(){
-      renderer.setSize(window.innerWidth, window.innerHeight);if (isSmallScreen()) fitCameraToRoom(); else setDesktopOrtho();
+    function setDesktopOrtho() { fitCameraToRoom(); }
+    function updateCameraMode() {
+      renderer.setSize(window.innerWidth,window.innerHeight);
+      fitCameraToRoom();
     }
-    window.addEventListener('resize', updateCameraMode);
+    window.addEventListener('resize',updateCameraMode);
 
-    // ---- Lights ----
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xf2d8a8, 0.85));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-    dir.position.set(5, 10, 2);
+    // 光と影
+    scene.add(new THREE.HemisphereLight(0xeaf6ff,0xb2a484,1.85));
+    const dir = new THREE.DirectionalLight(0xffe3b9,3.0);
+    dir.position.set(12,22,10);
+    dir.target.position.set(0,0,3);
+    scene.add(dir.target);
+    dir.castShadow=true;
+    dir.shadow.mapSize.set(mobileQuality?1024:2048,mobileQuality?1024:2048);
+    Object.assign(dir.shadow.camera,{
+      left:-27,right:27,top:23,bottom:-23,near:.5,far:65
+    });
+    dir.shadow.bias=-.0002;
+    dir.shadow.normalBias=.035;
+    dir.shadow.radius=3;
     scene.add(dir);
+    const fill=new THREE.DirectionalLight(0xddefff,.65);
+    fill.position.set(-12,8,-8);
+    scene.add(fill);
+    const stage=new THREE.Mesh(
+      new THREE.PlaneGeometry(200,200),
+      new THREE.MeshStandardMaterial({color:0xeeeae0,roughness:1})
+    );
+    stage.rotation.x=-Math.PI/2;
+    stage.position.y=-.74;
+    stage.receiveShadow=true;
+    scene.add(stage);
 
-    // ---- Room ----
-    const room = new THREE.Group();
+    // 背景の共通素材
+    const decor=new THREE.Group();
+    decor.name='Garden room details';
+    scene.add(decor);
+    let decorSeed=5127;
+    const rnd=()=>{
+      decorSeed=(Math.imul(1664525,decorSeed)+1013904223)>>>0;
+      return decorSeed/4294967296;
+    };
+    const makeMat=(color,extras={})=>
+      new THREE.MeshStandardMaterial({color,roughness:.83,...extras});
+    const palette={
+      oak:makeMat(0xb78551),
+      darkOak:makeMat(0x725134),
+      ivory:makeMat(0xf6efdf),
+      teal:makeMat(0x326b65),
+      sage:makeMat(0x73967c),
+      brass:makeMat(0xd5ac64,{metalness:.5,roughness:.36}),
+      leaf:makeMat(0x4c8048),
+      leafLight:makeMat(0x76a05a),
+      soil:makeMat(0x665441),
+      terracotta:makeMat(0xc77c58),
+      stone:makeMat(0xc8c3a9),
+      ink:makeMat(0x263d38)
+    };
+    const boxGeometry=new THREE.BoxGeometry(1,1,1);
+    const sphereGeometry=new THREE.SphereGeometry(1,12,8);
+    const cylinderGeometry=new THREE.CylinderGeometry(1,1,1,16);
+    const leafGeometry=new THREE.SphereGeometry(1,8,6);
+
+    function mesh(parent,geometry,material,x,y,z,sx=1,sy=1,sz=1) {
+      const m=new THREE.Mesh(geometry,material);
+      m.position.set(x,y,z);
+      m.scale.set(sx,sy,sz);
+      m.castShadow=true;
+      m.receiveShadow=true;
+      parent.add(m);
+      return m;
+    }
+    const box=(parent,w,h,d,x,y,z,mat=palette.oak)=>
+      mesh(parent,boxGeometry,mat,x,y,z,w,h,d);
+    const ball=(parent,x,y,z,sx,sy,sz,mat)=>
+      mesh(parent,sphereGeometry,mat,x,y,z,sx,sy,sz);
+    const cyl=(parent,r,h,x,y,z,mat)=>
+      mesh(parent,cylinderGeometry,mat,x,y,z,r,h,r);
+
+    const roundedCache=new Map();
+    function softBox(parent,w,h,d,x,y,z,mat,r=.08) {
+      const key=[w,h,d,r].join('/');
+      if (!roundedCache.has(key)) {
+        roundedCache.set(key,new RoundedBoxGeometry(
+          w,h,d,2,Math.min(r,w/3,h/3,d/3)
+        ));
+      }
+      return mesh(parent,roundedCache.get(key),mat,x,y,z);
+    }
+
+    function texture(size,paint) {
+      const canvas=document.createElement('canvas');
+      canvas.width=canvas.height=size;
+      paint(canvas.getContext('2d'),size);
+      const t=new THREE.CanvasTexture(canvas);
+      t.colorSpace=THREE.SRGBColorSpace;
+      t.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
+      return t;
+    }
+
+    const floorTexture=texture(1024,(c,s)=>{
+      c.fillStyle='#b78c5e';
+      c.fillRect(0,0,s,s);
+      for (let row=0;row<20;row++) {
+        const h=s/20,shift=(row%3)*s/7;
+        for (let col=-1;col<5;col++) {
+          const x=col*s/4+shift,y=row*h;
+          c.fillStyle=`hsl(${31+rnd()*5} 39% ${61+rnd()*10}%)`;
+          c.fillRect(x+1,y+1,s/4-2,h-2);
+          for (let k=0;k<14;k++) {
+            c.strokeStyle=`rgba(99,63,29,${.025+rnd()*.07})`;
+            c.lineWidth=.5+rnd();
+            c.beginPath();
+            const yy=y+rnd()*h;
+            c.moveTo(x+3,yy);
+            c.bezierCurveTo(x+65,yy-3,x+170,yy+3,x+s/4-3,yy);
+            c.stroke();
+          }
+        }
+      }
+    });
+    const plasterTexture=texture(256,(c,s)=>{
+      c.fillStyle='#f2e8d5';
+      c.fillRect(0,0,s,s);
+      for (let i=0;i<6500;i++) {
+        c.fillStyle=rnd()>.5?'rgba(132,108,74,.05)':'rgba(255,255,255,.19)';
+        c.fillRect(rnd()*s,rnd()*s,1+rnd()*2,1+rnd()*2);
+      }
+    });
+    const weaveTexture=texture(512,(c,s)=>{
+      c.fillStyle='#e8e0c9';
+      c.fillRect(0,0,s,s);
+      for (let i=0;i<s;i+=4) {
+        c.fillStyle='rgba(78,92,72,.11)';
+        c.fillRect(i,0,1,s);
+        c.fillStyle='rgba(255,255,255,.35)';
+        c.fillRect(0,i,s,1);
+      }
+      c.strokeStyle='#62817a';
+      c.lineWidth=22;
+      c.strokeRect(30,30,s-60,s-60);
+      c.strokeStyle='#b0ad84';
+      c.lineWidth=5;
+      c.strokeRect(51,51,s-102,s-102);
+      for (let x=92;x<s-65;x+=66) {
+        c.save();
+        c.translate(x,s/2);
+        c.rotate(Math.PI/4);
+        c.fillStyle='#7c9382';
+        c.fillRect(-12,-12,24,24);
+        c.restore();
+      }
+    });
+    const fabricTexture=texture(128,(c,s)=>{
+      c.fillStyle='#ffffff';
+      c.fillRect(0,0,s,s);
+      c.fillStyle='rgba(80,85,70,.12)';
+      for (let i=0;i<s;i+=4) {
+        c.fillRect(i,0,1,s);
+        c.fillRect(0,i,s,1);
+      }
+    });
+    const lawnTexture=texture(512,(c,s)=>{
+      c.fillStyle='#91af69';
+      c.fillRect(0,0,s,s);
+      for (let i=0;i<18000;i++) {
+        c.fillStyle=rnd()>.5?'rgba(43,90,38,.08)':'rgba(224,233,140,.18)';
+        c.fillRect(rnd()*s,rnd()*s,1,1+rnd()*3);
+      }
+    });
+    lawnTexture.wrapS=lawnTexture.wrapT=THREE.RepeatWrapping;
+    lawnTexture.repeat.set(5,4);
+
+    // お部屋
+    const room=new THREE.Group();
+    room.name='Room';
     scene.add(room);
-    const floorGeo = new THREE.PlaneGeometry(18, 14);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0xF4D9A0, roughness: 0.95 });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    room.add(floor);
+    const floorMat=new THREE.MeshStandardMaterial({map:floorTexture,roughness:.84});
+    const floor=mesh(room,new THREE.PlaneGeometry(18,14),floorMat,0,.012,0);
+    floor.rotation.x=-Math.PI/2;
+    floor.castShadow=false;
+    box(room,18.3,.14,14.3,0,-.075,0,palette.darkOak);
 
-    const wallH = 5, wallT = 0.3;
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0xF7CD8F });
-    const mkWall = (w,h,t) => new THREE.Mesh(new THREE.BoxGeometry(w,h,t), wallMat);
+    const wallH=5,wallT=.3;
+    const wallMat=new THREE.MeshStandardMaterial({map:plasterTexture,roughness:1});
+    const DOOR_X=-9,DOOR_Z_MIN=3.5,DOOR_Z_MAX=6.5;
+    const back=box(room,18,wallH,wallT,0,wallH/2,-7,wallMat);
+    box(room,18,.19,.43,0,5.03,-7,palette.oak);
+    box(room,18,1.25,.09,0,.63,-6.8,palette.sage);
+    box(room,18,.09,.16,0,1.28,-6.75,palette.ivory);
+    box(room,18,.15,.16,0,.1,-6.73,palette.ivory);
+    for (let x=-8.75;x<9;x+=1.25) {
+      box(room,.055,1.08,.045,x,.67,-6.73,palette.ivory);
+    }
+    for (const x of [-8.88,8.88]) {
+      box(room,.22,5,.36,x,2.5,-6.76,palette.oak);
+    }
 
-    // 後ろの壁
-    const back = mkWall(18, wallH, wallT); back.position.set(0, wallH/2, -7); room.add(back);
+    const rightGroup=new THREE.Group();
+    room.add(rightGroup);
+    const rightX=9,beamMat=palette.oak;
+    box(rightGroup,.22,.22,13,rightX,4.25,0,beamMat);
+    box(rightGroup,.36,.2,13.2,rightX,1.5,0,beamMat);
+    for (const z of [-6.5,-3.25,0,3.25,6.5]) {
+      box(rightGroup,.13,2.62,.12,rightX,2.9,z,beamMat);
+    }
+    box(rightGroup,.1,.075,13,rightX,2.9,0,palette.ivory);
+    box(room,.3,.55,14,rightX,4.75,0,wallMat);
+    box(room,.28,1.35,14,rightX,.675,0,wallMat);
+    box(room,.42,.1,14,rightX,5.06,0,palette.oak);
+    const glassMat=new THREE.MeshStandardMaterial({
+      color:0xb8dce0,roughness:.23,transparent:true,
+      opacity:.12,depthWrite:false,side:THREE.DoubleSide
+    });
+    const glass=mesh(rightGroup,new THREE.PlaneGeometry(13,2.55),glassMat,8.96,2.88,0);
+    glass.rotation.y=-Math.PI/2;
+    glass.castShadow=false;
+    const linen=makeMat(0xf4ead4,{map:fabricTexture,side:THREE.DoubleSide});
+    for (let i=0;i<44;i++) {
+      const curtain=box(
+        rightGroup,.045,.48,.31,
+        8.85+Math.sin(i*Math.PI*.6)*.065,3.96,-6.42+i*.298,linen
+      );
+      curtain.castShadow=false;
+    }
 
-    // 左壁：上を開放（下だけ残す）
-    const DOOR_X = -9, DOOR_Z_MIN = 3.5, DOOR_Z_MAX = 6.5;
-    // const leftA = mkWall(wallT, wallH, (DOOR_Z_MIN - (-7))); leftA.position.set(-9, wallH/2, (-7 + DOOR_Z_MIN)/2); room.add(leftA);
-    // const leftB = mkWall(wallT, wallH, (7 - DOOR_Z_MAX));   leftB.position.set(-9, wallH/2, (7 + DOOR_Z_MAX)/2);   room.add(leftB);
+    // お庭
+    const garden=new THREE.Group();
+    garden.name='Garden';
+    scene.add(garden);
+    const foundation=softBox(garden,36,.65,24,0,-.39,4,makeMat(0xc4b793),.2);
+    const lawnMat=new THREE.MeshStandardMaterial({map:lawnTexture,roughness:1});
+    const lawn=mesh(garden,new THREE.PlaneGeometry(35.7,23.7),lawnMat,0,-.025,4);
+    lawn.rotation.x=-Math.PI/2;
+    lawn.castShadow=false;
+    box(garden,35.6,.1,.12,0,-.005,15.87,palette.stone);
+    box(garden,.12,.1,23.7,-17.86,-.005,4,palette.stone);
+    box(garden,.12,.1,23.7,17.86,-.005,4,palette.stone);
 
-    // 右壁＋窓
-    const rightGroup = new THREE.Group(); room.add(rightGroup); const rightX = 9;
-    const beamMat = new THREE.MeshStandardMaterial({ color: 0xE9A86B });
-    const beamT = wallT;
-    const frameTop = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.4, 13), beamMat); frameTop.position.set(rightX, 4.2, 0); rightGroup.add(frameTop);
-    const frameBottom = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.4, 13), beamMat); frameBottom.position.set(rightX, 1.6, 0); rightGroup.add(frameBottom);
-    const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(beamT, 2.2, 0.3), beamMat); frameLeft.position.set(rightX, 2.9, -6.5); rightGroup.add(frameLeft);
-    const frameRight = new THREE.Mesh(new THREE.BoxGeometry(beamT, 2.2, 0.3), beamMat); frameRight.position.set(rightX, 2.9, 6.5); rightGroup.add(frameRight);
-    const rightTopWall = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.5, 14), wallMat); rightTopWall.position.set(rightX, 4.75, 0); room.add(rightTopWall);
-    const rightBottomWall = new THREE.Mesh(new THREE.BoxGeometry(beamT, 0.5, 14), wallMat); rightBottomWall.position.set(rightX, 1.0, 0); room.add(rightBottomWall);
+    const tree=new THREE.Group();
+    garden.add(tree);
+    tree.position.set(-13.9,0,-3.5);
+    function buildTree(group,scale=1) {
+      group.scale.setScalar(scale);
+      const trunk=mesh(
+        group,new THREE.CylinderGeometry(.18,.3,3.3,10),
+        palette.darkOak,0,1.65,0
+      );
+      for (let i=0;i<4;i++) {
+        const a=i*2.1;
+        const branch=mesh(
+          group,new THREE.CylinderGeometry(.07,.14,1.8,8),
+          palette.darkOak,Math.sin(a)*.35,2.8,Math.cos(a)*.35
+        );
+        branch.rotation.z=Math.cos(a)*.5;
+        branch.rotation.x=Math.sin(a)*.5;
+      }
+      for (let i=0;i<15;i++) {
+        const a=i*2.399,r=.4+rnd()*1.1;
+        const leaves=ball(
+          group,Math.cos(a)*r,3.2+rnd()*1.65,Math.sin(a)*r,
+          1.1+rnd()*.3,.85+rnd()*.4,1.1+rnd()*.3,
+          i%3?palette.leaf:palette.leafLight
+        );
+        leaves.rotation.y=a;
+      }
+      for (let i=0;i<9;i++) {
+        const a=i*2.4;
+        ball(group,Math.sin(a)*1.3,3.3+rnd()*.85,Math.cos(a)*1.3,.1,.12,.1,palette.terracotta);
+      }
+      cyl(group,1.7,.035,0,.002,0,palette.soil).castShadow=false;
+    }
+    buildTree(tree,1.2);
+    const tree2=new THREE.Group();
+    tree2.position.set(14.4,0,-4.9);
+    garden.add(tree2);
+    buildTree(tree2,1.02);
 
+    // 草花をまとめて描画
+    const batches=new Map();
+    function instance(key,geometry,mat,x,y,z,sx,sy,sz,rx=0,ry=0,rz=0) {
+      if (!batches.has(key)) batches.set(key,{geometry,mat,items:[]});
+      batches.get(key).items.push({x,y,z,sx,sy,sz,rx,ry,rz});
+    }
+    const flowerColors=[
+      makeMat(0xf6e6b5),makeMat(0xc18caf),
+      makeMat(0xe9ac83),makeMat(0xf5f1e5)
+    ];
+    const stalkGeometry=new THREE.CylinderGeometry(1,1,1,5);
+    function flower(x,z,h,colorIndex=0) {
+      instance('stems',stalkGeometry,palette.leaf,x,h/2,z,.019,h,.019);
+      for (let j=0;j<2;j++) {
+        instance(
+          'flowerLeaves',leafGeometry,palette.leafLight,
+          x+(j?-.07:.07),h*.45,z,.14,.025,.065,0,j,j?.55:-.55
+        );
+      }
+      instance('flowerCenters',sphereGeometry,palette.brass,x,h,z,.065,.05,.065);
+      for (let p=0;p<5;p++) {
+        const a=p*Math.PI*2/5;
+        instance(
+          'petals'+colorIndex,leafGeometry,flowerColors[colorIndex],
+          x+Math.sin(a)*.09,h,z+Math.cos(a)*.09,.085,.035,.06,0,-a,0
+        );
+      }
+    }
+    function shrub(x,z,s=.8) {
+      for (let i=0;i<5;i++) {
+        instance(
+          'shrubs',sphereGeometry,palette.leaf,
+          x+(rnd()-.5)*s,.18+rnd()*.28,z+(rnd()-.5)*s,
+          s*.45,s*.4,s*.45,0,rnd()*6,0
+        );
+      }
+    }
+    const bedAreas=[
+      [-15.7,6.8,1.1,4.0],
+      [15.9,5.5,1.05,5.8],
+      [-10.2,13.9,4.4,.8],
+      [9.7,14.1,4,.7]
+    ];
+    for (const [x,z,w,d] of bedAreas) {
+      softBox(garden,w*2,.09,d*2,x,-.004,z,palette.soil,.04);
+      for (let i=0;i<24;i++) {
+        flower(x+(rnd()-.5)*w*1.8,z+(rnd()-.5)*d*1.8,.3+rnd()*.38,i%4);
+      }
+      for (let i=0;i<5;i++) {
+        shrub(x+(rnd()-.5)*w*1.7,z+(rnd()-.5)*d*1.7,.65);
+      }
+    }
+    for (const [x,z] of [
+      [-16,-5.7],[-16,-.3],[16,-5.4],
+      [16,-1.7],[-13.3,13.8],[13.7,13.8]
+    ]) shrub(x,z,1.3);
+    for (let i=0;i<160;i++) {
+      const x=-17+rnd()*34,z=-7+rnd()*22;
+      if ((Math.abs(x)<9.25&&z<7.2)||Math.hypot(x+2,z-10)<2.85) continue;
+      for (let j=0;j<3;j++) {
+        instance(
+          'grass',leafGeometry,palette.leafLight,
+          x+j*.04,.07,z,.022,.11+rnd()*.06,.02,0,rnd()*6,(j-1)*.35
+        );
+      }
+    }
+    function pottedPlant(parent,x,y,z,s=1) {
+      mesh(
+        parent,new THREE.CylinderGeometry(.33,.24,.5,14),
+        palette.terracotta,x,y+.25*s,z,s,s,s
+      );
+      cyl(parent,.345,.07,x,y+.48*s,z,palette.terracotta)
+        .scale.set(.345*s,.07*s,.345*s);
+      cyl(parent,.29,.025,x,y+.505*s,z,palette.soil)
+        .scale.set(.29*s,.025*s,.29*s);
+      for (let i=0;i<7;i++) {
+        const a=i*2.4;
+        const leaf=mesh(
+          parent,leafGeometry,i%2?palette.leaf:palette.leafLight,
+          x+Math.sin(a)*.19*s,y+(.65+rnd()*.18)*s,z+Math.cos(a)*.19*s,
+          .11*s,.38*s,.08*s
+        );
+        leaf.rotation.set(Math.cos(a)*.6,a,-Math.sin(a)*.6);
+      }
+    }
+
+    // 石畳
+    for (let i=0;i<9;i++) {
+      const t=i/8,x=3.8+Math.sin(t*2.4)*2.2,z=7.55+t*6.4;
+      const stone=mesh(
+        garden,new THREE.CylinderGeometry(.5,.53,.07,7),
+        i%2?palette.stone:palette.ivory,x,.016,z,1,.8,.72
+      );
+      stone.rotation.y=i*.73;
+    }
+    for (let i=0;i<8;i++) {
+      const stone=mesh(
+        garden,new THREE.CylinderGeometry(.48,.51,.065,7),
+        palette.stone,-9.8-i*.7,.015,5.8+Math.sin(i*.6)*1.1
+      );
+      stone.scale.z=.7;
+      stone.rotation.y=i;
+    }
+
+    // 池
+    const pond=new THREE.Group();
+    pond.name='Pond';
+    garden.add(pond);
+    const pondBedMat=makeMat(0x447e76);
+    const basin=cyl(pond,2.2,.06,-2,.022,10,pondBedMat);
+    basin.castShadow=false;
+    const rim=new THREE.Group();
+    pond.add(rim);
+    for (let i=0;i<31;i++) {
+      const a=i*Math.PI*2/31;
+      instance(
+        'pondRocks',sphereGeometry,palette.stone,
+        -2+Math.cos(a)*2.27,.1,10+Math.sin(a)*2.27,
+        .26+rnd()*.08,.13+rnd()*.055,.2+rnd()*.045,0,-a,0
+      );
+    }
+    const waterUniforms={
+      uTime:{value:0},
+      uDeep:{value:new THREE.Color(0x277d79)},
+      uShallow:{value:new THREE.Color(0x82c9b7)}
+    };
+    const waterMat=new THREE.ShaderMaterial({
+      uniforms:waterUniforms,
+      transparent:true,
+      depthWrite:false,
+      side:THREE.DoubleSide,
+      vertexShader:`
+        varying vec2 vUv;
+        void main(){
+          vUv=uv;
+          gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+        }
+      `,
+      fragmentShader:`
+        uniform float uTime;
+        uniform vec3 uDeep;
+        uniform vec3 uShallow;
+        varying vec2 vUv;
+        void main(){
+          vec2 p=(vUv-.5)*2.;
+          float radius=length(p);
+          float wave=sin(p.x*19.+sin(p.y*13.+uTime*.5)*1.4+uTime*.7)
+                    *sin(p.y*23.-uTime*.55);
+          float fleck=pow(max(0.,wave),9.);
+          float shore=smoothstep(.55,1.,radius);
+          vec3 color=mix(uDeep,uShallow,shore*.7+.17)
+                    +fleck*vec3(.14,.22,.17);
+          float ring=pow(max(0.,sin(radius*54.-uTime*1.0)),24.)*.018;
+          color+=ring;
+          gl_FragColor=vec4(color,.91);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
+        }
+      `
+    });
+    const water=new THREE.Mesh(new THREE.CircleGeometry(2.1,64),waterMat);
+    water.rotation.x=-Math.PI/2;
+    water.position.set(-2,.081,10);
+    water.renderOrder=2;
+    pond.add(water);
+
+    const lilyPads=[];
+    for (let i=0;i<5;i++) {
+      const a=2.8+i*.38,r=1.35+(i%2)*.18;
+      const pad=mesh(
+        pond,new THREE.CircleGeometry(.26+(i%2)*.06,24,.14,Math.PI*2-.28),
+        palette.leaf,-2+Math.cos(a)*r,.104,10+Math.sin(a)*r
+      );
+      pad.rotation.x=-Math.PI/2;
+      pad.rotation.z=a;
+      pad.castShadow=false;
+      pad.renderOrder=3;
+      lilyPads.push(pad);
+      if (i===1||i===3) {
+        for (let p=0;p<7;p++) {
+          const t=p*Math.PI*2/7;
+          const petal=ball(
+            pond,pad.position.x+Math.sin(t)*.06,.16,
+            pad.position.z+Math.cos(t)*.06,.055,.08,.05,flowerColors[3]
+          );
+          petal.renderOrder=3;
+        }
+        const center=ball(
+          pond,pad.position.x,.19,pad.position.z,.036,.045,.036,palette.brass
+        );
+        center.renderOrder=3;
+      }
+    }
+    for (let i=0;i<17;i++) {
+      const a=3.5+rnd()*.9,r=2.5+rnd()*.25;
+      const x=-2+Math.cos(a)*r,z=10+Math.sin(a)*r,h=.6+rnd()*.6;
+      instance('reeds',stalkGeometry,palette.leaf,x,h/2,z,.021,h,.021,0,0,(rnd()-.5)*.12);
+      instance('reedHeads',sphereGeometry,palette.darkOak,x,h,z,.038,.13,.038);
+    }
+    const ripples=[];
+    const rippleMat=new THREE.MeshBasicMaterial({
+      color:0xd8f5de,transparent:true,opacity:.25,
+      depthWrite:false,side:THREE.DoubleSide
+    });
+    const rippleGeo=new THREE.RingGeometry(.96,1,64);
+    for (let i=0;i<3;i++) {
+      const ripple=new THREE.Mesh(rippleGeo,rippleMat.clone());
+      ripple.rotation.x=-Math.PI/2;
+      ripple.position.set(-1.8,.11,10);
+      ripple.renderOrder=3;
+      pond.add(ripple);
+      ripples.push(ripple);
+    }
+
+    // ベンチとランタン
+    const bench=new THREE.Group();
+    garden.add(bench);
+    bench.position.set(-10.9,0,11.2);
+    bench.rotation.y=-.18;
+    for (let i=0;i<4;i++) box(bench,3.1,.11,.19,0,.65,-.32+i*.22,palette.oak);
+    for (let i=0;i<3;i++) box(bench,3.1,.19,.1,0,1.02+i*.23,-.43,palette.oak);
+    for (const x of [-1.2,1.2]) {
+      box(bench,.12,1.56,.13,x,.8,-.43,palette.darkOak);
+      box(bench,.12,.65,.13,x,.33,.32,palette.darkOak);
+    }
+    const lanternGlow=new THREE.MeshStandardMaterial({
+      color:0xffe4ab,emissive:0xffc36c,emissiveIntensity:.65,roughness:.5
+    });
+    for (const [x,z] of [[5.2,8.2],[6.3,12.5],[-7.8,12.7],[-12.5,6.5]]) {
+      cyl(garden,.055,.6,x,.3,z,palette.ink);
+      cyl(garden,.19,.28,x,.7,z,lanternGlow);
+      cyl(garden,.25,.05,x,.86,z,palette.ink);
+      for (let i=0;i<4;i++) {
+        const a=i*Math.PI/2;
+        box(garden,.025,.31,.025,x+Math.sin(a)*.17,.7,z+Math.cos(a)*.17,palette.ink);
+      }
+    }
+    for (const startX of [-17.2,10.1]) {
+      for (let i=0;i<9;i++) {
+        const x=startX+i*.8;
+        box(garden,.1,1.1,.12,x,.52,-7.5,palette.ivory);
+      }
+      box(garden,6.6,.12,.1,startX+3.2,.35,-7.5,palette.ivory);
+      box(garden,6.6,.12,.1,startX+3.2,.8,-7.5,palette.ivory);
+    }
+
+    // ラグとソファ
+    const rugMat=new THREE.MeshStandardMaterial({map:weaveTexture,roughness:1});
+    const rug=mesh(decor,new THREE.PlaneGeometry(8.3,5.7),rugMat,-1.2,.023,-.2);
+    rug.rotation.x=-Math.PI/2;
+    rug.castShadow=false;
+    const sofa=new THREE.Group();
+    sofa.position.set(-4.6,0,-5.7);
+    decor.add(sofa);
+    const upholstery=makeMat(0x65968a,{map:fabricTexture});
+    for (const x of [-1.8,1.8]) {
+      for (const z of [-.42,.48]) box(sofa,.14,.28,.14,x,.14,z,palette.darkOak);
+    }
+    softBox(sofa,4.25,.34,1.65,0,.43,0,upholstery,.12);
+    softBox(sofa,4.25,1.1,.35,0,1.1,-.68,upholstery,.14);
+    for (const x of [-2,2]) softBox(sofa,.34,.75,1.7,x,.82,0,upholstery,.14);
+    for (const x of [-.93,.93]) softBox(sofa,1.77,.22,1.3,x,.71,.06,upholstery,.1);
+    for (const [x,color,angle] of [[-1.4,0xf1d098,.16],[1.3,0xe8e8d6,-.22]]) {
+      const cushion=softBox(
+        sofa,.66,.64,.24,x,1.08,-.3,makeMat(color,{map:fabricTexture}),.12
+      );
+      cushion.rotation.z=angle;
+      cushion.rotation.x=-.15;
+    }
+
+    // 本棚
+    const shelves=new THREE.Group();
+    decor.add(shelves);
+    shelves.position.set(2.4,0,-6.27);
+    softBox(shelves,4.6,1.1,.93,0,.58,0,palette.sage,.035);
+    box(shelves,4.75,.13,1.02,0,1.2,0,palette.oak);
+    for (const x of [-1.12,1.12]) {
+      box(shelves,2.13,.82,.04,x,.61,.49,palette.teal);
+      cyl(shelves,.042,.055,x+.7,.71,.55,palette.brass).rotation.x=Math.PI/2;
+    }
+    for (const y of [2.25,3.46]) box(shelves,4.65,.12,.72,0,y,-.1,palette.oak);
+    for (const x of [-2.19,2.19]) box(shelves,.1,2.55,.73,x,2.47,-.1,palette.oak);
+    const bookMats=[
+      makeMat(0x526c72),makeMat(0xc58d6b),makeMat(0xe4c98f),
+      makeMat(0x89967a),makeMat(0xa58184)
+    ];
+    for (const y of [1.3,2.32,3.53]) {
+      for (let i=0;i<10;i++) {
+        const h=.42+rnd()*.28,w=.1+rnd()*.08,x=-1.93+i*.23;
+        const book=box(shelves,w,h,.38,x,y+h/2,.015,bookMats[i%5]);
+        book.rotation.z=i===9?-.13:0;
+        box(shelves,w*.75,.016,.009,x,y+.08,.211,palette.ivory);
+      }
+    }
+    pottedPlant(shelves,1.3,1.28,.08,.72);
+    pottedPlant(shelves,1.22,3.53,-.04,.63);
+    function vase(parent,x,y,z,mat,s=1) {
+      ball(parent,x,y+.21*s,z,.2*s,.25*s,.2*s,mat);
+      cyl(parent,.1*s,.19*s,x,y+.44*s,z,mat);
+      const lip=mesh(
+        parent,new THREE.TorusGeometry(.1*s,.023*s,8,20),mat,x,y+.54*s,z
+      );
+      lip.rotation.x=Math.PI/2;
+    }
+    vase(shelves,1.23,2.32,.01,palette.ivory,1);
+    vase(shelves,1.75,2.32,.02,palette.terracotta,.7);
+    pottedPlant(decor,-7.8,0,-5.8,1.5);
+    pottedPlant(decor,7.8,0,-5.8,1.4);
+
+    // 壁飾りと時計
+    for (const x of [-6.05,-3.95]) {
+      softBox(decor,1.58,1.94,.1,x,3.14,-6.76,palette.darkOak,.025);
+      box(decor,1.36,1.72,.02,x,3.14,-6.69,palette.ivory);
+      const stem=box(decor,.025,1.07,.022,x,3.13,-6.67,palette.sage);
+      stem.rotation.z=-.12;
+      for (let j=0;j<6;j++) {
+        const side=j%2?1:-1;
+        const leaf=mesh(
+          decor,leafGeometry,j%2?palette.leaf:palette.sage,
+          x+side*.115,2.78+j*.13,-6.645,.16,.065,.02
+        );
+        leaf.rotation.z=side*.52;
+      }
+    }
+    const clockFace=cyl(decor,.56,.065,-.8,3.65,-6.71,palette.oak);
+    clockFace.rotation.x=Math.PI/2;
+    const clockDial=cyl(decor,.49,.07,-.8,3.65,-6.67,palette.ivory);
+    clockDial.rotation.x=Math.PI/2;
+    const hourHand=box(decor,.037,.22,.018,-.86,3.73,-6.62,palette.ink);
+    hourHand.rotation.z=.65;
+    const minuteHand=box(decor,.024,.36,.018,-.67,3.66,-6.61,palette.ink);
+    minuteHand.rotation.z=-1.35;
+
+    const sideTable=softBox(decor,1.15,.12,.95,-7.6,.79,5.1,palette.oak,.04);
+    for (const x of [-8,-7.2]) {
+      for (const z of [4.8,5.4]) box(decor,.08,.74,.08,x,.37,z,palette.darkOak);
+    }
+    cyl(decor,.2,.08,-7.6,.88,5.1,palette.brass);
+    cyl(decor,.035,.45,-7.6,1.12,5.1,palette.brass);
+    const shade=mesh(
+      decor,new THREE.CylinderGeometry(.26,.43,.47,24,1,true),
+      makeMat(0xffe8be,{
+        side:THREE.DoubleSide,emissive:0xf1b560,emissiveIntensity:.2
+      }),-7.6,1.5,5.1
+    );
+    const lampLight=new THREE.PointLight(0xffd193,3,5,2);
+    lampLight.position.set(-7.6,1.3,5.1);
+    decor.add(lampLight);
+
+    const dummy=new THREE.Object3D();
+    for (const [name,b] of batches) {
+      const im=new THREE.InstancedMesh(b.geometry,b.mat,b.items.length);
+      im.name=name;
+      b.items.forEach((a,i)=>{
+        dummy.position.set(a.x,a.y,a.z);
+        dummy.rotation.set(a.rx,a.ry,a.rz);
+        dummy.scale.set(a.sx,a.sy,a.sz);
+        dummy.updateMatrix();
+        im.setMatrixAt(i,dummy.matrix);
+      });
+      im.instanceMatrix.needsUpdate=true;
+      im.castShadow=!/grass|stems|petals|Centers|Leaves/.test(name);
+      im.receiveShadow=true;
+      garden.add(im);
+    }
+
+    const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)');
+    function updateEnvironment(t) {
+      const time=reducedMotion.matches?0:t;
+      waterUniforms.uTime.value=time;
+      for (let i=0;i<ripples.length;i++) {
+        const phase=(time*.16+i/3)%1;
+        ripples[i].scale.setScalar(.22+phase*1.6);
+        ripples[i].material.opacity=(1-phase)*.17;
+      }
+      for (let i=0;i<lilyPads.length;i++) {
+        lilyPads[i].position.y=.105+Math.sin(time*.7+i)*.004;
+      }
+    }
+
+    // 静止した装飾を素材ごとに結合
+    const animatedDecor=new Set(lilyPads);
+    function batchStaticDecor(root) {
+      root.updateWorldMatrix(true,true);
+      const inverse=new THREE.Matrix4().copy(root.matrixWorld).invert();
+      const buckets=new Map();
+      root.traverse(o=>{
+        if (
+          !o.isMesh||o.isInstancedMesh||animatedDecor.has(o)||
+          Array.isArray(o.material)||o.material.transparent
+        ) return;
+        const key=[
+          o.material.uuid,o.castShadow,o.receiveShadow,o.renderOrder
+        ].join('/');
+        if (!buckets.has(key)) buckets.set(key,[]);
+        buckets.get(key).push(o);
+      });
+      for (const objects of buckets.values()) {
+        if (objects.length<2) continue;
+        const geometries=objects.map(o=>{
+          const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();
+          return g.applyMatrix4(
+            new THREE.Matrix4().multiplyMatrices(inverse,o.matrixWorld)
+          );
+        });
+        const merged=mergeGeometries(geometries,false);
+        geometries.forEach(g=>g.dispose());
+        if (!merged) continue;
+        const first=objects[0];
+        const combined=new THREE.Mesh(merged,first.material);
+        combined.castShadow=first.castShadow;
+        combined.receiveShadow=first.receiveShadow;
+        combined.renderOrder=first.renderOrder;
+        combined.name='Static '+root.name;
+        objects.forEach(o=>o.removeFromParent());
+        root.add(combined);
+      }
+    }
+    [room,decor,garden].forEach(batchStaticDecor);
     updateCameraMode();
-    const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xA7D0FF, transmission: 0.9, thickness: 0.02, roughness: 0.1, transparent: true, opacity: 0.6 });
-    const glass = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.2, 13), glassMat); glass.position.set(rightX - 0.02, 2.9, 0); rightGroup.add(glass);
 
-    // ---- Garden (拡張) ----
-    const garden = new THREE.Group(); scene.add(garden);
-    const lawnMat = new THREE.MeshStandardMaterial({ color: 0xCDE7B0, roughness: 0.95 });
-
-    // 既存の庭（前・左）
-    const frontLawn = new THREE.Mesh(new THREE.PlaneGeometry(18, 8), lawnMat); frontLawn.rotation.x = -Math.PI/2; frontLawn.position.set(0, 0, 11); garden.add(frontLawn);
-    const leftLawn  = new THREE.Mesh(new THREE.PlaneGeometry(8, 14), lawnMat); leftLawn.rotation.x = -Math.PI/2; leftLawn.position.set(-13, 0, 0); garden.add(leftLawn);
-
-    // 追加: 右側・右前・左前にも芝を延長
-    const rightLawn = new THREE.Mesh(new THREE.PlaneGeometry(8, 14), lawnMat); rightLawn.rotation.x = -Math.PI/2; rightLawn.position.set(13, 0, 0); garden.add(rightLawn);
-    const rightFrontLawn = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), lawnMat); rightFrontLawn.rotation.x = -Math.PI/2; rightFrontLawn.position.set(13, 0, 11); garden.add(rightFrontLawn);
-    const leftFrontLawn = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), lawnMat); leftFrontLawn.rotation.x = -Math.PI/2; leftFrontLawn.position.set(-13, 0, 11); garden.add(leftFrontLawn);
-
-    // tree
-    const tree = new THREE.Group(); garden.add(tree); tree.position.set(-12, 0, 3.5);
-    tree.scale.setScalar(1.5); 
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 2.2, 12), new THREE.MeshStandardMaterial({ color: 0x8D6E63 })); trunk.position.y = 1.1; tree.add(trunk);
-    const crown1 = new THREE.Mesh(new THREE.SphereGeometry(1.2, 16, 12), new THREE.MeshStandardMaterial({ color: 0x7CB342 })); crown1.position.y = 2.2; tree.add(crown1);
-    const crown2 = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 12), new THREE.MeshStandardMaterial({ color: 0x8BC34A })); crown2.position.set(0.9, 2.9, 0.2); tree.add(crown2);
-
-    // pond
-    const pond = new THREE.Group(); garden.add(pond);
-    const rim = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.3, 0.12, 48, 1, true), new THREE.MeshStandardMaterial({ color: 0xA1887F })); rim.position.set(-2.0, 0.06, 10.0); pond.add(rim);
-    const water = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, 0.05, 48), new THREE.MeshStandardMaterial({ color: 0xB3E5FF, roughness: 0.25, metalness: 0 })); water.position.set(-2.0, 0.081, 10.0); water.renderOrder = 2; pond.add(water);
-
-    // --- pond helpers ---
-    const POND_POS = water.position.clone();
-    const droplets = [];
-    const dropletGeo = new THREE.SphereGeometry(0.06, 10, 8);
-    const dropletBaseMat = new THREE.MeshStandardMaterial({ color: 0xB3E5FF, metalness:0, roughness:0.2, transparent:true, opacity:0.9 });
-    function spawnSplash(pos, count=6){
-      for(let i=0;i<count;i++){
-        const m = new THREE.Mesh(dropletGeo, dropletBaseMat.clone());
-        m.position.copy(pos).add(new THREE.Vector3((Math.random()-0.5)*0.4, 0.1, (Math.random()-0.5)*0.4));
-        m.userData = { vel: new THREE.Vector3((Math.random()-0.5)*1.2, 1.5+Math.random()*0.8, (Math.random()-0.5)*1.2), life: 0.7 };
+    // 水しぶき
+    const POND_POS=water.position.clone();
+    const droplets=[];
+    const dropletGeo=new THREE.SphereGeometry(.06,10,8);
+    const dropletBaseMat=new THREE.MeshStandardMaterial({
+      color:0xB3E5FF,metalness:0,roughness:.2,transparent:true,opacity:.9
+    });
+    function spawnSplash(pos,count=6) {
+      for (let i=0;i<count;i++) {
+        const m=new THREE.Mesh(dropletGeo,dropletBaseMat.clone());
+        m.position.copy(pos).add(new THREE.Vector3(
+          (Math.random()-.5)*.4,.1,(Math.random()-.5)*.4
+        ));
+        m.userData={
+          vel:new THREE.Vector3(
+            (Math.random()-.5)*1.2,1.5+Math.random()*.8,(Math.random()-.5)*1.2
+          ),
+          life:.7
+        };
         scene.add(m);
         droplets.push(m);
       }
     }
 
-    // ---- Cat ----
-    const cat = new THREE.Group(); garden.add(cat); cat.position.set(-11.2, 0, 2.5); cat.visible = false; // 非表示
-    const catMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
-    const catBody = new THREE.Mesh(new THREE.SphereGeometry(0.45, 18, 14), catMat); catBody.scale.set(1.4, 0.9, 1.8); catBody.position.y = 0.45; cat.add(catBody);
-    const catHead = new THREE.Mesh(new THREE.SphereGeometry(0.28, 18, 14), catMat); catHead.position.set(0, 0.9, 0.2); cat.add(catHead);
-    const earMat = new THREE.MeshStandardMaterial({ color: 0xFFE0E0 });
-    const earL = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.18, 12), earMat); earL.position.set(-0.12, 1.05, 0.18); cat.add(earL);
-    const earR = earL.clone(); earR.position.x = 0.12; cat.add(earR);
-    const eyeMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
-    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.03, 12, 8), eyeMat); eyeL.position.set(-0.07, 0.93, 0.35); cat.add(eyeL);
-    const eyeR = eyeL.clone(); eyeR.position.x = 0.07; cat.add(eyeR);
-    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.025, 10, 8), new THREE.MeshStandardMaterial({ color: 0xF8BBD0 })); nose.position.set(0, 0.9, 0.4); cat.add(nose);
-    const legGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.22, 10);
-    for (let i=0;i<4;i++){ const leg = new THREE.Mesh(legGeo, catMat); leg.position.set(i<2?-0.15:0.15, 0.11, i%2?0.1:-0.25); cat.add(leg); }
-    const catTail = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 10), catMat); catTail.position.set(0, 0.6, -0.45); catTail.rotation.x = Math.PI/3; cat.add(catTail);
-    garden.userData.catHead = catHead; garden.userData.catTail = catTail;
+    // 元の簡易ネコ（非表示）
+    const cat=new THREE.Group();
+    garden.add(cat);
+    cat.position.set(-11.2,0,2.5);
+    cat.visible=false;
+    const catMat=new THREE.MeshStandardMaterial({color:0xFFFFFF});
+    const catBody=new THREE.Mesh(new THREE.SphereGeometry(.45,18,14),catMat);
+    catBody.scale.set(1.4,.9,1.8);
+    catBody.position.y=.45;
+    cat.add(catBody);
+    const catHead=new THREE.Mesh(new THREE.SphereGeometry(.28,18,14),catMat);
+    catHead.position.set(0,.9,.2);
+    cat.add(catHead);
+    const earMat=new THREE.MeshStandardMaterial({color:0xFFE0E0});
+    const earL=new THREE.Mesh(new THREE.ConeGeometry(.1,.18,12),earMat);
+    earL.position.set(-.12,1.05,.18);
+    cat.add(earL);
+    const earR=earL.clone();
+    earR.position.x=.12;
+    cat.add(earR);
+    const eyeMat=new THREE.MeshStandardMaterial({color:0x222222});
+    const eyeL=new THREE.Mesh(new THREE.SphereGeometry(.03,12,8),eyeMat);
+    eyeL.position.set(-.07,.93,.35);
+    cat.add(eyeL);
+    const eyeR=eyeL.clone();
+    eyeR.position.x=.07;
+    cat.add(eyeR);
+    const nose=new THREE.Mesh(
+      new THREE.SphereGeometry(.025,10,8),
+      new THREE.MeshStandardMaterial({color:0xF8BBD0})
+    );
+    nose.position.set(0,.9,.4);
+    cat.add(nose);
+    const legGeo=new THREE.CylinderGeometry(.06,.06,.22,10);
+    for (let i=0;i<4;i++) {
+      const leg=new THREE.Mesh(legGeo,catMat);
+      leg.position.set(i<2?-.15:.15,.11,i%2?.1:-.25);
+      cat.add(leg);
+    }
+    const catTail=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.5,10),catMat);
+    catTail.position.set(0,.6,-.45);
+    catTail.rotation.x=Math.PI/3;
+    cat.add(catTail);
+    garden.userData.catHead=catHead;
+    garden.userData.catTail=catTail;
 
-    // ---- Toys & props ----
-    const toys = new THREE.Group(); scene.add(toys);
-    const RING_X = 4.0, RING_Z = -3.0;
-    const addBlock = (x,z,color) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.9,0.9,0.9), new THREE.MeshStandardMaterial({ color })); m.position.set(x,0.45,z); toys.add(m); return m; };
-    const blocks = [];
+    // おもちゃ
+    const toys=new THREE.Group();
+    scene.add(toys);
+    const RING_X=4.0,RING_Z=-3.0;
+    const addBlock=(x,z,color)=>{
+      const m=new THREE.Mesh(
+        new RoundedBoxGeometry(.9,.9,.9,2,.08),
+        new THREE.MeshStandardMaterial({color})
+      );
+      m.position.set(x,.45,z);
+      toys.add(m);
+      return m;
+    };
+    const blocks=[];
     blocks.push(addBlock(-4,-2,0xf9a825));
     blocks.push(addBlock(-5,-1,0x4fc3f7));
     blocks.push(addBlock(-3,-1,0x81c784));
-    const BLOCKS_POS = new THREE.Vector3(
-      (blocks[0].position.x + blocks[1].position.x + blocks[2].position.x)/3, 0,
-      (blocks[0].position.z + blocks[1].position.z + blocks[2].position.z)/3
+    const BLOCKS_POS=new THREE.Vector3(
+      (blocks[0].position.x+blocks[1].position.x+blocks[2].position.x)/3,0,
+      (blocks[0].position.z+blocks[1].position.z+blocks[2].position.z)/3
     );
-
-    const ring = (radius, y, color) => { const g=new THREE.TorusGeometry(radius,0.15,12,32); const m=new THREE.MeshStandardMaterial({ color }); const t=new THREE.Mesh(g,m); t.rotation.x=Math.PI/2; t.position.set(RING_X, y, RING_Z); toys.add(t); return t; };
-    ring(0.8, 0.35, 0xff8a65); ring(0.65, 0.55, 0x4db6ac); ring(0.5, 0.75, 0x9575cd);
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,1.2,16), new THREE.MeshStandardMaterial({ color: 0xd7ccc8 })); pole.position.set(RING_X,0.6,RING_Z); toys.add(pole);
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,0.2,20), new THREE.MeshStandardMaterial({ color: 0xef9a9a })); base.position.set(RING_X,0.1,RING_Z); toys.add(base);
-
-    const dish = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.1, 24), new THREE.MeshStandardMaterial({ color: 0x90caf9 })); dish.position.set(2, 0.05, 2); scene.add(dish);
-
-    // ---- Bed ----
-    const bed = new THREE.Group(); scene.add(bed);
-    const bedX = -4.8, bedZ = 5.2;
-    const woodMat = new THREE.MeshStandardMaterial({ color: 0xC18E66 });
-    const fabricMat = new THREE.MeshStandardMaterial({ color: 0xEDE7F6 });
-    const blanketMat = new THREE.MeshStandardMaterial({ color: 0x9bd0ff });
-    const bedBase = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.25, 1.8), woodMat); bedBase.position.set(bedX, 0.125, bedZ); bed.add(bedBase);
-    const headBoard = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.6, 0.12), woodMat); headBoard.position.set(bedX, 0.55, bedZ - 0.95); bed.add(headBoard);
-    const mattress = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.22, 1.6), fabricMat); mattress.position.set(bedX, 0.36, bedZ); bed.add(mattress);
-    const blanket = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.12, 1.2), blanketMat); blanket.position.set(bedX + 0.2, 0.48, bedZ + 0.05); bed.add(blanket);
-    const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.15, 0.45), new THREE.MeshStandardMaterial({ color: 0xffffff })); pillow.position.set(bedX - 1.3, 0.5, bedZ + 0.0); pillow.rotation.y = Math.PI / 2; bed.add(pillow);
-    const BED_SLEEP = { x: bedX - 0.9, z: bedZ - 0.45, y: 0.55 };
-
-    // ---- Resource queues ----
-    const RES = {
-      play:  { holder: null, queue: [], pos: new THREE.Vector3(RING_X, 0, RING_Z), waitDir: new THREE.Vector3(-1,0,0) },
-      playBlocks: { holder: null, queue: [], pos: BLOCKS_POS.clone(), waitDir: new THREE.Vector3(-1,0,0) },
-      eat:   { holder: null, queue: [], pos: dish.position.clone(), waitDir: new THREE.Vector3(-1,0,0) },
-      sleep: { holder: null, queue: [], pos: new THREE.Vector3(BED_SLEEP.x, 0, BED_SLEEP.z), waitDir: new THREE.Vector3(1,0,0) },
-      pond:  { holder: null, queue: [], pos: POND_POS.clone(), waitDir: new THREE.Vector3(1,0,0) }
+    const ring=(radius,y,color)=>{
+      const g=new THREE.TorusGeometry(radius,.15,12,32);
+      const m=new THREE.MeshStandardMaterial({color});
+      const t=new THREE.Mesh(g,m);
+      t.rotation.x=Math.PI/2;
+      t.position.set(RING_X,y,RING_Z);
+      toys.add(t);
+      return t;
     };
-    // 追加: ネコ用キュー（予備位置）
-    RES.neco = { holder: null, queue: [], pos: new THREE.Vector3(-11.2,0,2.5), waitDir: new THREE.Vector3(1,0,0) };
+    ring(.8,.35,0xff8a65);
+    ring(.65,.55,0x4db6ac);
+    ring(.5,.75,0x9575cd);
+    const pole=new THREE.Mesh(
+      new THREE.CylinderGeometry(.08,.08,1.2,16),
+      new THREE.MeshStandardMaterial({color:0xd7ccc8})
+    );
+    pole.position.set(RING_X,.6,RING_Z);
+    toys.add(pole);
+    const base=new THREE.Mesh(
+      new THREE.CylinderGeometry(.5,.7,.2,20),
+      new THREE.MeshStandardMaterial({color:0xef9a9a})
+    );
+    base.position.set(RING_X,.1,RING_Z);
+    toys.add(base);
+    const dish=new THREE.Mesh(
+      new THREE.CylinderGeometry(.9,.9,.1,24),
+      new THREE.MeshStandardMaterial({color:0x90caf9})
+    );
+    dish.position.set(2,.05,2);
+    scene.add(dish);
 
-    function requestResource(p, name){ const r = RES[name]; if(!r.holder){ r.holder = p; return true; } if(!r.queue.includes(p)) r.queue.push(p); return false; }
-    function releaseResource(name){ const r = RES[name]; if(r.holder) r.holder = null; const next = r.queue.shift(); if(next) setState(next, name); }
-    function dequeueAll(p){
-      ['play','playBlocks','eat','sleep','pond','neco','sharon'].forEach((name)=>{
-        const r = RES[name]; if(!r) return;
-        const i = r.queue.indexOf(p);
-        if (i >= 0) r.queue.splice(i, 1);
-        if (r.holder === p) {
-          r.holder = null;
-          const next = r.queue.shift();
-          if (next) setState(next, name);
+    // ベッド
+    const bed=new THREE.Group();
+    scene.add(bed);
+    const bedX=-4.8,bedZ=5.2;
+    const woodMat=palette.oak;
+    const fabricMat=makeMat(0xf3ecdb,{map:fabricTexture});
+    const blanketMat=makeMat(0x7baeb0,{map:fabricTexture});
+    const bedBase=new THREE.Mesh(
+      new RoundedBoxGeometry(3.2,.25,1.8,2,.055),woodMat
+    );
+    bedBase.position.set(bedX,.125,bedZ);
+    bed.add(bedBase);
+    const headBoard=new THREE.Mesh(
+      new RoundedBoxGeometry(3.2,.6,.12,2,.055),woodMat
+    );
+    headBoard.position.set(bedX,.55,bedZ-.95);
+    bed.add(headBoard);
+    const mattress=new THREE.Mesh(
+      new RoundedBoxGeometry(3,.22,1.6,2,.055),fabricMat
+    );
+    mattress.position.set(bedX,.36,bedZ);
+    bed.add(mattress);
+    const blanket=new THREE.Mesh(
+      new RoundedBoxGeometry(1.6,.12,1.2,2,.055),blanketMat
+    );
+    blanket.position.set(bedX+.2,.48,bedZ+.05);
+    bed.add(blanket);
+    const pillow=new THREE.Mesh(
+      new RoundedBoxGeometry(.7,.15,.45,2,.055),
+      new THREE.MeshStandardMaterial({color:0xffffff})
+    );
+    pillow.position.set(bedX-1.3,.5,bedZ);
+    pillow.rotation.y=Math.PI/2;
+    bed.add(pillow);
+    const BED_SLEEP={x:bedX-.9,z:bedZ-.45,y:.55};
+    for (let i=0;i<9;i++) {
+      box(bed,.05,.62,.055,bedX-1.4+i*.35,.53,bedZ-.87,palette.ivory);
+    }
+    for (let i=0;i<11;i++) {
+      box(bed,.025,.008,1.13,bedX-.51+i*.14,.545,bedZ+.05,palette.ivory);
+    }
+    for (const x of [bedX-1.3,bedX+1.3]) {
+      for (const z of [bedZ-.65,bedZ+.65]) cyl(bed,.08,.14,x,.07,z,palette.darkOak);
+    }
+    bed.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+    toys.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+    dish.material=makeMat(0x92b7b8,{roughness:.27});
+    const dishRim=mesh(
+      scene,new THREE.TorusGeometry(.84,.065,8,32),palette.ivory,2,.13,2
+    );
+    dishRim.rotation.x=Math.PI/2;
+
+    // 行動の順番待ち
+    const RES={
+      play:{
+        holder:null,queue:[],pos:new THREE.Vector3(RING_X,0,RING_Z),
+        waitDir:new THREE.Vector3(-1,0,0)
+      },
+      playBlocks:{
+        holder:null,queue:[],pos:BLOCKS_POS.clone(),
+        waitDir:new THREE.Vector3(-1,0,0)
+      },
+      eat:{
+        holder:null,queue:[],pos:dish.position.clone(),
+        waitDir:new THREE.Vector3(-1,0,0)
+      },
+      sleep:{
+        holder:null,queue:[],pos:new THREE.Vector3(BED_SLEEP.x,0,BED_SLEEP.z),
+        waitDir:new THREE.Vector3(1,0,0)
+      },
+      pond:{
+        holder:null,queue:[],pos:POND_POS.clone(),
+        waitDir:new THREE.Vector3(1,0,0)
+      }
+    };
+    RES.neco={
+      holder:null,queue:[],pos:new THREE.Vector3(-11.2,0,2.5),
+      waitDir:new THREE.Vector3(1,0,0)
+    };
+    function requestResource(p,name) {
+      const r=RES[name];
+      if (!r.holder) {r.holder=p;return true;}
+      if (!r.queue.includes(p)) r.queue.push(p);
+      return false;
+    }
+    function releaseResource(name) {
+      const r=RES[name];
+      if (r.holder) r.holder=null;
+      const next=r.queue.shift();
+      if (next) setState(next,name);
+    }
+    function dequeueAll(p) {
+      ['play','playBlocks','eat','sleep','pond','neco','sharon'].forEach(name=>{
+        const r=RES[name];
+        if (!r) return;
+        const i=r.queue.indexOf(p);
+        if (i>=0) r.queue.splice(i,1);
+        if (r.holder===p) {
+          r.holder=null;
+          const next=r.queue.shift();
+          if (next) setState(next,name);
         }
       });
     }
-    function queueWaitPos(name, p){
-      const r = RES[name];
-      const base = (r && r.pos) ? r.pos.clone() : new THREE.Vector3();
-      const dir  = (r && r.waitDir) ? r.waitDir.clone() : new THREE.Vector3(1,0,0);
-      const idx  = r && r.queue ? r.queue.indexOf(p) : -1;
-      const k    = (idx >= 0 ? idx + 1 : ((r && r.queue ? r.queue.length : 0) + 1));
-      const off  = dir.multiplyScalar(0.7 * k);
+    function queueWaitPos(name,p) {
+      const r=RES[name];
+      const base=(r&&r.pos)?r.pos.clone():new THREE.Vector3();
+      const dir=(r&&r.waitDir)?r.waitDir.clone():new THREE.Vector3(1,0,0);
+      const idx=r&&r.queue?r.queue.indexOf(p):-1;
+      const k=idx>=0?idx+1:((r&&r.queue?r.queue.length:0)+1);
+      const off=dir.multiplyScalar(.7*k);
       return base.add(off);
     }
 
-    // ---- Mobile toy ----
-    const mobile = new THREE.Group(); scene.add(mobile); mobile.position.set(-5, 3.8, -4.5);
-    const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.2,12), new THREE.MeshStandardMaterial({ color: 0xd7ccc8 })); rod.rotation.z = Math.PI/2; mobile.add(rod);
-    const stringMat = new THREE.MeshStandardMaterial({ color: 0xd7ccc8 });
-    const makeFish = () => { const fish = new THREE.Group(); const body = new THREE.Mesh(new THREE.SphereGeometry(0.18,16,12), new THREE.MeshStandardMaterial({ color: 0x64b5f6 })); body.scale.set(1.5,1,1); fish.add(body); const tail = new THREE.Mesh(new THREE.ConeGeometry(0.18,0.3,16), new THREE.MeshStandardMaterial({ color: 0xffcc80 })); tail.rotation.z = Math.PI/2; tail.position.set(-0.35,0,0); fish.add(tail); const eye = new THREE.Mesh(new THREE.SphereGeometry(0.04,10,8), new THREE.MeshStandardMaterial({ color: 0x222 })); eye.position.set(0.2,0.08,0.12); fish.add(eye); return fish; };
-    const hangFish = (oz) => { const s = new THREE.Mesh(new THREE.CylinderGeometry(0.015,0.015,1.0,8), stringMat); s.position.set(0,-0.5,oz); mobile.add(s); const f = makeFish(); f.position.set(0,-1.1,oz); mobile.add(f); return f; };
-    const mf1 = hangFish(-0.35), mf2 = hangFish(0), mf3 = hangFish(0.35);
+    // お魚のモビール
+    const mobile=new THREE.Group();
+    scene.add(mobile);
+    mobile.position.set(-5,3.8,-4.5);
+    const rod=new THREE.Mesh(
+      new THREE.CylinderGeometry(.03,.03,1.2,12),
+      new THREE.MeshStandardMaterial({color:0xd7ccc8})
+    );
+    rod.rotation.z=Math.PI/2;
+    mobile.add(rod);
+    const stringMat=new THREE.MeshStandardMaterial({color:0xd7ccc8});
+    const makeFish=()=>{
+      const fish=new THREE.Group();
+      const body=new THREE.Mesh(
+        new THREE.SphereGeometry(.18,16,12),
+        new THREE.MeshStandardMaterial({color:0x64b5f6})
+      );
+      body.scale.set(1.5,1,1);
+      fish.add(body);
+      const tail=new THREE.Mesh(
+        new THREE.ConeGeometry(.18,.3,16),
+        new THREE.MeshStandardMaterial({color:0xffcc80})
+      );
+      tail.rotation.z=Math.PI/2;
+      tail.position.set(-.35,0,0);
+      fish.add(tail);
+      const eye=new THREE.Mesh(
+        new THREE.SphereGeometry(.04,10,8),
+        new THREE.MeshStandardMaterial({color:0x222})
+      );
+      eye.position.set(.2,.08,.12);
+      fish.add(eye);
+      return fish;
+    };
+    const hangFish=oz=>{
+      const s=new THREE.Mesh(new THREE.CylinderGeometry(.015,.015,1,8),stringMat);
+      s.position.set(0,-.5,oz);
+      mobile.add(s);
+      const f=makeFish();
+      f.position.set(0,-1.1,oz);
+      mobile.add(f);
+      return f;
+    };
+    const mf1=hangFish(-.35),mf2=hangFish(0),mf3=hangFish(.35);
 
-    // ===== ペンギンまみれ: ゲーム設定 =====
-    const GAME = {
-      enabled: new URLSearchParams(location.search).get('game') === '1',
-      running: false,
-      over: false,
-      startTime: 0,
-      elapsed: 0,
-      spawnEvery: 5.0,      // 何秒ごとに1羽増えるか
-      spawnTimer: 0,
-      initialCount: 3,      // 開始時の羽数
-      surroundRadius: 2.2,  // この距離内にいるペンギンを「囲み」とカウント
-      surroundLimit: 7,     // 囲みがこの数を超えたらゲームオーバー
-      trigger: 'greet',     // 'greet'=挨拶した子が追尾 / 'radius'=距離で追尾
-      chaseRadius: 5.0,     // trigger:'radius' のときの発火距離
-      chaseSpeed: 1.15,     // 追尾速度（少年より少し遅い）
-      colorCycle: ['Pen.glb','Pen_b.glb','Pen_r.glb','Pen_y.glb','Pen_g.glb'],
-      colorIdx: 0
+    // ペンギンまみれ
+    const GAME={
+      enabled:new URLSearchParams(location.search).get('game')==='1',
+      running:false,
+      over:false,
+      startTime:0,
+      elapsed:0,
+      spawnEvery:5,
+      spawnTimer:0,
+      initialCount:3,
+      surroundRadius:2.2,
+      surroundLimit:7,
+      trigger:'greet',
+      chaseRadius:5,
+      chaseSpeed:1.15,
+      colorCycle:['Pen.glb','Pen_b.glb','Pen_r.glb','Pen_y.glb','Pen_g.glb'],
+      colorIdx:0
     };
 
-    // ---- GLTF loader (shared) ----
-    let penguin = null; const penguins = [];
-    let gltfLoader = new GLTFLoader();
-    let draco = new DRACOLoader();
+    let penguin=null;
+    const penguins=[];
+    let gltfLoader=new GLTFLoader();
+    let draco=new DRACOLoader();
     draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/');
     gltfLoader.setDRACOLoader(draco);
-    const ktx2 = new KTX2Loader().setTranscoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/basis/');
+    const ktx2=new KTX2Loader().setTranscoderPath(
+      'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/basis/'
+    );
     ktx2.detectSupport(renderer);
     gltfLoader.setKTX2Loader(ktx2);
     gltfLoader.setMeshoptDecoder(MeshoptDecoder);
 
-    // === 可動範囲を右庭まで拡張 ===
-    const bounds = { xMin: -16, xMax: 17, zMin: -7, zMax: 15 };
-    // 少年の行動範囲: 通常は全域(bounds)、ゲーム中は部屋の中だけに閉じ込める
-    const ROOM_BOUNDS = { xMin: -8.5, xMax: 8.5, zMin: -6.5, zMax: 6.5 };
-    function boyBounds(){ return (GAME.enabled && GAME.running) ? ROOM_BOUNDS : bounds; }
-    function clampBoy(){
+    const bounds={xMin:-16,xMax:17,zMin:-7,zMax:15};
+    const ROOM_BOUNDS={xMin:-8.5,xMax:8.5,zMin:-6.5,zMax:6.5};
+    function boyBounds() {
+      return GAME.enabled&&GAME.running?ROOM_BOUNDS:bounds;
+    }
+    function clampBoy() {
       if (!boyRef) return;
-      const b = boyBounds();
-      boyRef.position.x = THREE.MathUtils.clamp(boyRef.position.x, b.xMin, b.xMax);
-      boyRef.position.z = THREE.MathUtils.clamp(boyRef.position.z, b.zMin, b.zMax);
+      const b=boyBounds();
+      boyRef.position.x=THREE.MathUtils.clamp(boyRef.position.x,b.xMin,b.xMax);
+      boyRef.position.z=THREE.MathUtils.clamp(boyRef.position.z,b.zMin,b.zMax);
     }
-    const targetHeight = 2.2;
-    const HEADING_OFFSET = Math.PI;
+    const targetHeight=2.2;
+    const HEADING_OFFSET=Math.PI;
 
-    // ---- Bubbles ----
-    const commentMap = {
-      wander: 'おさんぽしよっと',
-      lounge: 'ちょとつかれた',
-      play:   'あそぼっと',
-      playBlocks: 'あそぼっと',
-      eat:    'おなかすいた',
-      window: 'そとなにあるかな',
-      sleep:  'もうねよっと',
-      wake:   '',
-      sit:    'ちょときゅうけい',
-      pond:   'ちょとあつい',
-      neco:   'ネコみよっと',
-      sharon: 'シャロンみよっと',
-      chase:  'ねぇ、あそぼ'
+    const commentMap={
+      wander:'おさんぽしよっと',
+      lounge:'ちょとつかれた',
+      play:'あそぼっと',
+      playBlocks:'あそぼっと',
+      eat:'おなかすいた',
+      window:'そとなにあるかな',
+      sleep:'もうねよっと',
+      wake:'',
+      sit:'ちょときゅうけい',
+      pond:'ちょとあつい',
+      neco:'ネコみよっと',
+      sharon:'シャロンみよっと',
+      chase:'ねぇ、あそぼ'
     };
-    function ensureBubble(p){ if (!p.userData.bubbleEl) { const el = document.createElement('div'); el.className='bubble'; document.body.appendChild(el); p.userData.bubbleEl = el; } return p.userData.bubbleEl; }
-    function setBubble(p, state){ const el = ensureBubble(p); el.textContent = commentMap[state] || ''; el.style.opacity = el.textContent ? 1 : 0; }
-    function updateBubblePositionFor(p){
-      const el = p.userData.bubbleEl; if (!el) return;
-      const offY = (p.userData && typeof p.userData.bubbleOffsetY === 'number') ? p.userData.bubbleOffsetY : 2.6;
-      const world = p.position.clone().add(new THREE.Vector3(0, offY, 0));
-      const q = world.project(camera);
-      el.style.left = (q.x*0.5+0.5)*window.innerWidth+'px';
-      el.style.top  = (-q.y*0.5+0.5)*window.innerHeight+'px';
+    function ensureBubble(p) {
+      if (!p.userData.bubbleEl) {
+        const el=document.createElement('div');
+        el.className='bubble';
+        document.body.appendChild(el);
+        p.userData.bubbleEl=el;
+      }
+      return p.userData.bubbleEl;
     }
-    function setBubbleText(obj, text){ const el = ensureBubble(obj); el.textContent = text || ''; el.style.opacity = text ? 1 : 0; }
+    function setBubble(p,state) {
+      const el=ensureBubble(p);
+      el.textContent=commentMap[state]||'';
+      el.style.opacity=el.textContent?1:0;
+    }
+    function updateBubblePositionFor(p) {
+      const el=p.userData.bubbleEl;
+      if (!el) return;
+      const offY=p.userData&&typeof p.userData.bubbleOffsetY==='number'
+        ?p.userData.bubbleOffsetY:2.6;
+      const world=p.position.clone().add(new THREE.Vector3(0,offY,0));
+      const q=world.project(camera);
+      el.style.left=(q.x*.5+.5)*window.innerWidth+'px';
+      el.style.top=(-q.y*.5+.5)*window.innerHeight+'px';
+    }
+    function setBubbleText(obj,text) {
+      const el=ensureBubble(obj);
+      el.textContent=text||'';
+      el.style.opacity=text?1:0;
+    }
 
-    // ---- Penguin load helpers ----
     function fitAndFloor(model) {
-      const tmp = new THREE.Group(); tmp.add(model); scene.add(tmp);
+      const tmp=new THREE.Group();
+      tmp.add(model);
+      scene.add(tmp);
       tmp.updateWorldMatrix(true,true);
-      const box = new THREE.Box3().setFromObject(tmp);
-      const size = new THREE.Vector3(); box.getSize(size);
-      const s = (size.y>0? targetHeight/size.y : 1);
+      const box=new THREE.Box3().setFromObject(tmp);
+      const size=new THREE.Vector3();
+      box.getSize(size);
+      const s=size.y>0?targetHeight/size.y:1;
       model.scale.setScalar(s);
       tmp.updateWorldMatrix(true,true);
-      const box2 = new THREE.Box3().setFromObject(tmp);
-      model.position.y += -box2.min.y;
+      const box2=new THREE.Box3().setFromObject(tmp);
+      model.position.y+=-box2.min.y;
       scene.remove(tmp);
       return model;
     }
-
     async function loadPenguin(url) {
-      setStatus('loading ' + url + ' ...');
-      return new Promise((resolve, reject) => {
-        gltfLoader.load(url, (gltf) => {
-          const st=$('status'); if(st){ st.textContent=''; st.style.display='none'; }
-          const root = new THREE.Group();
-          const model = gltf.scene;
-          model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      setStatus('loading '+url+' ...');
+      return new Promise((resolve,reject)=>{
+        gltfLoader.load(url,gltf=>{
+          const st=$('status');
+          if (st&&!missingPenguinModels) {
+            st.textContent='';
+            st.style.display='none';
+          }
+          const root=new THREE.Group();
+          const model=gltf.scene;
+          model.traverse(o=>{
+            if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}
+          });
           fitAndFloor(model);
           root.add(model);
-          let mixer = null;
-          if (gltf.animations && gltf.animations.length) {
-            mixer = new THREE.AnimationMixer(model);
-            const action = mixer.clipAction(gltf.animations[0]);
+          let mixer=null;
+          if (gltf.animations&&gltf.animations.length) {
+            mixer=new THREE.AnimationMixer(model);
+            const action=mixer.clipAction(gltf.animations[0]);
             action.play();
           }
-          root.userData = { speed: 0, state: 'idle', target: new THREE.Vector3(), timer: 0, mixer, model, goingToBed: false };
+          root.userData={
+            speed:0,state:'idle',target:new THREE.Vector3(),timer:0,
+            mixer,model,goingToBed:false
+          };
           resolve(root);
-        }, undefined, (err) => { console.error('GLB load error:', err); setStatus('GLB load error: ' + (err?.message || err)); reject(err); });
+        },undefined,err=>{
+          console.error('GLB load error:',err);
+          setStatus('GLB load error: '+(err?.message||err));
+          reject(err);
+        });
       });
     }
 
-    const FALLBACK_COLORS = {
-      'Pen.glb':   { body: 0x4b4f57, belly: 0xe9e9ee },
-      'Pen_b.glb': { body: 0x4f7bd6, belly: 0xe9eeff },
-      'Pen_r.glb': { body: 0xe06aa0, belly: 0xffe9f2 },
-      'Pen_y.glb': { body: 0xe0c24f, belly: 0xfff7e0 },
-      'Pen_g.glb': { body: 0x5fb56a, belly: 0xe9ffe9 }
+    const FALLBACK_COLORS={
+      'Pen.glb':{body:0x4b4f57,belly:0xe9e9ee},
+      'Pen_b.glb':{body:0x4f7bd6,belly:0xe9eeff},
+      'Pen_r.glb':{body:0xe06aa0,belly:0xffe9f2},
+      'Pen_y.glb':{body:0xe0c24f,belly:0xfff7e0},
+      'Pen_g.glb':{body:0x5fb56a,belly:0xe9ffe9}
     };
     function fallbackPenguin(url) {
-      const c = FALLBACK_COLORS[url] || FALLBACK_COLORS['Pen.glb'];
-      const g = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 18), new THREE.MeshStandardMaterial({ color: c.body })); body.scale.set(1, 1.4, 1); body.position.y = 1.2; g.add(body);
-      const belly = new THREE.Mesh(new THREE.SphereGeometry(0.62, 24, 18), new THREE.MeshStandardMaterial({ color: c.belly })); belly.scale.set(0.85, 1.25, 0.7); belly.position.set(0, 1.15, 0.42); g.add(belly);
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 24, 18), new THREE.MeshStandardMaterial({ color: c.body })); head.position.set(0, 2.05, 0.05); g.add(head);
-      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.34, 12), new THREE.MeshStandardMaterial({ color: 0xf2a73e })); beak.rotation.x = Math.PI/2; beak.position.set(0, 2.0, 0.5); g.add(beak);
-      const eyeMat = new THREE.MeshStandardMaterial({ color: 0x111 });
-      const eL = new THREE.Mesh(new THREE.SphereGeometry(0.06,10,8), eyeMat); eL.position.set(-0.16, 2.15, 0.42); g.add(eL);
-      const eR = eL.clone(); eR.position.x = 0.16; g.add(eR);
-      g.userData = { speed: 0, state: 'idle', target: new THREE.Vector3(), timer: 0 };
+      const c=FALLBACK_COLORS[url]||FALLBACK_COLORS['Pen.glb'];
+      const g=new THREE.Group();
+      const body=new THREE.Mesh(
+        new THREE.SphereGeometry(.9,24,18),
+        new THREE.MeshStandardMaterial({color:c.body})
+      );
+      body.scale.set(1,1.4,1);
+      body.position.y=1.2;
+      g.add(body);
+      const belly=new THREE.Mesh(
+        new THREE.SphereGeometry(.62,24,18),
+        new THREE.MeshStandardMaterial({color:c.belly})
+      );
+      belly.scale.set(.85,1.25,.7);
+      belly.position.set(0,1.15,.42);
+      g.add(belly);
+      const head=new THREE.Mesh(
+        new THREE.SphereGeometry(.45,24,18),
+        new THREE.MeshStandardMaterial({color:c.body})
+      );
+      head.position.set(0,2.05,.05);
+      g.add(head);
+      const beak=new THREE.Mesh(
+        new THREE.ConeGeometry(.12,.34,12),
+        new THREE.MeshStandardMaterial({color:0xf2a73e})
+      );
+      beak.rotation.x=Math.PI/2;
+      beak.position.set(0,2,.5);
+      g.add(beak);
+      const eyeMat=new THREE.MeshStandardMaterial({color:0x111});
+      const eL=new THREE.Mesh(new THREE.SphereGeometry(.06,10,8),eyeMat);
+      eL.position.set(-.16,2.15,.42);
+      g.add(eL);
+      const eR=eL.clone();
+      eR.position.x=.16;
+      g.add(eR);
+      g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
+      g.userData={speed:0,state:'idle',target:new THREE.Vector3(),timer:0};
       return g;
     }
 
-    // ---- Behavior helpers ----
-    function randomPointNear(x0, z0, r=5) {
-      const x = THREE.MathUtils.clamp(x0 + (Math.random()*2-1)*r, bounds.xMin, bounds.xMax);
-      const z = THREE.MathUtils.clamp(z0 + (Math.random()*2-1)*r, bounds.zMin, bounds.zMax);
+    function randomPointNear(x0,z0,r=5) {
+      const x=THREE.MathUtils.clamp(
+        x0+(Math.random()*2-1)*r,bounds.xMin,bounds.xMax
+      );
+      const z=THREE.MathUtils.clamp(
+        z0+(Math.random()*2-1)*r,bounds.zMin,bounds.zMax
+      );
       return new THREE.Vector3(x,0,z);
     }
 
-    // === 右のガラス壁の回り込み経路 ===
-    const RIGHT_WALL_X = 9.0;
-    const RIGHT_WALL_Z_MIN = -6.5;
-    const RIGHT_WALL_Z_MAX =  6.5;
-    const GATE_EPS = 0.35;
-    const GATE_FRONT_Z = RIGHT_WALL_Z_MAX + 0.2;
-    const GATE_BACK_Z  = RIGHT_WALL_Z_MIN - 0.2;
-    // （左側は壁が無く自由通行。回り込みは右ガラス壁のみ pathAroundRightWall で処理）
-
-    function pathAroundRightWall(from, to){
-      const crosses = ((from.x <= RIGHT_WALL_X && to.x > RIGHT_WALL_X) || (from.x >= RIGHT_WALL_X && to.x < RIGHT_WALL_X));
-      const zInBand = (z)=> (z > RIGHT_WALL_Z_MIN && z < RIGHT_WALL_Z_MAX);
-      if (!crosses || !zInBand(from.z) || !zInBand(to.z)) return null;
-      const insideX = RIGHT_WALL_X - GATE_EPS, outsideX = RIGHT_WALL_X + GATE_EPS;
-      const frontIn  = new THREE.Vector3(insideX,0,GATE_FRONT_Z), frontOut = new THREE.Vector3(outsideX,0,GATE_FRONT_Z);
-      const backIn   = new THREE.Vector3(insideX,0,GATE_BACK_Z),  backOut  = new THREE.Vector3(outsideX,0,GATE_BACK_Z);
-      const frontLen = from.distanceTo(frontIn)+frontIn.distanceTo(frontOut)+frontOut.distanceTo(to);
-      const backLen  = from.distanceTo(backIn)+backIn.distanceTo(backOut)+backOut.distanceTo(to);
-      return (frontLen <= backLen) ? [frontIn, frontOut] : [backIn, backOut];
+    const RIGHT_WALL_X=9;
+    const RIGHT_WALL_Z_MIN=-6.5;
+    const RIGHT_WALL_Z_MAX=6.5;
+    const GATE_EPS=.35;
+    const GATE_FRONT_Z=RIGHT_WALL_Z_MAX+.2;
+    const GATE_BACK_Z=RIGHT_WALL_Z_MIN-.2;
+    function pathAroundRightWall(from,to) {
+      const crosses=
+        (from.x<=RIGHT_WALL_X&&to.x>RIGHT_WALL_X)||
+        (from.x>=RIGHT_WALL_X&&to.x<RIGHT_WALL_X);
+      const zInBand=z=>z>RIGHT_WALL_Z_MIN&&z<RIGHT_WALL_Z_MAX;
+      if (!crosses||!zInBand(from.z)||!zInBand(to.z)) return null;
+      const insideX=RIGHT_WALL_X-GATE_EPS,outsideX=RIGHT_WALL_X+GATE_EPS;
+      const frontIn=new THREE.Vector3(insideX,0,GATE_FRONT_Z);
+      const frontOut=new THREE.Vector3(outsideX,0,GATE_FRONT_Z);
+      const backIn=new THREE.Vector3(insideX,0,GATE_BACK_Z);
+      const backOut=new THREE.Vector3(outsideX,0,GATE_BACK_Z);
+      const frontLen=from.distanceTo(frontIn)+frontIn.distanceTo(frontOut)+frontOut.distanceTo(to);
+      const backLen=from.distanceTo(backIn)+backIn.distanceTo(backOut)+backOut.distanceTo(to);
+      return frontLen<=backLen?[frontIn,frontOut]:[backIn,backOut];
     }
-
-    function setRoute(p, dest){
-      const via = pathAroundRightWall(p.position, dest);
-      p.userData.way = [];
-      if (via && via.length){
-        p.userData.way = [...via, dest.clone()];
+    function setRoute(p,dest) {
+      const via=pathAroundRightWall(p.position,dest);
+      p.userData.way=[];
+      if (via&&via.length) {
+        p.userData.way=[...via,dest.clone()];
         p.userData.target.copy(p.userData.way.shift());
       } else {
         p.userData.target.copy(dest);
       }
     }
 
-    function chooseNextAction(p){
+    function chooseNextAction(p) {
       if (!p) return;
-      if (GAME.enabled && GAME.running){
-        // radius方式: 全員 chase に寄せる（距離トリガーは updateGame 側でも発火）
-        if (GAME.trigger === 'radius'){ setState(p,'chase'); return; }
-        // greet方式: 一度ロックオンされた子だけ chase を維持。未挨拶の子は普通にうろつく。
-        if (p.userData.greetedLock){ setState(p,'chase'); return; }
-        // 未挨拶の子はそのまま下のランダム行動へ（挨拶でロックオンされるまで自由）
+      if (GAME.enabled&&GAME.running) {
+        if (GAME.trigger==='radius') {setState(p,'chase');return;}
+        if (p.userData.greetedLock) {setState(p,'chase');return;}
       }
-      const r = Math.random();
-      if (r < 0.27) setState(p,'wander');
-      else if (r < 0.42) setState(p,'lounge');
-      else if (r < 0.49) setState(p,'play');
-      else if (r < 0.57) setState(p,'playBlocks');
-      else if (r < 0.72) setState(p,'eat');
-      else if (r < 0.80) setState(p,'pond');
-      else if (r < 0.90) setState(p,'neco');
-      else if (r < 0.94) setState(p,'window');
-      //else if (r < 0.94) setState(p,'sharon');
-      else if (r < 0.98) setState(p,'sleep');
+      const r=Math.random();
+      if (r<.27) setState(p,'wander');
+      else if (r<.42) setState(p,'lounge');
+      else if (r<.49) setState(p,'play');
+      else if (r<.57) setState(p,'playBlocks');
+      else if (r<.72) setState(p,'eat');
+      else if (r<.80) setState(p,'pond');
+      else if (r<.90) setState(p,'neco');
+      else if (r<.94) setState(p,'window');
+      else if (r<.98) setState(p,'sleep');
       else setState(p,'sit');
     }
 
-    function setState(p, state){
-      if(!p) return;
-      const ud = p.userData; dequeueAll(p);
-      ud.timer = 0; ud.arrived = false;
-      let final = state; let bubbleKey = state;
+    function setState(p,state) {
+      if (!p) return;
+      const ud=p.userData;
+      dequeueAll(p);
+      ud.timer=0;
+      ud.arrived=false;
+      let final=state,bubbleKey=state;
 
-      if(state === 'wander'){ const dest = randomPointNear(p.position.x, p.position.z, 6); setRoute(p, dest); ud.speed = 0.9 + Math.random()*0.4; }
-      else if(state === 'lounge'){ ud.speed = 0; }
-      else if(state === 'play'){
-        ud.speed = 0.8;
-        if (requestResource(p,'play')) { setRoute(p, new THREE.Vector3(RING_X,0,RING_Z)); }
-        else { final = 'playWait'; setRoute(p, queueWaitPos('play',p)); bubbleKey = 'play'; }
-      }
-      else if(state === 'playBlocks'){
-        ud.speed = 0.8;
-        if (requestResource(p,'playBlocks')) { setRoute(p, BLOCKS_POS.clone()); }
-        else { final = 'playBlocksWait'; setRoute(p, queueWaitPos('playBlocks',p)); bubbleKey = 'playBlocks'; }
-      }
-      else if(state === 'eat'){
-        ud.speed = 1.0;
-        if (requestResource(p,'eat')) { setRoute(p, dish.position.clone().add(new THREE.Vector3(-0.9,0,0))); }
-        else { final = 'eatWait'; setRoute(p, queueWaitPos('eat',p)); bubbleKey = 'eat'; }
-      }
-      else if(state === 'pond'){
-        ud.speed = 1.0;
-        if (requestResource(p,'pond')) { setRoute(p, POND_POS.clone()); }
-        else { final = 'pondWait'; setRoute(p, queueWaitPos('pond',p)); bubbleKey = 'pond'; }
-      }
-      else if(state === 'neco'){
-        ud.speed = 1.0;
-        if (necoRef){
-          if (requestResource(p,'neco')){
-            const base = (RES.neco && RES.neco.pos) ? RES.neco.pos : new THREE.Vector3(-11.2,0,2.5);
-            const dest = base.clone().add(new THREE.Vector3(1.0,0,0));
-            setRoute(p, dest);
+      if (state==='wander') {
+        const dest=randomPointNear(p.position.x,p.position.z,6);
+        setRoute(p,dest);
+        ud.speed=.9+Math.random()*.4;
+      } else if (state==='lounge') {
+        ud.speed=0;
+      } else if (state==='play') {
+        ud.speed=.8;
+        if (requestResource(p,'play')) {
+          setRoute(p,new THREE.Vector3(RING_X,0,RING_Z));
+        } else {
+          final='playWait';
+          setRoute(p,queueWaitPos('play',p));
+          bubbleKey='play';
+        }
+      } else if (state==='playBlocks') {
+        ud.speed=.8;
+        if (requestResource(p,'playBlocks')) {
+          setRoute(p,BLOCKS_POS.clone());
+        } else {
+          final='playBlocksWait';
+          setRoute(p,queueWaitPos('playBlocks',p));
+          bubbleKey='playBlocks';
+        }
+      } else if (state==='eat') {
+        ud.speed=1;
+        if (requestResource(p,'eat')) {
+          setRoute(p,dish.position.clone().add(new THREE.Vector3(-.9,0,0)));
+        } else {
+          final='eatWait';
+          setRoute(p,queueWaitPos('eat',p));
+          bubbleKey='eat';
+        }
+      } else if (state==='pond') {
+        ud.speed=1;
+        if (requestResource(p,'pond')) {
+          setRoute(p,POND_POS.clone());
+        } else {
+          final='pondWait';
+          setRoute(p,queueWaitPos('pond',p));
+          bubbleKey='pond';
+        }
+      } else if (state==='neco') {
+        ud.speed=1;
+        if (necoRef) {
+          if (requestResource(p,'neco')) {
+            const base=RES.neco&&RES.neco.pos
+              ?RES.neco.pos:new THREE.Vector3(-11.2,0,2.5);
+            const dest=base.clone().add(new THREE.Vector3(1,0,0));
+            setRoute(p,dest);
           } else {
-            final = 'necoWait'; setRoute(p, queueWaitPos('neco',p)); bubbleKey = 'neco';
+            final='necoWait';
+            setRoute(p,queueWaitPos('neco',p));
+            bubbleKey='neco';
           }
         } else {
-          final = 'wander'; setRoute(p, randomPointNear(p.position.x, p.position.z, 5));
+          final='wander';
+          setRoute(p,randomPointNear(p.position.x,p.position.z,5));
         }
-      }
-      else if(state === 'sharon'){
-        ud.speed = 1.0;
-        if (sharonRef){
-          if (!RES.sharon) RES.sharon = { holder:null, queue:[], pos: SHARON_POS.clone(), waitDir: new THREE.Vector3(-1,0,0) };
-          if (requestResource(p,'sharon')){
-            const base = (RES.sharon && RES.sharon.pos) ? RES.sharon.pos : SHARON_POS.clone();
-            // シャロンの手前で少し散らす
-            const dest = base.clone().add(new THREE.Vector3(-1.0 + Math.random()*0.6, 0, (Math.random()-0.5)*0.8));
-            setRoute(p, dest);
+      } else if (state==='sharon') {
+        ud.speed=1;
+        if (sharonRef) {
+          if (!RES.sharon) {
+            RES.sharon={
+              holder:null,queue:[],pos:SHARON_POS.clone(),
+              waitDir:new THREE.Vector3(-1,0,0)
+            };
+          }
+          if (requestResource(p,'sharon')) {
+            const base=RES.sharon&&RES.sharon.pos?RES.sharon.pos:SHARON_POS.clone();
+            const dest=base.clone().add(new THREE.Vector3(
+              -1+Math.random()*.6,0,(Math.random()-.5)*.8
+            ));
+            setRoute(p,dest);
           } else {
-            final = 'sharonWait'; setRoute(p, queueWaitPos('sharon',p)); bubbleKey = 'sharon';
+            final='sharonWait';
+            setRoute(p,queueWaitPos('sharon',p));
+            bubbleKey='sharon';
           }
         } else {
-          final = 'wander'; setRoute(p, randomPointNear(p.position.x, p.position.z, 5));
+          final='wander';
+          setRoute(p,randomPointNear(p.position.x,p.position.z,5));
         }
+      } else if (state==='window') {
+        ud.speed=1;
+        setRoute(p,new THREE.Vector3(7.4,0,0));
+      } else if (state==='sit') {
+        ud.speed=0;
+      } else if (state==='sleep') {
+        ud.speed=1;
+        if (requestResource(p,'sleep')) {
+          setRoute(p,new THREE.Vector3(BED_SLEEP.x,0,BED_SLEEP.z));
+          ud.goingToBed=true;
+        } else {
+          final='sleepWait';
+          setRoute(p,queueWaitPos('sleep',p));
+          bubbleKey='sleep';
+        }
+      } else if (state==='chase') {
+        ud.speed=GAME.chaseSpeed;
+        if (boyRef) {
+          setRoute(p,boyRef.position.clone());
+        } else {
+          final='wander';
+          setRoute(p,randomPointNear(p.position.x,p.position.z,5));
+        }
+      } else if (state==='wake') {
+        ud.speed=0;
       }
-      else if(state === 'window'){ ud.speed = 1.0; setRoute(p, new THREE.Vector3(7.4,0,0)); }
-      else if(state === 'sit'){ ud.speed = 0; }
-      else if(state === 'sleep'){
-        ud.speed = 1.0;
-        if (requestResource(p,'sleep')) { setRoute(p, new THREE.Vector3(BED_SLEEP.x, 0, BED_SLEEP.z)); ud.goingToBed = true; }
-        else { final = 'sleepWait'; setRoute(p, queueWaitPos('sleep',p)); bubbleKey = 'sleep'; }
-      }
-      else if(state === 'chase'){
-        ud.speed = GAME.chaseSpeed;
-        // 追尾はリソースキューに関与しない（dequeueAllは冒頭で実行済み）
-        if (boyRef) { setRoute(p, boyRef.position.clone()); }
-        else { final = 'wander'; setRoute(p, randomPointNear(p.position.x, p.position.z, 5)); }
-      }
-      else if(state === 'wake'){ ud.speed = 0; }
-
-      ud.state = final;
-      setBubble(p, bubbleKey);
+      ud.state=final;
+      setBubble(p,bubbleKey);
     }
 
-    const clock = new THREE.Clock();
+    const clock=new THREE.Clock();
     function beakWorldPos(p) {
       if (!p) return new THREE.Vector3();
-      const forward = new THREE.Vector3(0,0,1).applyQuaternion(p.quaternion);
-      return p.position.clone().add(new THREE.Vector3(0,1.0,0)).add(forward.multiplyScalar(0.7));
+      const forward=new THREE.Vector3(0,0,1).applyQuaternion(p.quaternion);
+      return p.position.clone()
+        .add(new THREE.Vector3(0,1,0))
+        .add(forward.multiplyScalar(.7));
     }
 
-    function updatePenguin(p, dt) {
+    function updatePenguin(p,dt) {
       if (!p) return;
-      const ud = p.userData;
+      const ud=p.userData;
       if (ud.mixer) ud.mixer.update(dt);
-      ud.timer += dt;
-
-      if (ud.state !== 'sit' && ud.state !== 'sleep') { p.position.y = Math.max(0, Math.sin(performance.now()/1000*6)*0.03); }
-
-      if ([ 'wander','play','playBlocks','eat','window','pond','neco','sharon','chase',
-            'playWait','playBlocksWait','eatWait','pondWait','necoWait','sharonWait','sleepWait' ].includes(ud.state) || (ud.state==='sleep' && ud.goingToBed)) {
-        // chase 中は毎フレーム少年の現在位置を狙い続ける
-        if (ud.state === 'chase' && boyRef) { ud.way = []; ud.target.copy(boyRef.position); }
-        const target = ud.target;
-        const v = new THREE.Vector3(target.x - p.position.x, 0, target.z - p.position.z);
-
-        // separation
-        const sep = new THREE.Vector3();
+      ud.timer+=dt;
+      if (ud.state!=='sit'&&ud.state!=='sleep') {
+        p.position.y=Math.max(0,Math.sin(performance.now()/1000*6)*.03);
+      }
+      if ([
+        'wander','play','playBlocks','eat','window','pond','neco','sharon','chase',
+        'playWait','playBlocksWait','eatWait','pondWait','necoWait','sharonWait','sleepWait'
+      ].includes(ud.state)||(ud.state==='sleep'&&ud.goingToBed)) {
+        if (ud.state==='chase'&&boyRef) {
+          ud.way=[];
+          ud.target.copy(boyRef.position);
+        }
+        const target=ud.target;
+        const v=new THREE.Vector3(target.x-p.position.x,0,target.z-p.position.z);
+        const sep=new THREE.Vector3();
         for (const other of penguins) {
-          if (other === p) continue;
-          const dx = p.position.x - other.position.x;
-          const dz = p.position.z - other.position.z;
-          const d2 = dx*dx + dz*dz;
-          const minD = 1.2;
-          if (d2 > 1e-4 && d2 < minD*minD) {
-            const d = Math.sqrt(d2);
-            const f = (minD - d) / minD;
-            sep.x += (dx / d) * f;
-            sep.z += (dz / d) * f;
+          if (other===p) continue;
+          const dx=p.position.x-other.position.x,dz=p.position.z-other.position.z;
+          const d2=dx*dx+dz*dz,minD=1.2;
+          if (d2>1e-4&&d2<minD*minD) {
+            const d=Math.sqrt(d2),f=(minD-d)/minD;
+            sep.x+=(dx/d)*f;
+            sep.z+=(dz/d)*f;
           }
         }
-        v.add(sep.multiplyScalar(0.8));
-
-        const dist = Math.hypot(v.x, v.z);
-        if (dist > 0.02) {
+        v.add(sep.multiplyScalar(.8));
+        const dist=Math.hypot(v.x,v.z);
+        if (dist>.02) {
           v.normalize();
-          const speed = ud.speed * dt * 0.9;
-          p.position.addScaledVector(v, Math.min(speed, dist));
-          const yaw = Math.atan2(v.x, v.z);
-          p.rotation.y = yaw + HEADING_OFFSET;
-          p.rotation.z = Math.sin(performance.now()/1000*8)*0.05;
+          const speed=ud.speed*dt*.9;
+          p.position.addScaledVector(v,Math.min(speed,dist));
+          const yaw=Math.atan2(v.x,v.z);
+          p.rotation.y=yaw+HEADING_OFFSET;
+          p.rotation.z=Math.sin(performance.now()/1000*8)*.05;
         } else {
-          if (ud.way && ud.way.length) { ud.target.copy(ud.way.shift()); return; }
-          if (ud.state === 'wander') {
-            if (ud.timer > 1.0) setState(p,'lounge');
-          } else if (ud.state === 'play') {
-            if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
-            toys.children.forEach(t => { if (t.geometry && t.geometry.type === 'TorusGeometry') t.position.y = 0.35 + Math.sin(performance.now()/1000*6)*0.07; });
-            if (ud.timer > (1.0 + Math.random()*1.0)) { releaseResource('play'); chooseNextAction(p); }
-          } else if (ud.state === 'playBlocks') {
-            if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
-            const wobble = Math.sin(performance.now()/1000 * 6) * 0.12; blocks.forEach(b => { b.rotation.y = wobble; });
-            if (ud.timer > (1.0 + Math.random()*1.0)) { blocks.forEach(b=>b.rotation.y=0); releaseResource('playBlocks'); chooseNextAction(p); }
-          } else if (ud.state === 'eat') {
+          if (ud.way&&ud.way.length) {
+            ud.target.copy(ud.way.shift());
+            return;
+          }
+          if (ud.state==='wander') {
+            if (ud.timer>1) setState(p,'lounge');
+          } else if (ud.state==='play') {
+            if (!ud.arrived) {ud.arrived=true;ud.timer=0;}
+            toys.children.forEach(t=>{
+              if (t.geometry&&t.geometry.type==='TorusGeometry') {
+                t.position.y=.35+Math.sin(performance.now()/1000*6)*.07;
+              }
+            });
+            if (ud.timer>1+Math.random()) {
+              releaseResource('play');
+              chooseNextAction(p);
+            }
+          } else if (ud.state==='playBlocks') {
+            if (!ud.arrived) {ud.arrived=true;ud.timer=0;}
+            const wobble=Math.sin(performance.now()/1000*6)*.12;
+            blocks.forEach(b=>{b.rotation.y=wobble;});
+            if (ud.timer>1+Math.random()) {
+              blocks.forEach(b=>b.rotation.y=0);
+              releaseResource('playBlocks');
+              chooseNextAction(p);
+            }
+          } else if (ud.state==='eat') {
             if (!ud.fish) {
-              ud.fish = makeFish();
-              ud.fish.position.copy(dish.position).add(new THREE.Vector3(Math.random()*0.3, 0.2, Math.random()*0.3));
+              ud.fish=makeFish();
+              ud.fish.position.copy(dish.position).add(new THREE.Vector3(
+                Math.random()*.3,.2,Math.random()*.3
+              ));
               scene.add(ud.fish);
             } else {
-              const beakPos = beakWorldPos(p);
-              ud.fish.position.lerp(beakPos, Math.min(1, dt*1.5));
-              if (ud.fish.position.distanceTo(beakPos) < 0.06) {
-                scene.remove(ud.fish); ud.fish = null; releaseResource('eat'); chooseNextAction(p);
+              const beakPos=beakWorldPos(p);
+              ud.fish.position.lerp(beakPos,Math.min(1,dt*1.5));
+              if (ud.fish.position.distanceTo(beakPos)<.06) {
+                scene.remove(ud.fish);
+                ud.fish=null;
+                releaseResource('eat');
+                chooseNextAction(p);
               }
             }
-          } else if (ud.state === 'sleep' && ud.goingToBed) {
-            p.position.y = BED_SLEEP.y;
-            p.rotation.y = Math.PI/2 + HEADING_OFFSET;
-            ud.goingToBed = false; ud.timer = 0;
-          } else if (ud.state === 'neco') {
-            if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
-            if (ud.timer > (1.0 + Math.random()*1.2)) {
+          } else if (ud.state==='sleep'&&ud.goingToBed) {
+            p.position.y=BED_SLEEP.y;
+            p.rotation.y=Math.PI/2+HEADING_OFFSET;
+            ud.goingToBed=false;
+            ud.timer=0;
+          } else if (ud.state==='neco') {
+            if (!ud.arrived) {ud.arrived=true;ud.timer=0;}
+            if (ud.timer>1+Math.random()*1.2) {
               releaseResource('neco');
               chooseNextAction(p);
             }
-          } else if (ud.state === 'sharon') {
+          } else if (ud.state==='sharon') {
             if (!ud.arrived) {
-              ud.arrived = true; ud.timer = 0;
-              setBubbleText(p, 'シャロンかわいい');
-              if (sharonRef) setBubbleText(sharonRef, '^^');
+              ud.arrived=true;
+              ud.timer=0;
+              setBubbleText(p,'シャロンかわいい');
+              if (sharonRef) setBubbleText(sharonRef,'^^');
             }
-            if (ud.timer > (1.0 + Math.random()*1.2)) {
-              setBubbleText(p, '');
-              if (sharonRef) setBubbleText(sharonRef, '');
+            if (ud.timer>1+Math.random()*1.2) {
+              setBubbleText(p,'');
+              if (sharonRef) setBubbleText(sharonRef,'');
               releaseResource('sharon');
               chooseNextAction(p);
             }
-          } else if (ud.state === 'window') {
-            p.rotation.y = Math.PI/2 + HEADING_OFFSET;
-            if (!ud.arrived) { ud.arrived = true; ud.timer = 0; }
-            if (ud.timer > (1.0 + Math.random()*1.0)) chooseNextAction(p);
-          } else if (ud.state === 'pond') {
-            if (!ud.arrived) { ud.arrived = true; ud.timer = 0; spawnSplash(p.position.clone().setY(0.08), 8); }
-            p.position.y = Math.sin(performance.now()/1000 * 8) * 0.03;
-            if (ud.timer > (1.4 + Math.random()*0.8)) { p.position.y = 0; releaseResource('pond'); chooseNextAction(p); }
-          } else if (ud.state === 'chase') {
-            // 少年に追いついた（密着）状態。何もしない＝張り付く。
-            // 少年が動けば retarget 側で再び追う。
+          } else if (ud.state==='window') {
+            p.rotation.y=Math.PI/2+HEADING_OFFSET;
+            if (!ud.arrived) {ud.arrived=true;ud.timer=0;}
+            if (ud.timer>1+Math.random()) chooseNextAction(p);
+          } else if (ud.state==='pond') {
+            if (!ud.arrived) {
+              ud.arrived=true;
+              ud.timer=0;
+              spawnSplash(p.position.clone().setY(.08),8);
+            }
+            p.position.y=Math.sin(performance.now()/1000*8)*.03;
+            if (ud.timer>1.4+Math.random()*.8) {
+              p.position.y=0;
+              releaseResource('pond');
+              chooseNextAction(p);
+            }
           }
         }
-      } else if (ud.state === 'lounge') {
-        p.rotation.z = 0; if (ud.timer > (2 + Math.random()*3)) chooseNextAction(p);
-      } else if (ud.state === 'sit') {
-        p.rotation.z = 0; if (ud.timer > (2 + Math.random()*3)) chooseNextAction(p);
-      } else if (ud.state === 'sleep') {
-        p.rotation.set(0, p.rotation.y, 0);
-        p.rotation.x = Math.PI/2 * 0.8;
-        if (ud.timer > (3 + Math.random()*3)) setState(p,'wake');
-      } else if (ud.state === 'wake') {
-        p.rotation.x = THREE.MathUtils.damp(p.rotation.x, 0, 6, dt);
-        if (Math.abs(p.rotation.x) < 0.02) { p.rotation.x = 0; releaseResource('sleep'); chooseNextAction(p); }
+      } else if (ud.state==='lounge') {
+        p.rotation.z=0;
+        if (ud.timer>2+Math.random()*3) chooseNextAction(p);
+      } else if (ud.state==='sit') {
+        p.rotation.z=0;
+        if (ud.timer>2+Math.random()*3) chooseNextAction(p);
+      } else if (ud.state==='sleep') {
+        p.rotation.set(0,p.rotation.y,0);
+        p.rotation.x=Math.PI/2*.8;
+        if (ud.timer>3+Math.random()*3) setState(p,'wake');
+      } else if (ud.state==='wake') {
+        p.rotation.x=THREE.MathUtils.damp(p.rotation.x,0,6,dt);
+        if (Math.abs(p.rotation.x)<.02) {
+          p.rotation.x=0;
+          releaseResource('sleep');
+          chooseNextAction(p);
+        }
       }
-
-      p.position.x = THREE.MathUtils.clamp(p.position.x, bounds.xMin, bounds.xMax);
-      p.position.z = THREE.MathUtils.clamp(p.position.z, bounds.zMin, bounds.zMax);
+      p.position.x=THREE.MathUtils.clamp(p.position.x,bounds.xMin,bounds.xMax);
+      p.position.z=THREE.MathUtils.clamp(p.position.z,bounds.zMin,bounds.zMax);
     }
 
-    // ---- Boy (boy2.glb) ----
-    const mixers = []; // Animation mixers (boy/neco/others)
-    let boyRef = null;           
-    let boyMixer = null;
-    let boyActions = { idle: null, walk: null };
-    let boyCurrent = null;
-    let boyBaseYaw = 0;          
-    let greetTimer = 0;          
-    let lastGreetedPenguin = null; 
-    const GREET_RADIUS = 3.0;    
-    const BOY_LINES = [
-      'ここどこだろ','異世界かも','ペンギンたくさん','頭いたいかも','のどかわいた','あったかい','いいお天気','お庭きもちいい','いいにおいする','デジャヴかも','探し物あるかも','りんごたべたい','くつひもほどけてる','トイレどこかな','蚊にさされた','足のゆびかゆい','たまごごはん（TKG','ポトフたべたい','雲あんまりない','傘もってきたっけ','PASMOわすれた','コロッケたべたい','ドングリひろった','マインドフルネス','レベル25だって'
+    // 少年
+    const mixers=[];
+    let boyRef=null;
+    let boyMixer=null;
+    let boyActions={idle:null,walk:null};
+    let boyCurrent=null;
+    let boyBaseYaw=0;
+    let greetTimer=0;
+    let lastGreetedPenguin=null;
+    const GREET_RADIUS=3;
+    const BOY_LINES=[
+      'ここどこだろ','異世界かも','ペンギンたくさん','頭いたいかも',
+      'のどかわいた','あったかい','いいお天気','お庭きもちいい',
+      'いいにおいする','デジャヴかも','探し物あるかも','りんごたべたい',
+      'くつひもほどけてる','トイレどこかな','蚊にさされた','足のゆびかゆい',
+      'たまごごはん（TKG','ポトフたべたい','雲あんまりない',
+      '傘もってきたっけ','PASMOわすれた','コロッケたべたい',
+      'ドングリひろった','マインドフルネス','レベル25だって'
     ];
-    let boySpeakTimer = 0;
-    let boyNextSpeakIn = 2 + Math.random()*4;
+    let boySpeakTimer=0;
+    let boyNextSpeakIn=2+Math.random()*4;
 
-    function fitAndFloorToHeight(obj, targetH){
-      const tmp = new THREE.Group(); tmp.add(obj); scene.add(tmp);
+    function fitAndFloorToHeight(obj,targetH) {
+      const tmp=new THREE.Group();
+      tmp.add(obj);
+      scene.add(tmp);
       tmp.updateWorldMatrix(true,true);
-      const box = new THREE.Box3().setFromObject(tmp);
-      const size = new THREE.Vector3(); box.getSize(size);
-      const s = (size.y > 0 ? targetH / size.y : 1);
+      const box=new THREE.Box3().setFromObject(tmp);
+      const size=new THREE.Vector3();
+      box.getSize(size);
+      const s=size.y>0?targetH/size.y:1;
       obj.scale.setScalar(s);
       tmp.updateWorldMatrix(true,true);
-      const box2 = new THREE.Box3().setFromObject(tmp);
-      obj.position.y += -box2.min.y;
+      const box2=new THREE.Box3().setFromObject(tmp);
+      obj.position.y+=-box2.min.y;
       scene.remove(tmp);
       return obj;
     }
 
-    function spawnNeco(url, pos, targetH = 1.1){
-      gltfLoader.load(url, (gltf)=>{
-        const neco = new THREE.Group();
-        const model = gltf.scene;
-        model.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
-        fitAndFloorToHeight(model, targetH);
+    function spawnNeco(url,pos,targetH=1.1) {
+      gltfLoader.load(url,gltf=>{
+        const neco=new THREE.Group();
+        const model=gltf.scene;
+        model.traverse(o=>{
+          if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}
+        });
+        fitAndFloorToHeight(model,targetH);
         neco.add(model);
         neco.position.copy(pos);
-        neco.rotation.y = Math.PI / 2;
+        neco.rotation.y=Math.PI/2;
         scene.add(neco);
-        neco.userData = neco.userData || {};
-        const bb = new THREE.Box3().setFromObject(model);
-        const h = Math.max(0.001, bb.max.y - bb.min.y);
-        neco.userData.bubbleOffsetY = Math.max(h * 1.2, h + 0.15);
-        necoRef = neco;
-        if (RES.neco) RES.neco.pos = neco.position.clone();
-        if (gltf.animations && gltf.animations.length){
-          const mixer = new THREE.AnimationMixer(model);
-          gltf.animations.forEach(clip=> mixer.clipAction(clip).setLoop(THREE.LoopRepeat, Infinity).play());
+        neco.userData=neco.userData||{};
+        const bb=new THREE.Box3().setFromObject(model);
+        const h=Math.max(.001,bb.max.y-bb.min.y);
+        neco.userData.bubbleOffsetY=Math.max(h*1.2,h+.15);
+        necoRef=neco;
+        if (RES.neco) RES.neco.pos=neco.position.clone();
+        if (gltf.animations&&gltf.animations.length) {
+          const mixer=new THREE.AnimationMixer(model);
+          gltf.animations.forEach(clip=>
+            mixer.clipAction(clip).setLoop(THREE.LoopRepeat,Infinity).play()
+          );
           mixers.push(mixer);
         }
-      }, undefined, (err)=>console.warn('neco.glb load error', err));
+      },undefined,err=>console.warn('neco.glb load error',err));
     }
 
-    function makeInPlace(clip){
+    function makeInPlace(clip) {
       if (!clip) return clip;
-      const blocked = ['armature','mixamorig','hips','root','armature.001'];
-      const tracks = clip.tracks.filter(tr => {
+      const blocked=['armature','mixamorig','hips','root','armature.001'];
+      const tracks=clip.tracks.filter(tr=>{
         if (!tr.name.endsWith('.position')) return true;
-        const low = tr.name.toLowerCase();
-        return !blocked.some(k => low.includes(k));
+        const low=tr.name.toLowerCase();
+        return !blocked.some(k=>low.includes(k));
       });
-      return new THREE.AnimationClip(clip.name, clip.duration, tracks);
+      return new THREE.AnimationClip(clip.name,clip.duration,tracks);
     }
 
-    function spawnBoy(url, pos){
-      gltfLoader.load(url, (gltf)=>{
-        const boy = new THREE.Group();
-        const model = gltf.scene;
-        fitAndFloorToHeight(model, 1.55 * 0.007);
+    function spawnBoy(url,pos) {
+      gltfLoader.load(url,gltf=>{
+        const boy=new THREE.Group();
+        const model=gltf.scene;
+        fitAndFloorToHeight(model,1.55*.007);
         boy.add(model);
         boy.position.copy(pos);
         scene.add(boy);
-        boy.userData = boy.userData || {};
-        boy.userData.bubbleOffsetY = 4.5;
-        boyRef = boy;
-        boyBaseYaw = boy.rotation.y;
-
-        if (gltf.animations && gltf.animations.length){
-          boyMixer = new THREE.AnimationMixer(model);
-          const idleClip = gltf.animations.find(a=>/idle/i.test(a.name)) || gltf.animations[0];
-          let walkClip  = gltf.animations.find(a=>/walk/i.test(a.name)) || gltf.animations[gltf.animations.length-1];
-          walkClip = makeInPlace(walkClip);
-          boyActions.idle = boyMixer.clipAction(idleClip);
-          boyActions.walk = boyMixer.clipAction(walkClip);
-          boyActions.idle.setLoop(THREE.LoopRepeat, Infinity).play();
-          boyCurrent = boyActions.idle;
+        boy.userData=boy.userData||{};
+        boy.userData.bubbleOffsetY=4.5;
+        boyRef=boy;
+        boyBaseYaw=boy.rotation.y;
+        if (gltf.animations&&gltf.animations.length) {
+          boyMixer=new THREE.AnimationMixer(model);
+          const idleClip=gltf.animations.find(a=>/idle/i.test(a.name))||gltf.animations[0];
+          let walkClip=gltf.animations.find(a=>/walk/i.test(a.name))||
+            gltf.animations[gltf.animations.length-1];
+          walkClip=makeInPlace(walkClip);
+          boyActions.idle=boyMixer.clipAction(idleClip);
+          boyActions.walk=boyMixer.clipAction(walkClip);
+          boyActions.idle.setLoop(THREE.LoopRepeat,Infinity).play();
+          boyCurrent=boyActions.idle;
           mixers.push(boyMixer);
         }
-      }, undefined, (err)=>{
-        console.warn('boy2.glb load error -> fallback boy', err);
+      },undefined,err=>{
+        console.warn('boy2.glb load error -> fallback boy',err);
         spawnFallbackBoy(pos);
       });
     }
 
-    function spawnFallbackBoy(pos){
-      const boy = new THREE.Group();
-      const skin = new THREE.MeshStandardMaterial({ color: 0xf2c9a0 });
-      const shirt = new THREE.MeshStandardMaterial({ color: 0x5aa9c9 });
-      const pants = new THREE.MeshStandardMaterial({ color: 0x33373d });
-      const hair  = new THREE.MeshStandardMaterial({ color: 0x3a2a22 });
-      const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.28, 0.8, 16), shirt); torso.position.y = 1.15; boy.add(torso);
-      const hips  = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.24, 0.5, 16), pants); hips.position.y = 0.6; boy.add(hips);
-      const head  = new THREE.Mesh(new THREE.SphereGeometry(0.3, 20, 16), skin); head.position.y = 1.78; boy.add(head);
-      const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.32, 20, 16, 0, Math.PI*2, 0, Math.PI*0.6), hair); hairCap.position.y = 1.82; boy.add(hairCap);
-      const legGeo = new THREE.CylinderGeometry(0.1,0.09,0.55,12);
-      const legL = new THREE.Mesh(legGeo, pants); legL.position.set(-0.13,0.28,0); boy.add(legL);
-      const legR = legL.clone(); legR.position.x = 0.13; boy.add(legR);
-      const armGeo = new THREE.CylinderGeometry(0.08,0.07,0.6,12);
-      const armL = new THREE.Mesh(armGeo, shirt); armL.position.set(-0.42,1.2,0); armL.rotation.z = 0.12; boy.add(armL);
-      const armR = armL.clone(); armR.position.x = 0.42; armR.rotation.z = -0.12; boy.add(armR);
+    function spawnFallbackBoy(pos) {
+      const boy=new THREE.Group();
+      const skin=new THREE.MeshStandardMaterial({color:0xf2c9a0});
+      const shirt=new THREE.MeshStandardMaterial({color:0x5aa9c9});
+      const pants=new THREE.MeshStandardMaterial({color:0x33373d});
+      const hair=new THREE.MeshStandardMaterial({color:0x3a2a22});
+      const torso=new THREE.Mesh(new THREE.CylinderGeometry(.32,.28,.8,16),shirt);
+      torso.position.y=1.15;
+      boy.add(torso);
+      const hips=new THREE.Mesh(new THREE.CylinderGeometry(.28,.24,.5,16),pants);
+      hips.position.y=.6;
+      boy.add(hips);
+      const head=new THREE.Mesh(new THREE.SphereGeometry(.3,20,16),skin);
+      head.position.y=1.78;
+      boy.add(head);
+      const hairCap=new THREE.Mesh(
+        new THREE.SphereGeometry(.32,20,16,0,Math.PI*2,0,Math.PI*.6),hair
+      );
+      hairCap.position.y=1.82;
+      boy.add(hairCap);
+      const legGeo=new THREE.CylinderGeometry(.1,.09,.55,12);
+      const legL=new THREE.Mesh(legGeo,pants);
+      legL.position.set(-.13,.28,0);
+      boy.add(legL);
+      const legR=legL.clone();
+      legR.position.x=.13;
+      boy.add(legR);
+      const armGeo=new THREE.CylinderGeometry(.08,.07,.6,12);
+      const armL=new THREE.Mesh(armGeo,shirt);
+      armL.position.set(-.42,1.2,0);
+      armL.rotation.z=.12;
+      boy.add(armL);
+      const armR=armL.clone();
+      armR.position.x=.42;
+      armR.rotation.z=-.12;
+      boy.add(armR);
       boy.position.copy(pos);
-      boy.userData = { bubbleOffsetY: 2.3, _fallback: true };
+      boy.userData={bubbleOffsetY:2.3,_fallback:true};
+      boy.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
       scene.add(boy);
-      boyRef = boy;
-      boyBaseYaw = 0;
-      // フォールバックboyはmixer無し。setBoyAnimは安全に無視される。
+      boyRef=boy;
+      boyBaseYaw=0;
     }
 
-    // --- WASD & タップ移動 ---
-    const keyTimes = new Map();
-    const moveKeys = new Set(['w','a','s','d']);
-    function onKeyDown(e){ const k = (e.key || '').toLowerCase(); if (moveKeys.has(k)) { e.preventDefault(); keyTimes.set(k, performance.now()); } }
-    function onKeyUp(e){ const k = (e.key || '').toLowerCase(); if (moveKeys.has(k)) { e.preventDefault(); keyTimes.delete(k); } }
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
-    function activeKey(){ let key = null, t = -Infinity; for (const [k, time] of keyTimes.entries()){ if (time > t) { t = time; key = k; } } return key; }
+    // WASD・タップ操作
+    const keyTimes=new Map();
+    const moveKeys=new Set(['w','a','s','d']);
+    function onKeyDown(e) {
+      const k=(e.key||'').toLowerCase();
+      if (moveKeys.has(k)) {
+        e.preventDefault();
+        keyTimes.set(k,performance.now());
+      }
+    }
+    function onKeyUp(e) {
+      const k=(e.key||'').toLowerCase();
+      if (moveKeys.has(k)) {
+        e.preventDefault();
+        keyTimes.delete(k);
+      }
+    }
+    window.addEventListener('keydown',onKeyDown);
+    window.addEventListener('keyup',onKeyUp);
+    window.addEventListener('blur',()=>keyTimes.clear());
+    document.addEventListener('visibilitychange',()=>{
+      if(document.hidden)keyTimes.clear();
+    });
+    function activeKey() {
+      let key=null,t=-Infinity;
+      for (const [k,time] of keyTimes.entries()) {
+        if (time>t) {t=time;key=k;}
+      }
+      return key;
+    }
 
-    // タップで目的地
-    const raycaster = new THREE.Raycaster();
-    const ndc = new THREE.Vector2();
-    let boyTapTarget = null;
-    function screenToGround(clientX, clientY){
-      const rect = renderer.domElement.getBoundingClientRect();
-      ndc.set( ((clientX - rect.left) / rect.width ) * 2 - 1, - ( (clientY - rect.top)  / rect.height) * 2 + 1 );
-      raycaster.setFromCamera(ndc, camera);
-      const plane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
-      const hit = new THREE.Vector3();
-      if (raycaster.ray.intersectPlane(plane, hit)){
-        hit.x = THREE.MathUtils.clamp(hit.x, bounds.xMin, bounds.xMax);
-        hit.z = THREE.MathUtils.clamp(hit.z, bounds.zMin, bounds.zMax);
-        hit.y = 0;
+    const raycaster=new THREE.Raycaster();
+    const ndc=new THREE.Vector2();
+    let boyTapTarget=null;
+    function screenToGround(clientX,clientY) {
+      const rect=renderer.domElement.getBoundingClientRect();
+      ndc.set(
+        ((clientX-rect.left)/rect.width)*2-1,
+        -((clientY-rect.top)/rect.height)*2+1
+      );
+      raycaster.setFromCamera(ndc,camera);
+      const plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
+      const hit=new THREE.Vector3();
+      if (raycaster.ray.intersectPlane(plane,hit)) {
+        hit.x=THREE.MathUtils.clamp(hit.x,bounds.xMin,bounds.xMax);
+        hit.z=THREE.MathUtils.clamp(hit.z,bounds.zMin,bounds.zMax);
+        hit.y=0;
         return hit;
       }
       return null;
     }
-    function onCanvasPointerDown(e){
-      if (e.isPrimary === false) return;
-      const x = e.clientX ?? (e.touches && e.touches[0]?.clientX);
-      const y = e.clientY ?? (e.touches && e.touches[0]?.clientY);
-      const p = screenToGround(x, y);
-      if (p){ boyTapTarget = p; }
-      e.stopPropagation(); e.preventDefault();
+    function onCanvasPointerDown(e) {
+      if (e.isPrimary===false) return;
+      const x=e.clientX??(e.touches&&e.touches[0]?.clientX);
+      const y=e.clientY??(e.touches&&e.touches[0]?.clientY);
+      const p=screenToGround(x,y);
+      if (p) boyTapTarget=p;
+      e.stopPropagation();
+      e.preventDefault();
     }
-    renderer.domElement.addEventListener('pointerdown', onCanvasPointerDown, { passive:false });
-    renderer.domElement.addEventListener('click', (e)=>{ e.stopPropagation(); }, true);
+    renderer.domElement.addEventListener('pointerdown',onCanvasPointerDown,{passive:false});
+    renderer.domElement.addEventListener('click',e=>e.stopPropagation(),true);
 
-    const BOY_SPEED = 2.2;
-    function setBoyAnim(name){
-      if (!boyMixer || !boyActions[name]) return;
-      const next = boyActions[name];
-      if (boyCurrent === next) return;
-      if (boyCurrent) boyCurrent.crossFadeTo(next, 0.18, false);
+    const BOY_SPEED=2.2;
+    function setBoyAnim(name) {
+      if (!boyMixer||!boyActions[name]) return;
+      const next=boyActions[name];
+      if (boyCurrent===next) return;
+      if (boyCurrent) boyCurrent.crossFadeTo(next,.18,false);
       next.reset().play();
-      boyCurrent = next;
+      boyCurrent=next;
     }
-    function updateBoy(dt){
+    function updateBoy(dt) {
       if (!boyRef) return;
-      const k = activeKey();
-      if (k){
-        let yawOff = 0;
-        if (k === 'w') yawOff = Math.PI;
-        else if (k === 'a') yawOff = -Math.PI/2;
-        else if (k === 's') yawOff = 0;
-        else if (k === 'd') yawOff =  Math.PI/2;
-        boyRef.rotation.y = boyBaseYaw + yawOff;
-        const fwd = new THREE.Vector3(0,0,1).applyQuaternion(boyRef.quaternion);
-        fwd.y = 0; fwd.normalize();
-        boyRef.position.addScaledVector(fwd, BOY_SPEED * dt);
+      const k=activeKey();
+      if (k) {
+        let yawOff=0;
+        if (k==='w') yawOff=Math.PI;
+        else if (k==='a') yawOff=-Math.PI/2;
+        else if (k==='s') yawOff=0;
+        else if (k==='d') yawOff=Math.PI/2;
+        boyRef.rotation.y=boyBaseYaw+yawOff;
+        const fwd=new THREE.Vector3(0,0,1).applyQuaternion(boyRef.quaternion);
+        fwd.y=0;
+        fwd.normalize();
+        boyRef.position.addScaledVector(fwd,BOY_SPEED*dt);
         clampBoy();
-        boyRef.position.y = boyRef.userData._fallback ? Math.abs(Math.sin(performance.now()/1000*10))*0.06 : 0;
+        boyRef.position.y=boyRef.userData._fallback
+          ?Math.abs(Math.sin(performance.now()/1000*10))*.06:0;
         setBoyAnim('walk');
         return;
       }
-      if (boyTapTarget){
-        const v = new THREE.Vector3(boyTapTarget.x - boyRef.position.x, 0, boyTapTarget.z - boyRef.position.z);
-        const dist = Math.hypot(v.x, v.z);
-        if (dist > 0.03){
+      if (boyTapTarget) {
+        const v=new THREE.Vector3(
+          boyTapTarget.x-boyRef.position.x,0,boyTapTarget.z-boyRef.position.z
+        );
+        const dist=Math.hypot(v.x,v.z);
+        if (dist>.03) {
           v.normalize();
-          boyRef.rotation.y = Math.atan2(v.x, v.z);
-          boyRef.position.addScaledVector(v, Math.min(BOY_SPEED * dt, dist));
+          boyRef.rotation.y=Math.atan2(v.x,v.z);
+          boyRef.position.addScaledVector(v,Math.min(BOY_SPEED*dt,dist));
           clampBoy();
-          boyRef.position.y = boyRef.userData._fallback ? Math.abs(Math.sin(performance.now()/1000*10))*0.06 : 0;
+          boyRef.position.y=boyRef.userData._fallback
+            ?Math.abs(Math.sin(performance.now()/1000*10))*.06:0;
           setBoyAnim('walk');
         } else {
-          boyTapTarget = null;
-          if (boyRef.userData._fallback) boyRef.position.y = 0;
+          boyTapTarget=null;
+          if (boyRef.userData._fallback) boyRef.position.y=0;
           setBoyAnim('idle');
         }
         return;
@@ -884,395 +2066,454 @@
       setBoyAnim('idle');
     }
 
-    // 池の右下あたりに Boy
-    const boyPos = new THREE.Vector3(5, 0, 10);
-    spawnBoy('boy2.glb', boyPos);
+    const boyPos=new THREE.Vector3(5,0,10);
+    spawnBoy('boy2.glb',boyPos);
 
-    // 左庭の元の猫位置に neco.glb
-    let necoRef = null;               
-    let necoGreetTimer = 0;           
-    let necoGreetPenguin = null;      
-    const NECO_GREET_RADIUS = 2.0;    
-    spawnNeco('neco.glb', new THREE.Vector3(-11.2, 0, 2.0), 1.3);
+    let necoRef=null;
+    let necoGreetTimer=0;
+    let necoGreetPenguin=null;
+    const NECO_GREET_RADIUS=2;
+    spawnNeco('neco.glb',new THREE.Vector3(-11.2,0,2),1.3);
 
-    // ---- Sharon & Bee (right-front garden) ----
-    let sharonRef = null, beeRef = null, oguruRef = null;
-    const SHARON_POS = new THREE.Vector3(12.5, 0, 1.0);
-    if (!RES.sharon) RES.sharon = { holder: null, queue: [], pos: SHARON_POS.clone(), waitDir: new THREE.Vector3(-1,0,0) };
-    const BEE_BASE   = new THREE.Vector3(12.5, 0.6, -2.0);
-    const OGURU_POS  = new THREE.Vector3(13.0, 0, 9.0);
+    let sharonRef=null,beeRef=null,oguruRef=null;
+    const SHARON_POS=new THREE.Vector3(12.5,0,1);
+    if (!RES.sharon) {
+      RES.sharon={
+        holder:null,queue:[],pos:SHARON_POS.clone(),
+        waitDir:new THREE.Vector3(-1,0,0)
+      };
+    }
+    const BEE_BASE=new THREE.Vector3(12.5,.6,-2);
+    const OGURU_POS=new THREE.Vector3(13,0,9);
 
-    function fitAndFloorToHeightSimple(model, targetH = 1.5){
-      const tmp = new THREE.Group(); tmp.add(model); scene.add(tmp);
+    function fitAndFloorToHeightSimple(model,targetH=1.5) {
+      const tmp=new THREE.Group();
+      tmp.add(model);
+      scene.add(tmp);
       tmp.updateWorldMatrix(true,true);
-      const box = new THREE.Box3().setFromObject(tmp);
-      const size = new THREE.Vector3(); box.getSize(size);
-      const s = (size.y>0 ? targetH/size.y : 1);
+      const box=new THREE.Box3().setFromObject(tmp);
+      const size=new THREE.Vector3();
+      box.getSize(size);
+      const s=size.y>0?targetH/size.y:1;
       model.scale.setScalar(s);
       tmp.updateWorldMatrix(true,true);
-      const box2 = new THREE.Box3().setFromObject(tmp);
-      model.position.y += -box2.min.y;
+      const box2=new THREE.Box3().setFromObject(tmp);
+      model.position.y+=-box2.min.y;
       scene.remove(tmp);
     }
 
-    function spawnSharon(url, pos, targetH = 1.5){
-      gltfLoader.load(url, (gltf)=>{
-        const g = new THREE.Group();
-        const model = gltf.scene;
-        fitAndFloorToHeightSimple(model, targetH);
+    function spawnSharon(url,pos,targetH=1.5) {
+      gltfLoader.load(url,gltf=>{
+        const g=new THREE.Group();
+        const model=gltf.scene;
+        fitAndFloorToHeightSimple(model,targetH);
         g.add(model);
-        model.traverse(o=>{ if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; const mats = Array.isArray(o.material)? o.material : [o.material]; mats.forEach(m=>{ if(!m) return; if(m.vertexColors){ m.vertexColors = false; } if('metalness' in m){ m.metalness = Math.min(0.2, m.metalness ?? 0); } if('roughness' in m && (m.roughness ?? 1) > 0.95){ m.roughness = 0.7; } m.envMapIntensity = 1.0; if(m.color && (m.color.r + m.color.g + m.color.b) < 0.3){ m.color.multiplyScalar(2.0); } m.needsUpdate = true; }); } });
-        g.position.copy(pos);
-        g.rotation.y = -Math.PI/4 + Math.PI*2;
-        scene.add(g);
-        sharonRef = g;
-        g.userData = g.userData || {};
-        const sbb = new THREE.Box3().setFromObject(model);
-        const sh = Math.max(0.001, sbb.max.y - sbb.min.y);
-        g.userData.bubbleOffsetY = Math.max(sh * 1.2, sh + 0.15);
-        if (RES.sharon) RES.sharon.pos = g.position.clone();
-        if (gltf.animations && gltf.animations.length){
-          const mx = new THREE.AnimationMixer(model);
-          gltf.animations.forEach(clip=> mx.clipAction(clip).setLoop(THREE.LoopRepeat, Infinity).play());
-          mixers.push(mx);
-        }
-      }, undefined, (err)=>console.warn('sharon.glb load error', err));
-    }
-
-    function spawnBee(url, pos, targetH = 0.35){
-      gltfLoader.load(url, (gltf)=>{
-        const g = new THREE.Group();
-        const model = gltf.scene;
-        fitAndFloorToHeightSimple(model, targetH);
-        g.add(model);
-        const wings = [];
         model.traverse(o=>{
-          const n = (o.name||'').toLowerCase();
-          if (n.includes('wing') || n.includes('羽') || n.includes('hane')){ wings.push(o); }
+          if (!o.isMesh) return;
+          o.castShadow=true;
+          o.receiveShadow=true;
+          const mats=Array.isArray(o.material)?o.material:[o.material];
+          mats.forEach(m=>{
+            if (!m) return;
+            if (m.vertexColors) m.vertexColors=false;
+            if ('metalness' in m) m.metalness=Math.min(.2,m.metalness??0);
+            if ('roughness' in m&&(m.roughness??1)>.95) m.roughness=.7;
+            m.envMapIntensity=1;
+            if (m.color&&(m.color.r+m.color.g+m.color.b)<.3) {
+              m.color.multiplyScalar(2);
+            }
+            m.needsUpdate=true;
+          });
         });
-        g.userData.wings = wings;
-        wings.forEach(w=>{ w.userData = w.userData||{}; w.userData.base = {x:w.rotation.x, y:w.rotation.y, z:w.rotation.z}; });
         g.position.copy(pos);
+        g.rotation.y=-Math.PI/4+Math.PI*2;
         scene.add(g);
-        beeRef = g;
-        if (gltf.animations && gltf.animations.length){
-          const mx = new THREE.AnimationMixer(model);
-          gltf.animations.forEach(clip=> mx.clipAction(clip).setLoop(THREE.LoopRepeat, Infinity).play());
+        sharonRef=g;
+        g.userData=g.userData||{};
+        const sbb=new THREE.Box3().setFromObject(model);
+        const sh=Math.max(.001,sbb.max.y-sbb.min.y);
+        g.userData.bubbleOffsetY=Math.max(sh*1.2,sh+.15);
+        if (RES.sharon) RES.sharon.pos=g.position.clone();
+        if (gltf.animations&&gltf.animations.length) {
+          const mx=new THREE.AnimationMixer(model);
+          gltf.animations.forEach(clip=>
+            mx.clipAction(clip).setLoop(THREE.LoopRepeat,Infinity).play()
+          );
           mixers.push(mx);
         }
-      }, undefined, (err)=>console.warn('bee.glb load error', err));
+      },undefined,err=>console.warn('sharon.glb load error',err));
     }
 
-    function spawnOguru(url, pos, targetH = 1.5){
-      gltfLoader.load(url, (gltf)=>{
-        const g = new THREE.Group();
-        const model = gltf.scene;
-        fitAndFloorToHeightSimple(model, targetH);
+    function spawnBee(url,pos,targetH=.35) {
+      gltfLoader.load(url,gltf=>{
+        const g=new THREE.Group();
+        const model=gltf.scene;
+        fitAndFloorToHeightSimple(model,targetH);
+        g.add(model);
+        const wings=[];
+        model.traverse(o=>{
+          const n=(o.name||'').toLowerCase();
+          if (n.includes('wing')||n.includes('羽')||n.includes('hane')) wings.push(o);
+        });
+        g.userData.wings=wings;
+        wings.forEach(w=>{
+          w.userData=w.userData||{};
+          w.userData.base={x:w.rotation.x,y:w.rotation.y,z:w.rotation.z};
+        });
+        g.position.copy(pos);
+        scene.add(g);
+        beeRef=g;
+        if (gltf.animations&&gltf.animations.length) {
+          const mx=new THREE.AnimationMixer(model);
+          gltf.animations.forEach(clip=>
+            mx.clipAction(clip).setLoop(THREE.LoopRepeat,Infinity).play()
+          );
+          mixers.push(mx);
+        }
+      },undefined,err=>console.warn('bee.glb load error',err));
+    }
+
+    function spawnOguru(url,pos,targetH=1.5) {
+      gltfLoader.load(url,gltf=>{
+        const g=new THREE.Group();
+        const model=gltf.scene;
+        fitAndFloorToHeightSimple(model,targetH);
         g.add(model);
         g.position.copy(pos);
-        g.rotation.y = -Math.PI/6;
+        g.rotation.y=-Math.PI/6;
         scene.add(g);
-        oguruRef = g;
-        if (gltf.animations && gltf.animations.length){
-          const mx = new THREE.AnimationMixer(model);
-          gltf.animations.forEach(clip=> mx.clipAction(clip).setLoop(THREE.LoopRepeat, Infinity).play());
+        oguruRef=g;
+        if (gltf.animations&&gltf.animations.length) {
+          const mx=new THREE.AnimationMixer(model);
+          gltf.animations.forEach(clip=>
+            mx.clipAction(clip).setLoop(THREE.LoopRepeat,Infinity).play()
+          );
           mixers.push(mx);
         }
-      }, undefined, (err)=>console.warn('oguru.glb load error', err));
+      },undefined,err=>console.warn('oguru.glb load error',err));
     }
 
-    // place them
-    spawnSharon('sharon.glb', SHARON_POS, 2.0);
-    spawnBee('bee.glb', BEE_BASE, 1.5);
-    spawnOguru('oguru2.glb', OGURU_POS, 4.0);
+    spawnSharon('sharon.glb',SHARON_POS,2);
+    spawnBee('bee.glb',BEE_BASE,1.5);
+    spawnOguru('oguru2.glb',OGURU_POS,4);
 
-    // ---- Loop ----
-    function animate(){
+    // アニメーション
+    function animate() {
       requestAnimationFrame(animate);
-      const dt = clock.getDelta();
-
-      // penguins
-      for (const p of penguins) updatePenguin(p, dt);
-
-      // mixers
+      const dt=Math.min(clock.getDelta(),.05);
+      for (const p of penguins) updatePenguin(p,dt);
       for (const m of mixers) m.update(dt);
-
-      // boy
       updateBoy(dt);
-
-      // ペンギンまみれ: ゲーム進行
       updateGame(dt);
+      const t=performance.now()/1000;
+      updateEnvironment(t);
+      mf1.rotation.y=Math.sin(t*1.6)*.4;
+      mf2.rotation.y=Math.cos(t*1.4)*.4;
+      mf3.rotation.y=Math.sin(t*1.8+.7)*.4;
 
-      const t = performance.now()/1000;
-
-      // mobile fish wobble
-      mf1.rotation.y = Math.sin(t*1.6)*0.4;
-      mf2.rotation.y = Math.cos(t*1.4)*0.4;
-      mf3.rotation.y = Math.sin(t*1.8+0.7)*0.4;
-
-      // bee hover orbit
-      if (beeRef){
-        beeRef.position.x = BEE_BASE.x + Math.cos(t*2.0)*0.6;
-        beeRef.position.z = BEE_BASE.z + Math.sin(t*2.0)*0.6;
-        beeRef.position.y = 0.6 + Math.sin(t*5.0)*0.12;
-        beeRef.rotation.y += 2.5*dt;
-        const wings = (beeRef.userData && beeRef.userData.wings) ? beeRef.userData.wings : null;
-        if (wings && wings.length){
-          const flap = Math.sin(t*22.0);
-          const amp = 0.6;
-          for (let i=0;i<wings.length;i++){
-            const w = wings[i];
-            const b = (w.userData && w.userData.base) ? w.userData.base : {x:0,y:0,z:0};
-            w.rotation.z = b.z + (i%2?1:-1) * amp * flap;
+      if (beeRef) {
+        beeRef.position.x=BEE_BASE.x+Math.cos(t*2)*.6;
+        beeRef.position.z=BEE_BASE.z+Math.sin(t*2)*.6;
+        beeRef.position.y=.6+Math.sin(t*5)*.12;
+        beeRef.rotation.y+=2.5*dt;
+        const wings=beeRef.userData&&beeRef.userData.wings?beeRef.userData.wings:null;
+        if (wings&&wings.length) {
+          const flap=Math.sin(t*22),amp=.6;
+          for (let i=0;i<wings.length;i++) {
+            const w=wings[i];
+            const b=w.userData&&w.userData.base?w.userData.base:{x:0,y:0,z:0};
+            w.rotation.z=b.z+(i%2?1:-1)*amp*flap;
           }
         }
       }
-
-      // idle motions for oguru & sharon
-      if (oguruRef){
-        const tt = t*1.4;
-        oguruRef.rotation.z = Math.sin(tt)*0.06;
-        oguruRef.rotation.x = Math.cos(tt*0.9)*0.03;
-        oguruRef.position.y = Math.max(0, 0.02 + Math.sin(tt*0.5)*0.02);
+      if (oguruRef) {
+        const tt=t*1.4;
+        oguruRef.rotation.z=Math.sin(tt)*.06;
+        oguruRef.rotation.x=Math.cos(tt*.9)*.03;
+        oguruRef.position.y=Math.max(0,.02+Math.sin(tt*.5)*.02);
       }
-      if (sharonRef){
-        const ts = t*1.8;
-        sharonRef.rotation.x = Math.sin(ts)*0.05;
-        sharonRef.rotation.z = Math.cos(ts*1.6)*0.08;
-        sharonRef.position.y = Math.max(0, 0.02 + Math.sin(ts*2.2)*0.015);
+      if (sharonRef) {
+        const ts=t*1.8;
+        sharonRef.rotation.x=Math.sin(ts)*.05;
+        sharonRef.rotation.z=Math.cos(ts*1.6)*.08;
+        sharonRef.position.y=Math.max(0,.02+Math.sin(ts*2.2)*.015);
       }
-
-      // bubbles
       for (const p of penguins) updateBubblePositionFor(p);
       if (sharonRef) updateBubblePositionFor(sharonRef);
 
-      // --- greeting boy ---
-      if (boyRef && penguins.length){
-        let nearest = null, minD = Infinity;
-        const greetMode = (GAME.enabled && GAME.running && GAME.trigger === 'greet');
-        for (const p of penguins){
-          // ゲームの挨拶ロックオン方式では、追尾中の子は挨拶対象から外す
-          if (greetMode && p.userData.state === 'chase') continue;
-          const d = p.position.distanceTo(boyRef.position); if (d < minD){ minD = d; nearest = p; }
+      if (boyRef&&penguins.length) {
+        let nearest=null,minD=Infinity;
+        const greetMode=GAME.enabled&&GAME.running&&GAME.trigger==='greet';
+        for (const p of penguins) {
+          if (greetMode&&p.userData.state==='chase') continue;
+          const d=p.position.distanceTo(boyRef.position);
+          if (d<minD) {minD=d;nearest=p;}
         }
-        if (nearest && minD <= GREET_RADIUS && greetTimer <= 0){
-          greetTimer = 1.8;
-          lastGreetedPenguin = nearest;
-          setBubbleText(nearest, 'こんこん');
-          setBubbleText(boyRef, 'こんこん＾＾');
-          // ペンギンまみれ: 挨拶した子がロックオン＝追尾開始
-          if (GAME.enabled && GAME.running && GAME.trigger === 'greet' && nearest.userData.state !== 'chase'){
-            nearest.userData.greetedLock = true;
-            setState(nearest, 'chase');
+        if (nearest&&minD<=GREET_RADIUS&&greetTimer<=0) {
+          greetTimer=1.8;
+          lastGreetedPenguin=nearest;
+          setBubbleText(nearest,'こんこん');
+          setBubbleText(boyRef,'こんこん＾＾');
+          if (
+            GAME.enabled&&GAME.running&&GAME.trigger==='greet'&&
+            nearest.userData.state!=='chase'
+          ) {
+            nearest.userData.greetedLock=true;
+            setState(nearest,'chase');
           }
         }
-        if (greetTimer > 0){
-          greetTimer -= dt;
+        if (greetTimer>0) {
+          greetTimer-=dt;
           updateBubblePositionFor(boyRef);
           if (lastGreetedPenguin) updateBubblePositionFor(lastGreetedPenguin);
-          if (greetTimer <= 0){
-            if (lastGreetedPenguin){
-              // 追尾中の子は『あそぼっと』に戻す。それ以外は消す。
-              if (lastGreetedPenguin.userData.state === 'chase') setBubbleText(lastGreetedPenguin, 'ねぇ、あそぼ');
-              else setBubbleText(lastGreetedPenguin, '');
+          if (greetTimer<=0) {
+            if (lastGreetedPenguin) {
+              if (lastGreetedPenguin.userData.state==='chase') {
+                setBubbleText(lastGreetedPenguin,'ねぇ、あそぼ');
+              } else {
+                setBubbleText(lastGreetedPenguin,'');
+              }
             }
-            setBubbleText(boyRef, '');
-            lastGreetedPenguin = null;
+            setBubbleText(boyRef,'');
+            lastGreetedPenguin=null;
           }
         }
       }
 
-      // --- neco greeting ---
-      if (necoRef){
-        for (const p of penguins){ p.userData.necoCooldown = Math.max(0, (p.userData.necoCooldown || 0) - dt); }
-        if (necoGreetTimer <= 0){
-          let nearest = null, minD = Infinity;
-          for (const p of penguins){
-            const cd = p.userData.necoCooldown || 0; if (cd > 0) continue;
-            const d = p.position.distanceTo(necoRef.position);
-            if (d < minD){ minD = d; nearest = p; }
+      if (necoRef) {
+        for (const p of penguins) {
+          p.userData.necoCooldown=Math.max(0,(p.userData.necoCooldown||0)-dt);
+        }
+        if (necoGreetTimer<=0) {
+          let nearest=null,minD=Infinity;
+          for (const p of penguins) {
+            const cd=p.userData.necoCooldown||0;
+            if (cd>0) continue;
+            const d=p.position.distanceTo(necoRef.position);
+            if (d<minD) {minD=d;nearest=p;}
           }
-          if (nearest && minD <= NECO_GREET_RADIUS){
-            necoGreetTimer = 1.8;
-            necoGreetPenguin = nearest;
-            setBubbleText(nearest, 'ネコかわいい');
-            setBubbleText(necoRef, 'にゃあ');
-            nearest.userData.necoCooldown = 5.0;
+          if (nearest&&minD<=NECO_GREET_RADIUS) {
+            necoGreetTimer=1.8;
+            necoGreetPenguin=nearest;
+            setBubbleText(nearest,'ネコかわいい');
+            setBubbleText(necoRef,'にゃあ');
+            nearest.userData.necoCooldown=5;
           }
         } else {
-          necoGreetTimer -= dt;
+          necoGreetTimer-=dt;
           updateBubblePositionFor(necoRef);
           if (necoGreetPenguin) updateBubblePositionFor(necoGreetPenguin);
-          if (necoGreetTimer <= 0){
-            if (necoGreetPenguin){ setBubbleText(necoGreetPenguin, ''); necoGreetPenguin = null; }
-            setBubbleText(necoRef, '');
+          if (necoGreetTimer<=0) {
+            if (necoGreetPenguin) {
+              setBubbleText(necoGreetPenguin,'');
+              necoGreetPenguin=null;
+            }
+            setBubbleText(necoRef,'');
           }
         }
       }
 
-      // droplets
-      for (let i=droplets.length-1; i>=0; i--) {
-        const d = droplets[i];
-        d.userData.vel.y -= 3.5 * dt;
-        d.position.addScaledVector(d.userData.vel, dt);
-        d.userData.life -= dt;
-        d.material.opacity = Math.max(0, d.userData.life / 0.7);
-        if (d.userData.life <= 0 || d.position.y <= 0.02) { scene.remove(d); droplets.splice(i,1); }
+      for (let i=droplets.length-1;i>=0;i--) {
+        const d=droplets[i];
+        d.userData.vel.y-=3.5*dt;
+        d.position.addScaledVector(d.userData.vel,dt);
+        d.userData.life-=dt;
+        d.material.opacity=Math.max(0,d.userData.life/.7);
+        if (d.userData.life<=0||d.position.y<=.02) {
+          scene.remove(d);
+          d.material.dispose();
+          droplets.splice(i,1);
+        }
       }
-      renderer.render(scene, camera);
+      renderer.render(scene,camera);
     }
     animate();
 
-    // ---- Interactions ----
-    // 行動スキップは廃止（クリック/タップは少年の移動のみに使用）
-
-    // ---- Drag & drop ----
-    const drop = $('drop');
-    addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('on'); });
-    addEventListener('dragleave', (e) => { e.preventDefault(); drop.classList.remove('on'); });
-    addEventListener('drop', (e) => {
-      e.preventDefault(); drop.classList.remove('on');
-      const f = e.dataTransfer.files?.[0]; if (!f) return;
-      setStatus('reading ' + f.name + ' ...');
-      f.arrayBuffer().then((ab) => {
-        gltfLoader.parse(ab, '', (gltf) => {
+    // GLBのドロップ
+    const drop=$('drop');
+    addEventListener('dragover',e=>{
+      e.preventDefault();
+      drop.classList.add('on');
+    });
+    addEventListener('dragleave',e=>{
+      e.preventDefault();
+      drop.classList.remove('on');
+    });
+    addEventListener('drop',e=>{
+      e.preventDefault();
+      drop.classList.remove('on');
+      const f=e.dataTransfer.files?.[0];
+      if (!f) return;
+      setStatus('reading '+f.name+' ...');
+      f.arrayBuffer().then(ab=>{
+        gltfLoader.parse(ab,'',gltf=>{
           setStatus('parsed.');
-          const g = new THREE.Group();
-          const model = fitAndFloor(gltf.scene);
+          const g=new THREE.Group();
+          const model=fitAndFloor(gltf.scene);
           g.add(model);
-          g.userData = { speed:0, state:'idle', target:new THREE.Vector3(), timer:0, model };
+          g.userData={
+            speed:0,state:'idle',target:new THREE.Vector3(),timer:0,model
+          };
           scene.add(g);
-          if (!penguin) penguin = g; penguins.push(g);
+          if (!penguin) penguin=g;
+          penguins.push(g);
           setState(g,'wander');
-        }, (err) => setStatus('parse error: ' + (err?.message || err)) );
+        },err=>setStatus('parse error: '+(err?.message||err)));
       });
     });
 
-    // ---- Auto spawn penguins ----
-    const params = new URLSearchParams(location.search);
-    const modelUrl = params.get('model') || 'Pen.glb';
-    function spawn(url, start){
-      loadPenguin(url)
-        .then((g)=>{ if (start) g.position.copy(start); scene.add(g); penguins.push(g); if (!penguin) penguin = g; setState(g,'wander'); })
-        .catch(()=>{ const fb=fallbackPenguin(url); if (start) fb.position.copy(start); scene.add(fb); penguins.push(fb); if (!penguin) penguin = fb; setState(fb,'wander'); });
+    // ペンギンの初期配置
+    const params=new URLSearchParams(location.search);
+    const modelUrl=params.get('model')||'Pen.glb';
+    function spawn(url,start) {
+      loadPenguin(url).then(g=>{
+        if (start) g.position.copy(start);
+        scene.add(g);
+        penguins.push(g);
+        if (!penguin) penguin=g;
+        setState(g,'wander');
+      }).catch(()=>{
+        const fb=fallbackPenguin(url);
+        if (start) fb.position.copy(start);
+        scene.add(fb);
+        penguins.push(fb);
+        if (!penguin) penguin=fb;
+        setState(fb,'wander');
+      });
     }
-    const STANDARD = ['Pen.glb','Pen_b.glb','Pen_r.glb','Pen_y.glb','Pen_g.glb'];
-    if (modelUrl && !STANDARD.includes(modelUrl)) { spawn(modelUrl, new THREE.Vector3(-1,0,0)); }
-    const startsMap = {
-      'Pen.glb': [ new THREE.Vector3(-1.2,0, 0.0), new THREE.Vector3(-0.2,0,-1.6) ],
-      'Pen_b.glb': [ new THREE.Vector3( 1.0,0,-1.2), new THREE.Vector3( 1.6,0,-2.2) ],
-      'Pen_r.glb': [ new THREE.Vector3(-2.5,0, 1.2), new THREE.Vector3(-3.2,0, 0.3) ],
-      'Pen_y.glb': [ new THREE.Vector3( 0.0,0, 2.0), new THREE.Vector3( 1.0,0, 2.4) ],
-      'Pen_g.glb': [ new THREE.Vector3( 2.5,0, 2.0), new THREE.Vector3( 3.3,0, 1.0) ]
+    const STANDARD=['Pen.glb','Pen_b.glb','Pen_r.glb','Pen_y.glb','Pen_g.glb'];
+    if (modelUrl&&!STANDARD.includes(modelUrl)) {
+      spawn(modelUrl,new THREE.Vector3(-1,0,0));
+    }
+    const startsMap={
+      'Pen.glb':[
+        new THREE.Vector3(-1.2,0,0),new THREE.Vector3(-.2,0,-1.6)
+      ],
+      'Pen_b.glb':[
+        new THREE.Vector3(1,0,-1.2),new THREE.Vector3(1.6,0,-2.2)
+      ],
+      'Pen_r.glb':[
+        new THREE.Vector3(-2.5,0,1.2),new THREE.Vector3(-3.2,0,.3)
+      ],
+      'Pen_y.glb':[
+        new THREE.Vector3(0,0,2),new THREE.Vector3(1,0,2.4)
+      ],
+      'Pen_g.glb':[
+        new THREE.Vector3(2.5,0,2),new THREE.Vector3(3.3,0,1)
+      ]
     };
-    if (!GAME.enabled){
-      STANDARD.forEach((u)=> startsMap[u].forEach(pos => spawn(u, pos)));
+    if (!GAME.enabled) {
+      STANDARD.forEach(u=>startsMap[u].forEach(pos=>spawn(u,pos)));
     }
 
-    // ===== ペンギンまみれ: ゲームロジック =====
-    function gameSpawnOne(){
-      const url = GAME.colorCycle[GAME.colorIdx % GAME.colorCycle.length];
+    // ゲーム進行
+    function gameSpawnOne() {
+      const url=GAME.colorCycle[GAME.colorIdx%GAME.colorCycle.length];
       GAME.colorIdx++;
-      // 少年から少し離れた場所（庭含む全域）に出現。ペンギンはうろついて部屋に入ってくる
-      let sx, sz, tries = 0;
+      let sx,sz,tries=0;
       do {
-        sx = THREE.MathUtils.lerp(bounds.xMin+1, bounds.xMax-1, Math.random());
-        sz = THREE.MathUtils.lerp(bounds.zMin+1, bounds.zMax-1, Math.random());
+        sx=THREE.MathUtils.lerp(bounds.xMin+1,bounds.xMax-1,Math.random());
+        sz=THREE.MathUtils.lerp(bounds.zMin+1,bounds.zMax-1,Math.random());
         tries++;
-      } while (boyRef && Math.hypot(sx-boyRef.position.x, sz-boyRef.position.z) < 6 && tries < 12);
-      spawn(url, new THREE.Vector3(sx, 0, sz));
+      } while (
+        boyRef&&Math.hypot(sx-boyRef.position.x,sz-boyRef.position.z)<6&&tries<12
+      );
+      spawn(url,new THREE.Vector3(sx,0,sz));
     }
-
-    function countSurrounding(){
+    function countSurrounding() {
       if (!boyRef) return 0;
-      let c = 0;
-      for (const p of penguins){
-        if (p.position.distanceTo(boyRef.position) <= GAME.surroundRadius) c++;
+      let c=0;
+      for (const p of penguins) {
+        if (p.position.distanceTo(boyRef.position)<=GAME.surroundRadius) c++;
       }
       return c;
     }
-
-    function startGame(){
-      // 既存ペンギンを消す
-      for (const p of penguins){
-        if (p.userData && p.userData.bubbleEl){ p.userData.bubbleEl.remove(); }
+    function startGame() {
+      for (const p of penguins) {
+        if (p.userData&&p.userData.bubbleEl) p.userData.bubbleEl.remove();
         scene.remove(p);
       }
-      penguins.length = 0; penguin = null;
-      // リソースキューをクリア
-      for (const k in RES){ if (RES[k]){ RES[k].holder = null; RES[k].queue = []; } }
-
-      GAME.over = false; GAME.running = true; GAME.elapsed = 0;
-      GAME.spawnTimer = 0; GAME.colorIdx = 0;
-      GAME.startTime = performance.now();
-
-      $('gStart').style.display = 'none';
-      $('gOver').style.display = 'none';
-      $('gScore').style.display = 'block';
-
-      // 少年を部屋の中央あたりに配置（庭にいた場合の瞬間ワープ防止）
-      if (boyRef){ boyRef.position.set(0, 0, 2); boyTapTarget = null; }
-
-      // 初期ペンギン
+      penguins.length=0;
+      penguin=null;
+      for (const k in RES) {
+        if (RES[k]) {
+          RES[k].holder=null;
+          RES[k].queue=[];
+        }
+      }
+      GAME.over=false;
+      GAME.running=true;
+      GAME.elapsed=0;
+      GAME.spawnTimer=0;
+      GAME.colorIdx=0;
+      GAME.startTime=performance.now();
+      $('gStart').style.display='none';
+      $('gOver').style.display='none';
+      $('gScore').style.display='block';
+      if (boyRef) {
+        boyRef.position.set(0,0,2);
+        boyTapTarget=null;
+      }
       for (let i=0;i<GAME.initialCount;i++) gameSpawnOne();
     }
-
-    function endGame(){
-      GAME.running = false; GAME.over = true;
-      $('gResult').textContent = GAME.elapsed.toFixed(1);
-      $('gResultSub').textContent = 'ペンギン ' + penguins.length + ' 羽に囲まれた';
-      $('gOver').style.display = 'flex';
-      $('gScore').style.display = 'none';
+    function endGame() {
+      GAME.running=false;
+      GAME.over=true;
+      $('gResult').textContent=GAME.elapsed.toFixed(1);
+      $('gResultSub').textContent='ペンギン '+penguins.length+' 羽に囲まれた';
+      $('gOver').style.display='flex';
+      $('gScore').style.display='none';
     }
-
-    function updateGame(dt){
-      if (!GAME.enabled || !GAME.running) return;
-      GAME.elapsed = (performance.now() - GAME.startTime) / 1000;
-
-      // 増殖
-      GAME.spawnTimer += dt;
-      if (GAME.spawnTimer >= GAME.spawnEvery){
-        GAME.spawnTimer -= GAME.spawnEvery;
+    function updateGame(dt) {
+      if (!GAME.enabled||!GAME.running) return;
+      GAME.elapsed=(performance.now()-GAME.startTime)/1000;
+      GAME.spawnTimer+=dt;
+      if (GAME.spawnTimer>=GAME.spawnEvery) {
+        GAME.spawnTimer-=GAME.spawnEvery;
         gameSpawnOne();
       }
-
-      // 追尾の発火（trigger:'radius' のときのみ。'greet' は挨拶側で発火）
-      if (boyRef && GAME.trigger === 'radius'){
-        for (const p of penguins){
-          const ud = p.userData; if (!ud) continue;
-          if (ud.state === 'chase') continue;
-          if (p.position.distanceTo(boyRef.position) <= GAME.chaseRadius){
-            setState(p, 'chase');
+      if (boyRef&&GAME.trigger==='radius') {
+        for (const p of penguins) {
+          const ud=p.userData;
+          if (!ud||ud.state==='chase') continue;
+          if (p.position.distanceTo(boyRef.position)<=GAME.chaseRadius) {
+            setState(p,'chase');
           }
         }
       }
-
-      // HUD更新
-      const surrounded = countSurrounding();
-      $('gTime').textContent = GAME.elapsed.toFixed(1);
-      $('gCount').textContent = 'ペンギン ' + penguins.length + ' / 囲まれ ' + surrounded;
-
-      // ゲームオーバー判定
-      if (surrounded >= GAME.surroundLimit){ endGame(); }
+      const surrounded=countSurrounding();
+      $('gTime').textContent=GAME.elapsed.toFixed(1);
+      $('gCount').textContent='ペンギン '+penguins.length+' / 囲まれ '+surrounded;
+      if (surrounded>=GAME.surroundLimit) endGame();
     }
 
-    // ボタン配線
     (function wireGameUI(){
-      const sb = $('gStartBtn'); if (sb) sb.addEventListener('click', startGame);
-      const rb = $('gRetryBtn'); if (rb) rb.addEventListener('click', startGame);
-      if (GAME.enabled){
-        $('gStart').style.display = 'flex';
-        const hud = document.querySelector('.hud'); if (hud) hud.textContent = 'クリック/タップ・WASDで逃げろ';
+      const sb=$('gStartBtn');
+      if (sb) sb.addEventListener('click',startGame);
+      const rb=$('gRetryBtn');
+      if (rb) rb.addEventListener('click',startGame);
+      if (GAME.enabled) {
+        $('gStart').style.display='flex';
+        const hud=document.querySelector('.hud');
+        if (hud) hud.textContent='クリック/タップ・WASDで逃げろ';
       }
     })();
 
-    // ---- Console helpers ----
-    window.__penguin = { scene, camera, setState, chooseNextAction, get penguin(){ return penguin; }, get penguins(){ return penguins; } };
+    window.__penguin={
+      scene,camera,renderer,updateEnvironment,setState,chooseNextAction,
+      get penguin(){return penguin;},
+      get penguins(){return penguins;}
+    };
     setStatus('initialized OK');
   </script>
 
-  <!-- Eruda: mobile devtools -->
-  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-  <script>try{ eruda.init({ defaults: { displaySize: 50 }, tool: [ 'console','network','resources' ] }); console.log('Eruda ready'); }catch(e){ console.warn('Eruda init failed', e); }</script>
+  <script>
+    if (new URLSearchParams(location.search).get('debug')==='1') {
+      const script=document.createElement('script');
+      script.src='https://cdn.jsdelivr.net/npm/eruda';
+      script.onload=()=>window.eruda?.init({tool:['console','network','resources']});
+      document.body.appendChild(script);
+    }
+  </script>
 </body>
 </html>
