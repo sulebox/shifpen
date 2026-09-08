@@ -3316,5 +3316,78 @@ function installGardenWalk() {
 if(window.__penguin) installGardenWalk();
 else window.addEventListener('load',installGardenWalk,{once:true});
 </script>
+<!-- SHIFPEN FACING & BUBBLE FIX v54 -->
+<script type="module">
+import * as THREE from 'three';
+
+function installFacingBubbleFix() {
+  const api=window.__penguin;
+  if(!api?.renderer || window.__shifpenFacingBubbleFix) return;
+  window.__shifpenFacingBubbleFix=true;
+  const {scene,camera,renderer}=api;
+
+  // モデルの正面と、お散歩の進行方向を合わせる。
+  const facing={
+    oguru:-Math.PI/2,
+    sharon:-Math.PI/2,
+    cheryl:-Math.PI/2
+  };
+  const corrected=new WeakSet();
+
+  function fixFacing() {
+    for(const root of scene.children) {
+      const angle=facing[root.userData.gardenResident];
+      if(angle===undefined ||
+         corrected.has(root) ||
+         !root.children.length) continue;
+
+      const pivot=new THREE.Group();
+      pivot.name='garden-facing-correction';
+      pivot.rotation.y=angle;
+
+      for(const child of [...root.children]) {
+        pivot.add(child);
+      }
+      root.add(pivot);
+      corrected.add(root);
+    }
+  }
+
+  // 頭の上の位置を保ち、画面端では横長のまま見切れさせる。
+  const style=document.createElement('style');
+  style.textContent=`
+    #shifpen-bubbles .bubble {
+      box-sizing:border-box;
+      width:max-content;
+      max-width:none;
+      min-width:0;
+      white-space:nowrap;
+      word-break:normal;
+      overflow-wrap:normal;
+      transform:translate(-50%,-100%);
+    }
+  `;
+  document.head.appendChild(style);
+
+  const renderBefore=renderer.render.bind(renderer);
+  renderer.render=function(s,c) {
+    const active=s===scene && c===camera;
+    if(active) fixFacing();
+
+    const result=renderBefore(s,c);
+
+    if(active) {
+      // 遅れて読み込まれた子にも、一度だけ補正を付ける。
+      fixFacing();
+    }
+    return result;
+  };
+}
+
+if(window.__penguin) installFacingBubbleFix();
+else window.addEventListener(
+  'load',installFacingBubbleFix,{once:true}
+);
+</script>
 </body>
 </html>
