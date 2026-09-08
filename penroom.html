@@ -2515,5 +2515,533 @@
       document.body.appendChild(script);
     }
   </script>
+  <!-- SHIFPEN MOBILE FIX v52 -->
+<script type="module">
+import * as THREE from 'three';
+
+function installMobileFix() {
+  const api = window.__penguin;
+  if (!api?.renderer || window.__shifpenMobileFix) return;
+  window.__shifpenMobileFix = true;
+
+  const { scene, camera, renderer } = api;
+  const app = document.getElementById('app');
+  const canvas = renderer.domElement;
+  const coarse = window.matchMedia('(pointer: coarse)');
+  const clamp = THREE.MathUtils.clamp;
+  const MIN_ZOOM = 1, MAX_ZOOM = 5;
+
+  let mobile = false, width = 0, height = 0;
+  let zoom = 1, centerX = 0, centerY = 0, initialized = false;
+  let baseW = 1, baseH = 1, area;
+
+  const points = [
+    [-18,-.72,-8],[18,-.72,-8],[-18,-.72,16],[18,-.72,16],
+    [-9,5.25,-7],[9,5.25,-7],[9,5.25,7],
+    [-16.6,7,-5],[-11.3,7,-2],[12,6.1,-6.8],[16.8,6.1,-3]
+  ];
+
+  const style = document.createElement('style');
+  style.textContent = `
+    html {
+      -webkit-text-size-adjust:100%;
+      text-size-adjust:100%;
+    }
+    #app {
+      isolation:isolate;
+      overflow:hidden;
+    }
+    #app canvas {
+      width:100% !important;
+      height:100% !important;
+    }
+    #shifpen-bubbles {
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      overflow:hidden;
+    }
+    #shifpen-bubbles .bubble {
+      position:absolute;
+      font-size:12px;
+      line-height:1.35;
+      padding:5px 9px;
+      max-width:160px;
+      white-space:normal;
+      text-align:center;
+      transform:translate(-50%,-100%);
+      transition:opacity .15s;
+    }
+    #shifpen-view {
+      position:fixed;
+      z-index:4;
+      right:max(14px,env(safe-area-inset-right));
+      bottom:calc(76px + env(safe-area-inset-bottom));
+      display:flex;
+      gap:6px;
+    }
+    #shifpen-view[hidden] {
+      display:none;
+    }
+    #shifpen-view button {
+      min-width:44px;
+      min-height:44px;
+      padding:0 12px;
+      border:1px solid #fff;
+      border-radius:14px;
+      background:#fffaf0ed;
+      color:#36524b;
+      font:600 16px sans-serif;
+      box-shadow:0 3px 12px #34504418;
+      touch-action:manipulation;
+    }
+    #shifpen-view button:focus-visible {
+      outline:3px solid #bd8750;
+      outline-offset:3px;
+    }
+    #shifpen-view button:disabled {
+      opacity:.45;
+    }
+    @media(max-width:600px) {
+      .hud {
+        font-size:11px;
+        padding:10px 12px;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const layer = document.createElement('div');
+  layer.id = 'shifpen-bubbles';
+  app.appendChild(layer);
+
+  const controls = document.createElement('div');
+  controls.id = 'shifpen-view';
+  controls.setAttribute('role','group');
+  controls.setAttribute('aria-label','お部屋の表示');
+
+  function button(label, title, action) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.setAttribute('aria-label',title);
+    b.addEventListener('click',action);
+    controls.appendChild(b);
+    return b;
+  }
+
+  const minus = button('−','お部屋を縮小',()=>{
+    changeZoom(zoom/1.25);
+  });
+  const plus = button('＋','お部屋を拡大',()=>{
+    changeZoom(zoom*1.25);
+  });
+  button('全体','お庭まで全体を表示',()=>{
+    zoom = 1;
+    centerX = (area.minX+area.maxX)/2;
+    centerY = (area.minY+area.maxY)/2;
+    applyView();
+  });
+  document.body.appendChild(controls);
+
+  const viewport = document.querySelector('meta[name="viewport"]');
+  if (viewport) {
+    viewport.content =
+      'width=device-width, initial-scale=1, viewport-fit=cover';
+  }
+
+  function applyView() {
+    zoom = clamp(zoom,MIN_ZOOM,MAX_ZOOM);
+    const hw = baseW/(2*zoom);
+    const hh = baseH/(2*zoom);
+
+    centerX = area.maxX-area.minX <= hw*2
+      ? (area.minX+area.maxX)/2
+      : clamp(centerX,area.minX+hw,area.maxX-hw);
+
+    centerY = area.maxY-area.minY <= hh*2
+      ? (area.minY+area.maxY)/2
+      : clamp(centerY,area.minY+hh,area.maxY-hh);
+
+    camera.left = centerX-baseW/2;
+    camera.right = centerX+baseW/2;
+    camera.top = centerY+baseH/2;
+    camera.bottom = centerY-baseH/2;
+    camera.zoom = zoom;
+    camera.updateProjectionMatrix();
+
+    minus.disabled = zoom<=MIN_ZOOM;
+    plus.disabled = zoom>=MAX_ZOOM;
+  }
+
+  function changeZoom(next) {
+    zoom = next;
+    applyView();
+  }
+
+  function fit() {
+    const w = app.clientWidth;
+    const h = app.clientHeight;
+    if (!w || !h) return;
+
+    const nextMobile = coarse.matches && Math.min(w,h)<800;
+
+    if (
+      initialized && w===width && h===height &&
+      nextMobile===mobile
+    ) return;
+
+    const modeChanged = nextMobile!==mobile;
+    width = w;
+    height = h;
+    mobile = nextMobile;
+
+    renderer.setSize(w,h,false);
+    camera.updateMatrixWorld(true);
+
+    area = {
+      minX:Infinity,maxX:-Infinity,
+      minY:Infinity,maxY:-Infinity
+    };
+
+    for (const p of points) {
+      const v = new THREE.Vector3(...p)
+        .applyMatrix4(camera.matrixWorldInverse);
+      area.minX = Math.min(area.minX,v.x);
+      area.maxX = Math.max(area.maxX,v.x);
+      area.minY = Math.min(area.minY,v.y);
+      area.maxY = Math.max(area.maxY,v.y);
+    }
+
+    area.minX -= 1;
+    area.maxX += 1;
+    area.minY -= 1;
+    area.maxY += 1;
+
+    baseH = Math.max(
+      area.maxY-area.minY,
+      (area.maxX-area.minX)/(w/h)
+    );
+    baseW = baseH*w/h;
+
+    if (!initialized || modeChanged) {
+      zoom = mobile ? 2.2 : 1;
+      centerX = (area.minX+area.maxX)/2;
+      centerY = (area.minY+area.maxY)/2;
+    }
+
+    initialized = true;
+    controls.hidden = !mobile;
+    canvas.style.touchAction = mobile ? 'none' : 'manipulation';
+
+    const hud = document.querySelector('.hud');
+    if (hud && mobile) {
+      hud.textContent = 'タップで移動・2本指で拡大／移動';
+    }
+
+    applyView();
+  }
+  fit();
+
+  // 1本指はタップを離した時だけ少年を移動。
+  // 2本指ではカメラの拡大・移動を行う。
+  const touches = new Map();
+  let previous = null;
+  let multiple = false;
+  let replay = false;
+
+  function pair() {
+    if (touches.size!==2) return null;
+    const [a,b] = [...touches.values()];
+    return {
+      x:(a.x+b.x)/2,
+      y:(a.y+b.y)/2,
+      d:Math.hypot(a.x-b.x,a.y-b.y)
+    };
+  }
+
+  function ndcAt(p) {
+    const r = canvas.getBoundingClientRect();
+    return {
+      x:((p.x-r.left)/r.width)*2-1,
+      y:1-((p.y-r.top)/r.height)*2
+    };
+  }
+
+  canvas.addEventListener('pointerdown',e=>{
+    if (
+      replay || !mobile ||
+      !['touch','pen'].includes(e.pointerType)
+    ) return;
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    touches.set(e.pointerId,{
+      x:e.clientX,
+      y:e.clientY,
+      startX:e.clientX,
+      startY:e.clientY,
+      moved:false
+    });
+
+    if (touches.size>1) multiple = true;
+    previous = pair();
+
+    try {
+      canvas.setPointerCapture(e.pointerId);
+    } catch {}
+  },{capture:true,passive:false});
+
+  canvas.addEventListener('pointermove',e=>{
+    const t = touches.get(e.pointerId);
+    if (!t) return;
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    t.x = e.clientX;
+    t.y = e.clientY;
+
+    if (Math.hypot(t.x-t.startX,t.y-t.startY)>8) {
+      t.moved = true;
+    }
+
+    const current = pair();
+
+    if (
+      previous && current &&
+      previous.d>8 && current.d>8
+    ) {
+      const a = ndcAt(previous);
+      const b = ndcAt(current);
+
+      const anchorX = centerX+a.x*baseW/(2*zoom);
+      const anchorY = centerY+a.y*baseH/(2*zoom);
+
+      zoom = clamp(
+        zoom*current.d/previous.d,
+        MIN_ZOOM,MAX_ZOOM
+      );
+
+      centerX = anchorX-b.x*baseW/(2*zoom);
+      centerY = anchorY-b.y*baseH/(2*zoom);
+      applyView();
+    }
+
+    previous = current;
+  },{capture:true,passive:false});
+
+  function endPointer(e,cancelled=false) {
+    const t = touches.get(e.pointerId);
+    if (!t) return;
+
+    if (e.cancelable) e.preventDefault();
+    e.stopImmediatePropagation();
+
+    const tap =
+      !cancelled &&
+      !multiple &&
+      !t.moved &&
+      touches.size===1 &&
+      Math.hypot(
+        e.clientX-t.startX,
+        e.clientY-t.startY
+      )<=8;
+
+    touches.delete(e.pointerId);
+    previous = pair();
+
+    if (cancelled) multiple = true;
+    if (!touches.size) multiple = false;
+
+    if (tap) {
+      replay = true;
+      try {
+        canvas.dispatchEvent(new PointerEvent('pointerdown',{
+          bubbles:true,
+          cancelable:true,
+          pointerId:e.pointerId,
+          pointerType:e.pointerType,
+          isPrimary:true,
+          clientX:e.clientX,
+          clientY:e.clientY,
+          button:0,
+          buttons:1
+        }));
+      } finally {
+        replay = false;
+      }
+    }
+  }
+
+  canvas.addEventListener('pointerup',e=>{
+    endPointer(e);
+  },{capture:true,passive:false});
+
+  canvas.addEventListener('pointercancel',e=>{
+    endPointer(e,true);
+  },{capture:true,passive:false});
+
+  canvas.addEventListener('lostpointercapture',e=>{
+    endPointer(e,true);
+  },true);
+
+  function clearTouches() {
+    touches.clear();
+    previous = null;
+    multiple = false;
+  }
+
+  window.addEventListener('blur',clearTouches);
+  document.addEventListener('visibilitychange',()=>{
+    if (document.hidden) clearTouches();
+  });
+  window.addEventListener('resize',()=>{
+    clearTouches();
+    fit();
+  });
+
+  for (const type of [
+    'gesturestart','gesturechange','gestureend',
+    'touchmove','touchend'
+  ]) {
+    canvas.addEventListener(type,e=>{
+      if (mobile && e.cancelable) e.preventDefault();
+    },{passive:false});
+  }
+
+  // 少年の体・服を不透明にする。
+  // 髪などの切り抜きだけアルファテストを残す。
+  const fixedBoys = new WeakSet();
+  const headBones = new WeakMap();
+
+  function fixBoy(root) {
+    if (fixedBoys.has(root)) return;
+    fixedBoys.add(root);
+
+    const materials = new Map();
+
+    root.traverse(o=>{
+      if (
+        o.isBone && /head/i.test(o.name) &&
+        !headBones.has(root)
+      ) {
+        headBones.set(root,o);
+      }
+
+      if (!o.isMesh) return;
+
+      o.castShadow = true;
+      o.receiveShadow = true;
+
+      const convert = m=>{
+        const cutout =
+          !!m.alphaMap ||
+          /hair|eyelash|eyebrow|まつげ|眉|髪/i.test(
+            o.name+' '+m.name
+          );
+
+        const key = m.uuid+'/'+cutout;
+        if (materials.has(key)) return materials.get(key);
+
+        const n = m.clone();
+        n.transparent = false;
+        n.opacity = 1;
+        n.depthWrite = true;
+        n.depthTest = true;
+        n.side = THREE.DoubleSide;
+        n.alphaTest = cutout
+          ? Math.max(m.alphaTest||0,.1)
+          : 0;
+
+        if ('transmission' in n) n.transmission = 0;
+        n.needsUpdate = true;
+
+        materials.set(key,n);
+        return n;
+      };
+
+      o.material = Array.isArray(o.material)
+        ? o.material.map(convert)
+        : convert(o.material);
+    });
+
+    const bounds = new THREE.Box3().setFromObject(root);
+    const h = bounds.max.y-root.position.y;
+
+    root.userData.bubbleOffsetY = Number.isFinite(h)
+      ? clamp(h+.25,1.8,3.5)
+      : 2.3;
+  }
+
+  // 吹き出しをcanvasと同じ領域に配置する。
+  const world = new THREE.Vector3();
+
+  function placeBubbles() {
+    for (const root of scene.children) {
+      if (
+        root.userData.bubbleOffsetY===4.5 ||
+        root.userData._fallback===true
+      ) {
+        fixBoy(root);
+      }
+
+      const el = root.userData.bubbleEl;
+      if (!el) continue;
+
+      if (el.parentNode!==layer) layer.appendChild(el);
+      el.style.position = 'absolute';
+
+      const head = headBones.get(root);
+
+      if (head) {
+        head.getWorldPosition(world);
+        world.y += .35;
+      } else {
+        root.getWorldPosition(world);
+        world.y += root.userData.bubbleOffsetY??2.6;
+      }
+
+      world.project(camera);
+
+      const outside =
+        world.z < -1 || world.z > 1 ||
+        Math.abs(world.x)>1 || Math.abs(world.y)>1;
+
+      el.style.visibility = outside ? 'hidden' : 'visible';
+
+      el.style.left = (
+        canvas.offsetLeft +
+        (world.x*.5+.5)*canvas.clientWidth
+      )+'px';
+
+      el.style.top = (
+        canvas.offsetTop +
+        (-world.y*.5+.5)*canvas.clientHeight
+      )+'px';
+    }
+  }
+
+  const originalRender = renderer.render.bind(renderer);
+
+  renderer.render = function(s,c) {
+    if (s===scene && c===camera) {
+      fit();
+      applyView();
+      camera.updateMatrixWorld(true);
+      scene.updateMatrixWorld(true);
+      placeBubbles();
+    }
+    return originalRender(s,c);
+  };
+}
+
+if (window.__penguin) {
+  installMobileFix();
+} else {
+  window.addEventListener('load',installMobileFix,{once:true});
+}
+</script>
 </body>
 </html>
