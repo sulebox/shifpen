@@ -3043,5 +3043,278 @@ if (window.__penguin) {
   window.addEventListener('load',installMobileFix,{once:true});
 }
 </script>
+<!-- SHIFPEN GARDEN WALK v53 -->
+<script type="module">
+import * as THREE from 'three';
+
+function installGardenWalk() {
+  const api=window.__penguin;
+  if(!api?.renderer || window.__shifpenGardenWalk) return;
+  window.__shifpenGardenWalk=true;
+  const {scene,renderer,camera}=api;
+  const residents=[
+    {id:'oguru',name:'オーグル',x:13,z:9,radius:1,speed:.7,fly:false},
+    {id:'sharon',name:'シャロン',x:12.5,z:1,radius:.6,speed:.9,fly:false},
+    {id:'cheryl',name:'シェリルピープ',x:12.5,z:-2,radius:.4,speed:1.2,fly:true}
+  ];
+
+  // お部屋・ベンチ・木を避ける。飛ぶ子だけ池の上も通れる。
+  function safe(x,z,c) {
+    const r=c.radius;
+    if(x < -17.8+r || x > 17.8-r || z < -7.8+r || z > 15.8-r) return false;
+    for(const [x0,x1,z0,z1] of [
+      [-9.25,9.25,-7.25,7.25],
+      [-12.65,-9.15,10.3,12.1]
+    ]) {
+      if(x>x0-r && x<x1+r && z>z0-r && z<z1+r) return false;
+    }
+    for(const [tx,tz,tr] of [[-13.9,-3.5,.75],[14.4,-4.9,.65]]) {
+      if(Math.hypot(x-tx,z-tz)<tr+r) return false;
+    }
+    return c.fly || Math.hypot(x+2,z-10)>2.55+r;
+  }
+
+  function clear(a,b,c) {
+    if(!safe(a.x,a.z,c) || !safe(b.x,b.z,c)) return false;
+    const dx=b.x-a.x,dz=b.z-a.z,r=c.radius;
+    for(const [x0,x1,z0,z1] of [
+      [-9.25,9.25,-7.25,7.25],
+      [-12.65,-9.15,10.3,12.1]
+    ]) {
+      let lo=0,hi=1;
+      for(const [p,d,min,max] of [
+        [a.x,dx,x0-r,x1+r],
+        [a.z,dz,z0-r,z1+r]
+      ]) {
+        if(Math.abs(d)<1e-9) {
+          if(p<min || p>max) {lo=2;break;}
+        } else {
+          const t0=(min-p)/d,t1=(max-p)/d;
+          lo=Math.max(lo,Math.min(t0,t1));
+          hi=Math.min(hi,Math.max(t0,t1));
+        }
+      }
+      if(lo<=hi) return false;
+    }
+    const circles=[[-13.9,-3.5,.75],[14.4,-4.9,.65]];
+    if(!c.fly) circles.push([-2,10,2.55]);
+    for(const [x,z,radius] of circles) {
+      const t=THREE.MathUtils.clamp(
+        ((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz || 1),0,1
+      );
+      if(Math.hypot(a.x+dx*t-x,a.z+dz*t-z)<=radius+r) return false;
+    }
+    return true;
+  }
+
+  function makeMap(c) {
+    const nodes=[],lookup=new Map(),step=.85;
+    for(let j=0;j<=27;j++) for(let i=0;i<=41;i++) {
+      const x=-17.5+i*step,z=-7.5+j*step;
+      if(!safe(x,z,c)) continue;
+      const n={x,z,i,j,edges:[]};
+      lookup.set(i+','+j,nodes.length);
+      nodes.push(n);
+    }
+    for(const n of nodes) {
+      for(const [di,dj] of [
+        [1,0],[-1,0],[0,1],[0,-1],
+        [1,1],[1,-1],[-1,1],[-1,-1]
+      ]) {
+        const k=lookup.get((n.i+di)+','+(n.j+dj));
+        if(k===undefined) continue;
+        if(di && dj && (
+          !lookup.has((n.i+di)+','+n.j) ||
+          !lookup.has(n.i+','+(n.j+dj))
+        )) continue;
+        if(clear(n,nodes[k],c)) n.edges.push(k);
+      }
+    }
+    return nodes;
+  }
+
+  function makeRoute(s) {
+    const {nodes,c,pos}=s;
+    let start=-1,best=Infinity;
+    nodes.forEach((n,i)=>{
+      const d=Math.hypot(n.x-pos.x,n.z-pos.z);
+      if(d<best && clear(pos,n,c)) {best=d;start=i;}
+    });
+    if(start<0) return [];
+
+    const parent=new Int32Array(nodes.length).fill(-1);
+    const queue=[start];
+    parent[start]=start;
+    for(let i=0;i<queue.length;i++) {
+      for(const next of nodes[queue[i]].edges) {
+        if(parent[next]!==-1) continue;
+        parent[next]=queue[i];
+        queue.push(next);
+      }
+    }
+    const choices=queue.filter(i=>
+      Math.hypot(nodes[i].x-pos.x,nodes[i].z-pos.z)>4
+    );
+    if(!choices.length) return [];
+
+    const goal=choices[Math.floor(Math.random()*choices.length)];
+    const raw=[];
+    for(let i=goal;;i=parent[i]) {
+      raw.push(nodes[i]);
+      if(i===start) break;
+    }
+    raw.reverse();
+
+    const route=[];
+    let from=pos,index=0;
+    while(index<raw.length) {
+      let end=raw.length-1;
+      while(end>index && !clear(from,raw[end],c)) end--;
+      route.push(raw[end]);
+      from=raw[end];
+      index=end+1;
+    }
+    return route;
+  }
+
+  function attach(c,object) {
+    const nodes=makeMap(c);
+    if(!nodes.length) return;
+    const pos={x:object.position.x,z:object.position.z};
+    if(!safe(pos.x,pos.z,c)) {
+      const nearest=nodes.reduce((a,b)=>
+        Math.hypot(a.x-pos.x,a.z-pos.z)<
+        Math.hypot(b.x-pos.x,b.z-pos.z)?a:b
+      );
+      pos.x=nearest.x;
+      pos.z=nearest.z;
+    }
+    c.state={
+      c,object,nodes,pos,path:[],wait:Math.random()*1.5,
+      yaw:object.rotation.y,
+      phase:Math.random()*Math.PI*2,
+      speed:0
+    };
+    object.userData.gardenResident=c.id;
+  }
+
+  function findResidents() {
+    for(const c of residents) {
+      if(c.state) continue;
+      const object=scene.children.find(o=>{
+        if(!o.isGroup || o.userData.gardenResident ||
+          o.userData.state || o.userData._fallback) return false;
+        if(c.fly) return Array.isArray(o.userData.wings);
+        if(c.id==='oguru' &&
+          o.userData.bubbleOffsetY!==undefined) return false;
+        if(c.id==='sharon' &&
+          Math.abs((o.userData.bubbleOffsetY??0)-2.4)>.01) return false;
+        return Math.abs(o.position.x-c.x)<.01 &&
+          Math.abs(o.position.z-c.z)<.01;
+      });
+      if(object) attach(c,object);
+    }
+  }
+
+  function updateResident(s,dt,t) {
+    const {c,object,pos}=s;
+
+    // シャロンを見に来る行動を使った場合は、近くで待ってあげる。
+    const visitors=c.id==='sharon' ? api.penguins.filter(p=>
+      p.userData.state==='sharon' ||
+      p.userData.state==='sharonWait'
+    ) : [];
+    if(visitors.length) {
+      visitors.forEach((p,i)=>{
+        const dest=new THREE.Vector3(
+          pos.x-c.radius-1-i*.5,0,pos.z
+        );
+        if(p.userData.way?.length) {
+          p.userData.way[p.userData.way.length-1]=dest;
+        } else {
+          p.userData.target.copy(dest);
+        }
+      });
+    }
+
+    s.wait-=dt;
+    if(!s.path.length && s.wait<=0 && !visitors.length) {
+      s.path=makeRoute(s);
+      if(!s.path.length) s.wait=2;
+    }
+
+    const walking=s.path.length>0 && !visitors.length;
+    s.speed=THREE.MathUtils.damp(
+      s.speed,walking?c.speed:0,4,dt
+    );
+    let remaining=walking?s.speed*dt:0;
+    while(remaining>0 && s.path.length) {
+      const goal=s.path[0];
+      const dx=goal.x-pos.x,dz=goal.z-pos.z;
+      const d=Math.hypot(dx,dz);
+      if(d<.001) {s.path.shift();continue;}
+
+      const step=Math.min(d,remaining);
+      const yaw=Math.atan2(dx,dz);
+      const angle=Math.atan2(
+        Math.sin(yaw-s.yaw),Math.cos(yaw-s.yaw)
+      );
+      s.yaw+=angle*(1-Math.exp(-5*dt));
+      pos.x+=dx/d*step;
+      pos.z+=dz/d*step;
+      remaining-=step;
+      if(step>=d-.00001) s.path.shift();
+    }
+
+    if(walking && !s.path.length) {
+      s.wait=1.5+Math.random()*3.5;
+    }
+    s.phase+=dt*s.speed*8;
+
+    object.position.set(
+      pos.x,
+      c.fly
+        ? .8+Math.sin(t*2+s.phase*.1)*.16
+        : walking
+          ? Math.abs(Math.sin(s.phase))*.045
+          : .015+Math.sin(t*1.5+s.phase)*.01,
+      pos.z
+    );
+    object.rotation.y=s.yaw;
+    object.rotation.x=c.fly
+      ? Math.sin(t*1.7+s.phase)*.035 : 0;
+    object.rotation.z=c.fly
+      ? Math.sin(t*2.3+s.phase)*.055
+      : Math.sin(s.phase)*.04*Math.min(1,s.speed/c.speed);
+  }
+
+  let previous=performance.now();
+  const renderBefore=renderer.render.bind(renderer);
+  renderer.render=function(s,c) {
+    if(s===scene && c===camera) {
+      const now=performance.now();
+      const dt=document.hidden
+        ? 0
+        : Math.min(.05,Math.max(0,(now-previous)/1000));
+      previous=now;
+      findResidents();
+      for(const resident of residents) {
+        if(resident.state) {
+          updateResident(resident.state,dt,now/1000);
+        }
+      }
+    }
+    // 先に3人を動かしてから、前回の吹き出し補正と描画を行う。
+    return renderBefore(s,c);
+  };
+
+  document.addEventListener('visibilitychange',()=>{
+    previous=performance.now();
+  });
+}
+
+if(window.__penguin) installGardenWalk();
+else window.addEventListener('load',installGardenWalk,{once:true});
+</script>
 </body>
 </html>
